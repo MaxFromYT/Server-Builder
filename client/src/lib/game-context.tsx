@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo } 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { generateProceduralRacks } from "@/components/3d/ProceduralRacks";
-import { staticEquipmentCatalog } from "@/lib/static-equipment";
+import { enhanceEquipmentCatalogItem, staticEquipmentCatalog, type EquipmentCatalogItem } from "@/lib/static-equipment";
 import type { 
   GameMode, 
   GameState, 
@@ -34,7 +34,7 @@ interface GameContextType {
   networkNodes: NetworkNode[];
   networkLinks: NetworkLink[];
   facilityMetrics: FacilityMetrics;
-  equipmentCatalog: Equipment[];
+  equipmentCatalog: EquipmentCatalogItem[];
   
   inventory: {
     cpus: CPU[];
@@ -335,7 +335,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     networkNodes: data?.networkNodes ?? [],
     networkLinks: data?.networkLinks ?? [],
     facilityMetrics: data?.facilityMetrics ?? defaultMetrics,
-    equipmentCatalog: useStaticData ? staticEquipmentCatalog : equipmentData ?? [],
+    equipmentCatalog: useMemo(() => {
+      if (useStaticData) {
+        return staticEquipmentCatalog;
+      }
+      return (equipmentData ?? []).map((equipment) => enhanceEquipmentCatalogItem(equipment));
+    }, [equipmentData, useStaticData]),
     inventory: data?.inventory ?? defaultInventory,
     selectedRackId,
     setSelectedRackId,
