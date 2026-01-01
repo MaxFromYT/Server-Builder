@@ -7,9 +7,11 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import type { Rack } from "@shared/schema";
 
 export function DataCenter3D() {
-  const { isLoading } = useGame();
-  const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
+  const { isLoading, racks } = useGame();
+  const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+
+  const selectedRack = racks?.find(r => r.id === selectedRackId) || null;
 
   useEffect(() => {
     const savedUnlock = localStorage.getItem("hyperscale_unlocked");
@@ -23,6 +25,10 @@ export function DataCenter3D() {
     localStorage.setItem("hyperscale_unlocked", "true");
   };
 
+  const handleSelectRack = (rack: Rack | null) => {
+    setSelectedRackId(rack?.id || null);
+  };
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -30,8 +36,8 @@ export function DataCenter3D() {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background" data-testid="datacenter-3d-page">
       <IsometricDataCenter
-        onSelectRack={setSelectedRack}
-        selectedRackId={selectedRack?.id || null}
+        onSelectRack={handleSelectRack}
+        selectedRackId={selectedRackId}
         isUnlocked={isUnlocked}
       />
       
@@ -40,7 +46,7 @@ export function DataCenter3D() {
       {selectedRack && (
         <RackDetailPanel
           rack={selectedRack}
-          onClose={() => setSelectedRack(null)}
+          onClose={() => setSelectedRackId(null)}
           isUnlocked={isUnlocked}
         />
       )}

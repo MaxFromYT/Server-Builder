@@ -89,11 +89,55 @@ export type ServerConfig = z.infer<typeof serverConfigSchema>;
 export const insertServerConfigSchema = serverConfigSchema.omit({ id: true });
 export type InsertServerConfig = z.infer<typeof insertServerConfigSchema>;
 
+// ============ RACK EQUIPMENT ============
+
+export const equipmentTypeSchema = z.enum([
+  "server_1u", "server_2u", "server_4u",
+  "switch_1u", "switch_2u",
+  "storage_2u", "storage_4u",
+  "pdu_1u", "patch_panel_1u",
+  "ups_2u", "ups_4u",
+  "router_1u", "router_2u",
+  "firewall_1u", "firewall_2u",
+  "kvm_1u", "console_1u",
+  "blank_1u", "cable_management_1u"
+]);
+export type EquipmentType = z.infer<typeof equipmentTypeSchema>;
+
+export const equipmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: equipmentTypeSchema,
+  uHeight: z.number(),
+  manufacturer: z.string(),
+  model: z.string(),
+  powerDraw: z.number(),
+  heatOutput: z.number(),
+  price: z.number(),
+  color: z.string(),
+  ledColor: z.string().nullable(),
+  hasFans: z.boolean(),
+  portCount: z.number(),
+});
+export type Equipment = z.infer<typeof equipmentSchema>;
+
+export const installedEquipmentSchema = z.object({
+  id: z.string(),
+  equipmentId: z.string(),
+  uStart: z.number(),
+  uEnd: z.number(),
+  status: z.enum(["online", "warning", "critical", "offline"]),
+  cpuLoad: z.number().optional(),
+  memoryUsage: z.number().optional(),
+  networkActivity: z.number().optional(),
+});
+export type InstalledEquipment = z.infer<typeof installedEquipmentSchema>;
+
 // ============ RACK ============
 
 export const rackSlotSchema = z.object({
   uPosition: z.number(),
-  serverId: z.string().nullable(),
+  equipmentInstanceId: z.string().nullable(),
 });
 export type RackSlot = z.infer<typeof rackSlotSchema>;
 
@@ -103,6 +147,7 @@ export const rackSchema = z.object({
   type: z.enum(["open_2post", "open_4post", "enclosed_42U", "enclosed_48U", "liquid_cooled"]),
   totalUs: z.number(),
   slots: z.array(rackSlotSchema),
+  installedEquipment: z.array(installedEquipmentSchema),
   powerCapacity: z.number(),
   currentPowerDraw: z.number(),
   inletTemp: z.number(),

@@ -75,6 +75,47 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Equipment Catalog
+  app.get("/api/equipment", async (_req, res) => {
+    const equipment = await storage.getEquipmentCatalog();
+    res.json(equipment);
+  });
+
+  // Rack Equipment Management
+  app.post("/api/racks/:id/equipment", async (req, res) => {
+    try {
+      const schema = z.object({
+        equipmentId: z.string(),
+        uStart: z.number().min(1).max(42),
+      });
+      const validated = schema.parse(req.body);
+      const rack = await storage.addEquipmentToRack(req.params.id, validated.equipmentId, validated.uStart);
+      if (!rack) {
+        return res.status(400).json({ error: "Could not add equipment - slot occupied or invalid position" });
+      }
+      res.status(201).json(rack);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid request", details: error.errors });
+      }
+      throw error;
+    }
+  });
+
+  app.delete("/api/racks/:rackId/equipment/:equipmentInstanceId", async (req, res) => {
+    const rack = await storage.removeEquipmentFromRack(req.params.rackId, req.params.equipmentInstanceId);
+    if (!rack) {
+      return res.status(404).json({ error: "Equipment or rack not found" });
+    }
+    res.json(rack);
+  });
+
+  // Generate maxed datacenter
+  app.post("/api/datacenter/generate-maxed", async (_req, res) => {
+    const racks = await storage.generateMaxedDatacenter();
+    res.json(racks);
+  });
+
   // Servers
   app.get("/api/servers", async (_req, res) => {
     const servers = await storage.getServers();

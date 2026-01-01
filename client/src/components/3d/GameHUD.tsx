@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, Lock, Unlock, DollarSign, Star, Activity, AlertTriangle, Thermometer, Zap, RefreshCw } from "lucide-react";
+import { Lock, Unlock, DollarSign, Star, Activity, AlertTriangle, Thermometer, Zap, Server, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ interface GameHUDProps {
 }
 
 export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
-  const { gameState, facilityMetrics, alerts } = useGame();
+  const { gameState, facilityMetrics, alerts, racks, generateMaxedDatacenter, isGeneratingMaxed } = useGame();
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState(false);
@@ -131,7 +131,7 @@ export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
             </DialogDescription>
           </DialogHeader>
           
-          {!isUnlocked && (
+          {!isUnlocked ? (
             <div className="space-y-4">
               <Input
                 type="password"
@@ -148,6 +148,44 @@ export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
               {codeError && (
                 <p className="text-sm text-noc-red">Invalid code. Try again.</p>
               )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <Server className="w-5 h-5 text-noc-cyan" />
+                  <span className="font-mono">{racks?.length || 0} Racks</span>
+                </div>
+                <Badge variant="outline" className="text-noc-purple border-noc-purple">
+                  Editing Enabled
+                </Badge>
+              </div>
+              
+              <Button
+                className="w-full bg-noc-purple hover:bg-noc-purple/80"
+                onClick={async () => {
+                  await generateMaxedDatacenter();
+                  setShowCodeDialog(false);
+                }}
+                disabled={isGeneratingMaxed}
+                data-testid="button-generate-maxed"
+              >
+                {isGeneratingMaxed ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating 500 Racks...
+                  </>
+                ) : (
+                  <>
+                    <Server className="w-4 h-4 mr-2" />
+                    Generate Maxed Datacenter (500 Racks)
+                  </>
+                )}
+              </Button>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                This will replace the current datacenter with 500 fully-equipped racks, each with different equipment configurations.
+              </p>
             </div>
           )}
 

@@ -46,6 +46,10 @@ interface GameContextType {
   
   acknowledgeAlert: (id: string) => void;
   updateIncidentStatus: (id: string, status: Incident["status"]) => void;
+  
+  generateMaxedDatacenter: () => Promise<void>;
+  isGeneratingMaxed: boolean;
+  refetchRacks: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -105,10 +109,34 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
 
   // Fetch initial game data
-  const { data, isLoading } = useQuery<InitData>({
+  const { data, isLoading, refetch: refetchInit } = useQuery<InitData>({
     queryKey: ["/api/init"],
     staleTime: 30000,
   });
+
+  // Separate racks query for more granular updates
+  const { data: racksData, refetch: refetchRacksQuery } = useQuery<Rack[]>({
+    queryKey: ["/api/racks"],
+    staleTime: 5000,
+  });
+
+  const refetchRacks = useCallback(() => {
+    refetchRacksQuery();
+    refetchInit();
+  }, [refetchRacksQuery, refetchInit]);
+
+  // Generate maxed datacenter
+  const [isGeneratingMaxed, setIsGeneratingMaxed] = useState(false);
+  
+  const generateMaxedDatacenter = useCallback(async () => {
+    setIsGeneratingMaxed(true);
+    try {
+      await apiRequest("POST", "/api/datacenter/generate-maxed", {});
+      await refetchRacks();
+    } finally {
+      setIsGeneratingMaxed(false);
+    }
+  }, [refetchRacks]);
 
   // Local game mode state for immediate UI updates
   const [localGameMode, setLocalGameMode] = useState<GameMode>("noc");
@@ -182,7 +210,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       currentMode: localGameMode,
     },
     setGameMode,
-    racks: data?.racks ?? [],
+    racks: racksData ?? data?.racks ?? [],
     servers: data?.servers ?? [],
     alerts: data?.alerts ?? [],
     incidents: data?.incidents ?? [],
@@ -196,6 +224,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setSelectedServerId,
     acknowledgeAlert,
     updateIncidentStatus,
+    generateMaxedDatacenter,
+    isGeneratingMaxed,
+    refetchRacks,
   };
 
   return (
