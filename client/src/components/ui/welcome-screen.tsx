@@ -1,9 +1,10 @@
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
-import { useEffect, useMemo, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera, Sparkles as DreiSparkles } from "@react-three/drei";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Eye, Hammer, Play, Shield, Sparkles } from "lucide-react";
+import * as THREE from "three";
 
 type StartMode = "build" | "explore";
 
@@ -25,9 +26,23 @@ export function WelcomeScreen({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm">
-      <div className="mx-auto flex h-full max-w-6xl flex-col justify-center px-6 py-10">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="fixed inset-0 z-[100] overflow-hidden bg-black">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.3),_transparent_45%),radial-gradient(circle_at_70%_20%,_rgba(168,85,247,0.25),_transparent_45%),radial-gradient(circle_at_20%_80%,_rgba(20,184,166,0.3),_transparent_40%)] opacity-80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/80" />
+      <div className="absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.15),_transparent_60%)]" />
+
+      <div className="absolute inset-0 z-0">
+        <Canvas
+          dpr={[1, 2]}
+          gl={{ antialias: true }}
+          className="h-full w-full pointer-events-auto"
+        >
+          <IntroScene />
+        </Canvas>
+      </div>
+
+      <div className="mx-auto flex h-full max-w-6xl flex-col justify-center px-6 py-10 relative z-10 pointer-events-auto">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-cyan-300" />
@@ -99,6 +114,54 @@ export function WelcomeScreen({
   );
 }
 
+function IntroScene() {
+  const groupRef = useRef<THREE.Group>(null);
+  const fogColor = new THREE.Color("#05070f");
+
+  const rackGrid = useMemo(() => {
+    const positions: [number, number, number, number][] = [];
+    for (let x = -6; x <= 6; x += 2) {
+      for (let z = -6; z <= 6; z += 2) {
+        const height = 2.4 + Math.random() * 0.8;
+        positions.push([x * 2.2, height / 2, z * 2.4, height]);
+      }
+    }
+    return positions;
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    groupRef.current.rotation.y = t * 0.05;
+  });
+
+  return (
+    <>
+      <fog attach="fog" args={[fogColor, 8, 40]} />
+      <color attach="background" args={["#02030a"]} />
+      <PerspectiveCamera makeDefault position={[0, 8, 18]} fov={40} />
+
+      <ambientLight intensity={0.6} color="#4dd6ff" />
+      <directionalLight position={[10, 15, 10]} intensity={1.6} color="#b9e9ff" />
+      <directionalLight position={[-10, 10, -8]} intensity={0.9} color="#9b5cff" />
+
+      <group ref={groupRef}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+          <planeGeometry args={[120, 120]} />
+          <meshStandardMaterial color="#070b18" metalness={0.5} roughness={0.3} />
+        </mesh>
+
+        {rackGrid.map(([x, y, z, h], index) => (
+          <IntroRack key={`${x}-${z}-${index}`} position={[x, y, z]} height={h} />
+        ))}
+      </group>
+
+      <DreiSparkles count={200} speed={0.4} size={1.6} color="#22d3ee" scale={[40, 20, 40]} />
+      <DreiSparkles count={120} speed={0.2} size={2.4} color="#a855f7" scale={[45, 25, 45]} />
+    </>
+  );
+}
+
 function LiveFeed({
   title,
   subtitle,
@@ -140,29 +203,31 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
 
   const target = useMemo(() => [0, 1.5, 0] as [number, number, number], []);
 
+  const racks = useMemo(
+    () => [
+      [-1.8, 1.2, 0],
+      [0, 1.2, 0.4],
+      [1.8, 1.2, 0],
+    ],
+    []
+  );
+
   return (
     <>
       <PerspectiveCamera makeDefault position={camPos} fov={45} near={0.1} far={50} />
 
       <ambientLight intensity={0.7} />
-      <directionalLight position={[6, 10, 6]} intensity={1.0} />
+      <directionalLight position={[6, 10, 6]} intensity={1.2} />
+      <pointLight position={[-4, 6, -2]} intensity={1.2} color="#5eead4" />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[20, 20]} />
         <meshStandardMaterial color="#0b1220" />
       </mesh>
 
-      <group position={[0, 0, 0]}>
-        <mesh position={[0, 1.2, 0]}>
-          <boxGeometry args={[1.3, 2.4, 0.9]} />
-          <meshStandardMaterial color="#1f2a44" />
-        </mesh>
-
-        <mesh position={[0, 0.7, 1.2]}>
-          <boxGeometry args={[0.9, 0.4, 0.1]} />
-          <meshStandardMaterial color="#00aaff" emissive="#00aaff" emissiveIntensity={0.6} />
-        </mesh>
-      </group>
+      {racks.map((pos, index) => (
+        <IntroRack key={`${variant}-${index}`} position={pos as [number, number, number]} height={2.4} />
+      ))}
 
       <OrbitControls
         enablePan={false}
@@ -173,6 +238,55 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
         target={target}
       />
     </>
+  );
+}
+
+function IntroRack({
+  position,
+  height,
+}: {
+  position: [number, number, number];
+  height: number;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const rackRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (rackRef.current) {
+      rackRef.current.rotation.y = Math.sin(t * 0.6 + position[0]) * 0.15;
+    }
+    if (glowRef.current) {
+      glowRef.current.scale.y = 1 + Math.sin(t * 1.6 + position[2]) * 0.06;
+    }
+  });
+
+  return (
+    <group
+      position={position}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <mesh ref={rackRef} position={[0, height / 2, 0]}>
+        <boxGeometry args={[1.2, height, 1.8]} />
+        <meshStandardMaterial
+          color={hovered ? "#0ea5e9" : "#1f2937"}
+          emissive={hovered ? "#38bdf8" : "#0b1220"}
+          emissiveIntensity={hovered ? 0.8 : 0.3}
+          metalness={0.6}
+          roughness={0.3}
+        />
+      </mesh>
+      <mesh ref={glowRef} position={[0, height / 2, 0]}>
+        <boxGeometry args={[1.4, height * 1.05, 2]} />
+        <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.4} transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[0, height * 0.25, 0.92]}>
+        <boxGeometry args={[0.8, 0.35, 0.05]} />
+        <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.9} />
+      </mesh>
+    </group>
   );
 }
 
