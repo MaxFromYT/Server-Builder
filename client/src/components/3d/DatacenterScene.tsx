@@ -220,7 +220,8 @@ export function DatacenterScene({
   cameraMode = "orbit",
   showHUD = true,
   rackCount = 9,
-  showHeatmap = false
+  showHeatmap = false,
+  proceduralOptions
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
   const controlsRef = useRef<any>(null);
