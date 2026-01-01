@@ -42,6 +42,7 @@ function DataCenter3DContent() {
   const [focusMode, setFocusMode] = useState(false);
   const [fastRamp, setFastRamp] = useState(false);
   const fastRampTimer = useRef<number | null>(null);
+  const [lodResetToken, setLodResetToken] = useState(0);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -97,6 +98,7 @@ function DataCenter3DContent() {
     setSliderValue(next);
     setRackCount(next);
     setFastRamp(true);
+    setLodResetToken((prev) => prev + 1);
     if (fastRampTimer.current) {
       window.clearTimeout(fastRampTimer.current);
     }
@@ -133,6 +135,7 @@ function DataCenter3DContent() {
         qualityMode={qualityMode}
         visibleRacks={visibleRacks}
         forceSimplified={isStaticMode && fastRamp}
+        lodResetToken={lodResetToken}
       />
       
       {showOverlays && !focusMode && (

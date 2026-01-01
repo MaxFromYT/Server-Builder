@@ -16,6 +16,8 @@ interface Rack3DProps {
   onSelect: () => void;
   equipmentCatalog: Map<string, Equipment>;
   forceSimplified?: boolean;
+  detailBudget?: number;
+  lodIndex?: number;
 }
 
 const RACK_WIDTH = 0.85;
@@ -198,7 +200,16 @@ function SimplifiedRack({ thermalStatus }: { thermalStatus: string }) {
   );
 }
 
-export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog, forceSimplified = false }: Rack3DProps) {
+export function Rack3D({
+  rack,
+  position,
+  isSelected,
+  onSelect,
+  equipmentCatalog,
+  forceSimplified = false,
+  detailBudget,
+  lodIndex = 0,
+}: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
@@ -213,6 +224,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog,
   }, [rack.inletTemp]);
 
   const [isDetailedView, setIsDetailedView] = useState(true);
+  const allowDetailed = !forceSimplified && (detailBudget === undefined || lodIndex < detailBudget);
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -232,7 +244,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog,
       const distance = camera.position.distanceTo(
         new THREE.Vector3(position[0], position[1] + RACK_HEIGHT / 2, position[2])
       );
-      const shouldBeDetailed = distance < 20 || isSelected || hovered;
+      const shouldBeDetailed = allowDetailed && (distance < 20 || isSelected || hovered);
       if (shouldBeDetailed !== isDetailedView) {
         setIsDetailedView(shouldBeDetailed);
       }
@@ -240,9 +252,9 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog,
   });
 
   const sortedEquipment = useMemo(() => {
-    if (forceSimplified) return [];
+    if (!allowDetailed) return [];
     return [...rack.installedEquipment].sort((a, b) => a.uStart - b.uStart);
-  }, [forceSimplified, rack.installedEquipment]);
+  }, [allowDetailed, rack.installedEquipment]);
 
   const statusGlowIntensity = 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
 
@@ -264,7 +276,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog,
         document.body.style.cursor = "auto";
       }}
     >
-      {isDetailedView && !forceSimplified ? (
+      {isDetailedView && allowDetailed ? (
         <>
           <RackFrame isSelected={isSelected} thermalStatus={thermalStatus} statusGlowIntensity={statusGlowIntensity} />
 

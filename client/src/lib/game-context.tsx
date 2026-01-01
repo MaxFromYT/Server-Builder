@@ -57,6 +57,7 @@ interface GameContextType {
   refetchRacks: () => void;
   addEquipmentToRack: (rackId: string, equipmentId: string, uStart: number) => boolean;
   removeEquipmentFromRack: (rackId: string, equipmentInstanceId: string) => boolean;
+  preloadQueue: Equipment[];
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -127,6 +128,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const [staticRacksState, setStaticRacksState] = useState<Rack[]>(staticRacks);
+  const [preloadQueue, setPreloadQueue] = useState<Equipment[]>([]);
 
   // Fetch initial game data
   const { data, isLoading, refetch: refetchInit } = useQuery<InitData>({
@@ -148,6 +150,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     staleTime: 60000,
     enabled: !useStaticData,
   });
+
+  useEffect(() => {
+    const catalog = useStaticData ? staticEquipmentCatalog : equipmentData ?? [];
+    setPreloadQueue(catalog);
+  }, [equipmentData, useStaticData]);
 
   const refetchRacks = useCallback(() => {
     refetchRacksQuery();
@@ -348,6 +355,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     refetchRacks,
     addEquipmentToRack,
     removeEquipmentFromRack,
+    preloadQueue,
   };
 
   return (
