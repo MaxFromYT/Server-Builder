@@ -42,23 +42,30 @@ const initialState: BuildState = {
   historyIndex: 0,
 };
 
+const normalizeSelection = (ids: string[]) =>
+  Array.from(new Set(ids.filter((id) => typeof id === "string" && id.length > 0)));
+
 const arraysEqual = (a: string[], b: string[]) =>
   a.length === b.length && a.every((value, index) => value === b[index]);
 
 const recordSnapshot = (state: BuildState, nextSnapshot: BuildSnapshot): BuildState => {
+  const normalizedSnapshot: BuildSnapshot = {
+    mode: nextSnapshot.mode,
+    selectedIds: normalizeSelection(nextSnapshot.selectedIds),
+  };
   const currentSnapshot = state.history[state.historyIndex];
   if (
     currentSnapshot &&
-    currentSnapshot.mode === nextSnapshot.mode &&
-    arraysEqual(currentSnapshot.selectedIds, nextSnapshot.selectedIds)
+    currentSnapshot.mode === normalizedSnapshot.mode &&
+    arraysEqual(currentSnapshot.selectedIds, normalizedSnapshot.selectedIds)
   ) {
     return state;
   }
-  const nextHistory = state.history.slice(0, state.historyIndex + 1).concat(nextSnapshot);
+  const nextHistory = state.history.slice(0, state.historyIndex + 1).concat(normalizedSnapshot);
   return {
     ...state,
-    mode: nextSnapshot.mode,
-    selectedIds: nextSnapshot.selectedIds,
+    mode: normalizedSnapshot.mode,
+    selectedIds: normalizedSnapshot.selectedIds,
     history: nextHistory,
     historyIndex: nextHistory.length - 1,
   };
@@ -74,7 +81,7 @@ const reducer = (state: BuildState, action: BuildAction): BuildState => {
           ? state.selectedIds.filter((value) => value !== action.id)
           : [...state.selectedIds, action.id]
         : [action.id];
-      return recordSnapshot(state, { mode: state.mode, selectedIds: nextSelection });
+      return recordSnapshot(state, { mode: state.mode, selectedIds: normalizeSelection(nextSelection) });
     }
     case "CLEAR_SELECTION":
       return recordSnapshot(state, { mode: state.mode, selectedIds: [] });
@@ -86,7 +93,7 @@ const reducer = (state: BuildState, action: BuildAction): BuildState => {
       return { ...state, clipboard: [...state.selectedIds] };
     case "PASTE": {
       if (state.clipboard.length === 0) return state;
-      const nextSelection = Array.from(new Set([...state.selectedIds, ...state.clipboard]));
+      const nextSelection = normalizeSelection([...state.selectedIds, ...state.clipboard]);
       return recordSnapshot(state, { mode: state.mode, selectedIds: nextSelection });
     }
     case "DUPLICATE":
@@ -100,7 +107,7 @@ const reducer = (state: BuildState, action: BuildAction): BuildState => {
       return {
         ...state,
         mode: snapshot.mode,
-        selectedIds: snapshot.selectedIds,
+        selectedIds: normalizeSelection(snapshot.selectedIds),
         historyIndex: nextIndex,
       };
     }
@@ -111,7 +118,7 @@ const reducer = (state: BuildState, action: BuildAction): BuildState => {
       return {
         ...state,
         mode: snapshot.mode,
-        selectedIds: snapshot.selectedIds,
+        selectedIds: normalizeSelection(snapshot.selectedIds),
         historyIndex: nextIndex,
       };
     }

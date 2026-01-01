@@ -1,6 +1,6 @@
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
-import { Suspense, useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { Suspense, useState, useRef, useMemo, useCallback, useEffect, type RefObject } from "react";
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
@@ -14,6 +14,8 @@ import { PerformanceOverlay } from "./PerformanceOverlay";
 import type { Rack, Equipment } from "@shared/schema";
 import * as THREE from "three";
 import { precompileSceneMaterials } from "@/lib/asset-manager";
+import { useToast } from "@/hooks/use-toast";
+import { logInfo } from "@/lib/error-log";
 
 interface DatacenterSceneProps {
   onSelectRack: (rack: Rack | null) => void;
@@ -118,6 +120,26 @@ function ScenePrecompiler() {
   useEffect(() => {
     precompileSceneMaterials(gl, scene, camera);
   }, [gl, scene, camera]);
+
+  return null;
+}
+
+function CameraBounds({
+  controlsRef,
+  minHeight,
+  maxHeight,
+}: {
+  controlsRef: RefObject<any>;
+  minHeight: number;
+  maxHeight: number;
+}) {
+  useFrame(() => {
+    const controls = controlsRef.current;
+    if (!controls?.object) return;
+    const { position } = controls.object;
+    if (position.y > maxHeight) position.y = maxHeight;
+    if (position.y < minHeight) position.y = minHeight;
+  });
 
   return null;
 }
@@ -385,12 +407,14 @@ export function DatacenterScene({
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog, preloadQueue } = useGame();
   const { theme } = useTheme();
+  const { toast } = useToast();
   const controlsRef = useRef<any>(null);
-  const [autoOrbit, setAutoOrbit] = useState(cameraMode === "auto");
   const [dynamicQuality, setDynamicQuality] = useState<"low" | "high">(qualityMode);
   const isLight = theme === "light";
   const [detailBudget, setDetailBudget] = useState(0);
   const detailRampRef = useRef<number | null>(null);
+  const ceilingHeight = 36;
+  const minCameraHeight = 0.6;
 
   const equipmentMap = useMemo(() => {
     const map = new Map<string, Equipment>();
@@ -476,7 +500,11 @@ export function DatacenterScene({
       controls.object.position.y = maxHeight;
       controls.update();
     }
-  }, [ceilingHeight]);
+    if (controls.object.position.y < minCameraHeight) {
+      controls.object.position.y = minCameraHeight;
+      controls.update();
+    }
+  }, [ceilingHeight, minCameraHeight]);
 
   return (
     <div className="w-full h-full relative" data-testid="datacenter-scene-3d">
@@ -518,9 +546,17 @@ export function DatacenterScene({
             onChange={handleOrbitControlsChange}
           />
         )}
+
+        {cameraMode === "orbit" && (
+          <CameraBounds
+            controlsRef={controlsRef}
+            minHeight={minCameraHeight}
+            maxHeight={ceilingHeight - 0.5}
+          />
+        )}
         
         {cameraMode === "auto" && (
-          <CameraController autoOrbit orbitSpeed={0.08} maxHeight={ceilingHeight - 0.5} />
+          <CameraController autoOrbit orbitSpeed={0.08} maxHeight={ceilingHeight - 0.5} minHeight={minCameraHeight} />
         )}
         
         {cameraMode === "cinematic" && (
@@ -530,6 +566,7 @@ export function DatacenterScene({
             loop
             active
             maxHeight={ceilingHeight - 0.5}
+            minHeight={minCameraHeight}
           />
         )}
 
@@ -581,7 +618,22 @@ export function DatacenterScene({
           )}
           <PerformanceOverlay
             visible={showHUD}
-            onQualityChange={(quality) => setDynamicQuality(quality)}
+            onQualityChange={(quality, reason) => {
+              setDynamicQuality(quality);
+              if (quality === "low") {
+                toast({
+                  title: "Performance mode enabled",
+                  description: "FPS dropped below target. Effects reduced to keep things smooth.",
+                });
+                logInfo("Performance mode enabled.", { reason });
+              } else {
+                toast({
+                  title: "Performance restored",
+                  description: "Frame time stabilized. High quality restored.",
+                });
+                logInfo("Performance mode restored.", { reason });
+              }
+            }}
           />
           <ScenePrecompiler />
           <Preload all />

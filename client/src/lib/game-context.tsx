@@ -2,8 +2,9 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, u
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { generateProceduralRacks } from "@/components/3d/ProceduralRacks";
-import { staticEquipmentCatalog } from "@/lib/static-equipment";
-import { addAutosaveSnapshot, loadAutosaveSnapshots } from "@/lib/save-system";
+import { staticEquipmentCatalog, enhanceEquipmentCatalogItem, type EquipmentCatalogItem } from "@/lib/static-equipment";
+import { addAutosaveSnapshot, loadAutosaveSnapshots, sanitizeRacks } from "@/lib/save-system";
+import { logError, logWarning } from "@/lib/error-log";
 import type { 
   GameMode, 
   GameState, 
@@ -36,6 +37,7 @@ interface GameContextType {
   networkLinks: NetworkLink[];
   facilityMetrics: FacilityMetrics;
   equipmentCatalog: EquipmentCatalogItem[];
+  preloadQueue: Equipment[];
   
   inventory: {
     cpus: CPU[];
@@ -53,7 +55,7 @@ interface GameContextType {
   acknowledgeAlert: (id: string) => void;
   updateIncidentStatus: (id: string, status: Incident["status"]) => void;
   
-  generateMaxedDatacenter: () => Promise<void>;
+  generateMaxedDatacenter: () => Promise<boolean>;
   isGeneratingMaxed: boolean;
   refetchRacks: () => void;
   addEquipmentToRack: (rackId: string, equipmentId: string, uStart: number) => boolean;
@@ -116,6 +118,7 @@ const defaultInventory = {
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+  const [preloadQueue, setPreloadQueue] = useState<Equipment[]>([]);
   const useStaticData = true;
   const staticRacks = useMemo(
     () =>
@@ -137,6 +140,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["/api/init"],
     staleTime: 30000,
     enabled: !useStaticData,
+    onError: (error) => {
+      logError("Failed to load initial game data.", error);
+    },
   });
 
   // Separate racks query for more granular updates
@@ -144,6 +150,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["/api/racks"],
     staleTime: 5000,
     enabled: !useStaticData,
+    onError: (error) => {
+      logError("Failed to load racks.", error);
+    },
   });
 
   // Equipment catalog query
@@ -151,6 +160,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["/api/equipment"],
     staleTime: 60000,
     enabled: !useStaticData,
+    onError: (error) => {
+      logError("Failed to load equipment catalog.", error);
+    },
   });
 
   useEffect(() => {
@@ -168,12 +180,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   
   const generateMaxedDatacenter = useCallback(async () => {
     if (useStaticData) {
-      return;
+      return false;
     }
     setIsGeneratingMaxed(true);
     try {
       await apiRequest("POST", "/api/datacenter/generate-maxed", {});
       await refetchRacks();
+      return true;
+    } catch (error) {
+      logError("Failed to generate maxed datacenter.", error);
+      return false;
     } finally {
       setIsGeneratingMaxed(false);
     }
@@ -249,11 +265,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!useStaticData) return false;
       const equipment = staticEquipmentCatalog.find((item) => item.id === equipmentId);
       if (!equipment) return false;
+      if (!Number.isFinite(uStart)) return false;
       const uEnd = uStart + equipment.uHeight - 1;
       let didAdd = false;
       setStaticRacksState((prev) =>
         prev.map((rack) => {
           if (rack.id !== rackId) return rack;
+          if (uStart < 1 || uEnd > rack.totalUs) return rack;
           if (uEnd > rack.totalUs) return rack;
           const isOccupied = rack.slots.some(
             (slot) =>
@@ -331,14 +349,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const setRacksFromSave = useCallback((racks: Rack[]) => {
     if (!useStaticData) return;
-    setStaticRacksState(racks);
+    const sanitized = sanitizeRacks(racks);
+    if (sanitized.length === 0 && racks.length > 0) {
+      logWarning("Save data rejected due to invalid rack payload.");
+      return;
+    }
+    setStaticRacksState(sanitized);
   }, [useStaticData]);
 
   useEffect(() => {
     if (!useStaticData || hasLoadedAutosave.current) return;
     const snapshots = loadAutosaveSnapshots();
     if (snapshots.length > 0) {
-      setStaticRacksState(snapshots[0].racks);
+      const sanitized = sanitizeRacks(snapshots[0].racks);
+      if (sanitized.length === 0 && snapshots[0].racks.length > 0) {
+        logWarning("Autosave payload invalid. Skipping restore.");
+      } else {
+        setStaticRacksState(sanitized);
+      }
     }
     hasLoadedAutosave.current = true;
   }, [useStaticData]);
@@ -379,6 +407,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
       return (equipmentData ?? []).map((equipment) => enhanceEquipmentCatalogItem(equipment));
     }, [equipmentData, useStaticData]),
+    preloadQueue,
     inventory: data?.inventory ?? defaultInventory,
     selectedRackId,
     setSelectedRackId,

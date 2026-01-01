@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Activity, Thermometer, Zap } from "lucide-react";
+import { logWarning } from "@/lib/error-log";
 
 interface Rack3DProps {
   rack: Rack;
@@ -195,6 +196,34 @@ function SimplifiedRack({ thermalStatus }: { thermalStatus: string }) {
   );
 }
 
+function PlaceholderEquipment({
+  position,
+  width,
+  height,
+  depth,
+}: {
+  position: [number, number, number];
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  return (
+    <group position={position}>
+      <mesh castShadow receiveShadow>
+        <primitive object={getBoxGeometry([width, height, depth])} attach="geometry" />
+        <primitive
+          object={getStandardMaterial({ color: "#4b5563", metalness: 0.2, roughness: 0.7 })}
+          attach="material"
+        />
+      </mesh>
+      <mesh position={[0, 0, depth / 2 + 0.002]}>
+        <primitive object={getBoxGeometry([width * 0.8, height * 0.3, 0.001])} attach="geometry" />
+        <primitive object={getBasicMaterial({ color: "#f43f5e" })} attach="material" />
+      </mesh>
+    </group>
+  );
+}
+
 export function Rack3D({
   rack,
   position,
@@ -208,6 +237,7 @@ export function Rack3D({
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
+  const missingLogged = useRef<Set<string>>(new Set());
   const appearDelay = 0;
   const appearDuration = 0.9;
 
@@ -277,7 +307,26 @@ export function Rack3D({
 
           {sortedEquipment.map((installed) => {
             const equipment = equipmentCatalog.get(installed.equipmentId);
-            if (!equipment) return null;
+            if (!equipment) {
+              if (!missingLogged.current.has(installed.equipmentId)) {
+                missingLogged.current.add(installed.equipmentId);
+                logWarning("Equipment asset missing. Rendering placeholder.", undefined, {
+                  equipmentId: installed.equipmentId,
+                  rackId: rack.id,
+                });
+              }
+              const uHeight = Math.max(1, installed.uEnd - installed.uStart + 1) * U_HEIGHT;
+              const yPos = (installed.uStart - 1) * U_HEIGHT + uHeight / 2;
+              return (
+                <PlaceholderEquipment
+                  key={`placeholder-${installed.id}`}
+                  position={[0, yPos, 0]}
+                  width={RACK_WIDTH - 0.08}
+                  height={uHeight}
+                  depth={RACK_DEPTH - 0.1}
+                />
+              );
+            }
 
             const yPos = (installed.uStart - 1) * U_HEIGHT + (equipment.uHeight * U_HEIGHT) / 2;
 

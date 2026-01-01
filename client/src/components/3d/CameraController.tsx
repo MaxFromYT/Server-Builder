@@ -39,6 +39,7 @@ interface CameraControllerProps {
   autoOrbit?: boolean;
   orbitSpeed?: number;
   maxHeight?: number;
+  minHeight?: number;
 }
 
 export function CameraController({
@@ -48,6 +49,7 @@ export function CameraController({
   autoOrbit = false,
   orbitSpeed = 0.05,
   maxHeight,
+  minHeight,
 }: CameraControllerProps) {
   const { camera } = useThree();
   const targetPosition = useRef(new THREE.Vector3(20, 15, 20));
@@ -80,6 +82,9 @@ export function CameraController({
     if (maxHeight !== undefined && camera.position.y > maxHeight) {
       camera.position.y = maxHeight;
     }
+    if (minHeight !== undefined && camera.position.y < minHeight) {
+      camera.position.y = minHeight;
+    }
     camera.lookAt(currentLookAt.current);
 
     if (isTransitioning) {
@@ -99,12 +104,14 @@ export function CinematicFlythrough({
   loop = true,
   active = false,
   maxHeight,
+  minHeight,
 }: {
   waypoints: { position: [number, number, number]; target: [number, number, number] }[];
   speed?: number;
   loop?: boolean;
   active?: boolean;
   maxHeight?: number;
+  minHeight?: number;
 }) {
   const { camera } = useThree();
   const progress = useRef(0);
@@ -136,6 +143,9 @@ export function CinematicFlythrough({
     );
     if (maxHeight !== undefined && camera.position.y > maxHeight) {
       camera.position.y = maxHeight;
+    }
+    if (minHeight !== undefined && camera.position.y < minHeight) {
+      camera.position.y = minHeight;
     }
 
     const lookAt = new THREE.Vector3().lerpVectors(

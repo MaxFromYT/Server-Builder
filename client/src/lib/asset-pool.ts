@@ -76,3 +76,10 @@ export function getBasicMaterial(options: THREE.MeshBasicMaterialParameters): TH
 export function getCorePooledMaterials() {
   return Array.from(materialPool.values());
 }
+
+export function disposePooledAssets() {
+  geometryPool.forEach((geometry) => geometry.dispose());
+  materialPool.forEach((material) => material.dispose());
+  geometryPool.clear();
+  materialPool.clear();
+}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { X, Server, HardDrive, Network, Cpu, Router, Plug, Cable, Star, Clock, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -156,6 +156,13 @@ export function EquipmentPicker({ rack, selectedSlot, onClose, onSuccess }: Equi
       queryClient.invalidateQueries({ queryKey: ["/api/racks", rack.id] });
       onSuccess();
     },
+    onError: () => {
+      toast({
+        title: "Unable to add equipment",
+        description: "The service is unavailable. Please retry in a moment.",
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
@@ -202,32 +209,39 @@ export function EquipmentPicker({ rack, selectedSlot, onClose, onSuccess }: Equi
       .filter(Boolean) as EquipmentCatalogItem[];
   }, [equipmentCatalog, recentIds]);
 
-  const canFitEquipment = (equipment: Equipment) => {
+  const canFitEquipment = useCallback((equipment: Equipment) => {
     const endSlot = selectedSlot + equipment.uHeight - 1;
-    if (endSlot > 42) return false;
+    if (selectedSlot < 1 || endSlot > rack.totalUs) return false;
     
     for (let u = selectedSlot; u <= endSlot; u++) {
       const slot = rack.slots.find((s) => s.uPosition === u);
       if (slot?.equipmentInstanceId) return false;
     }
     return true;
-  };
+  }, [rack.slots, rack.totalUs, selectedSlot]);
 
-  const registerRecent = (equipmentId: string) => {
+  const registerRecent = useCallback((equipmentId: string) => {
     setRecentIds((prev) => {
       const next = [equipmentId, ...prev.filter((id) => id !== equipmentId)];
       return next.slice(0, MAX_RECENTS);
     });
-  };
+  }, []);
 
-  const toggleFavorite = (equipmentId: string) => {
+  const toggleFavorite = useCallback((equipmentId: string) => {
     setFavoriteIds((prev) =>
       prev.includes(equipmentId) ? prev.filter((id) => id !== equipmentId) : [...prev, equipmentId]
     );
-  };
+  }, []);
 
-  const handleAddEquipment = (equipment: Equipment) => {
-    if (!canFitEquipment(equipment)) return;
+  const handleAddEquipment = useCallback((equipment: Equipment) => {
+    if (!canFitEquipment(equipment)) {
+      toast({
+        title: "Placement blocked",
+        description: "That slot range is unavailable or out of bounds.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (isStaticMode) {
       setIsSaving(true);
       setSaveError(false);
@@ -258,7 +272,7 @@ export function EquipmentPicker({ rack, selectedSlot, onClose, onSuccess }: Equi
         },
       }
     );
-  };
+  }, [addEquipmentMutation, canFitEquipment, isStaticMode, rack.id, registerRecent, selectedSlot, toast]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
