@@ -24,7 +24,7 @@ const U_HEIGHT = RACK_HEIGHT / 42;
 const FRAME_THICKNESS = 0.025;
 const POST_SIZE = 0.04;
 
-function RackFrame({ isSelected, thermalStatus }: { isSelected: boolean; thermalStatus: string }) {
+function RackFrame({ isSelected, thermalStatus, statusGlowIntensity }: { isSelected: boolean; thermalStatus: string; statusGlowIntensity: number }) {
   const frameColor = "#1a1d24";
   const highlightColor = isSelected ? "#4488ff" : "#2a2d34";
 
@@ -226,13 +226,11 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
     }
   });
 
-  const statusGlowIntensity = useMemo(() => {
-    return 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
-  }, []);
-
   const sortedEquipment = useMemo(() => {
     return [...rack.installedEquipment].sort((a, b) => a.uStart - b.uStart);
   }, [rack.installedEquipment]);
+
+  const statusGlowIntensity = 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
 
   return (
     <group
@@ -254,7 +252,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
     >
       {isDetailedView ? (
         <>
-          <RackFrame isSelected={isSelected} thermalStatus={thermalStatus} />
+          <RackFrame isSelected={isSelected} thermalStatus={thermalStatus} statusGlowIntensity={statusGlowIntensity} />
 
           {sortedEquipment.map((installed) => {
             const equipment = equipmentCatalog.get(installed.equipmentId);

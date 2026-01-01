@@ -235,6 +235,7 @@ export function DatacenterScene({
     return map;
   }, [equipmentCatalog]);
 
+  // Fix: Move proceduralOptions check inside useMemo where it's used
   const displayRacks = useMemo(() => {
     if (isUnlocked && rackCount > 9 && equipmentCatalog?.length > 0) {
       return generateProceduralRacks(rackCount, equipmentCatalog, proceduralOptions);
