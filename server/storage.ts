@@ -180,14 +180,75 @@ const initialIncidents: Incident[] = [
   },
 ];
 
-function createRack(id: string, name: string, power: number, inlet: number, exhaust: number, airflow: number, x: number, y: number): Rack {
+function createInstalledEquipment(eqId: string, uStart: number, uHeight: number, status: "online" | "warning" | "critical" | "offline" = "online"): InstalledEquipment {
+  return {
+    id: `inst-${eqId}-${uStart}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    equipmentId: eqId,
+    uStart,
+    uEnd: uStart + uHeight - 1,
+    status,
+    cpuLoad: Math.random() * 80 + 10,
+    memoryUsage: Math.random() * 70 + 20,
+    networkActivity: Math.random() * 90 + 5,
+  };
+}
+
+function createRackWithEquipment(id: string, name: string, power: number, inlet: number, exhaust: number, airflow: number, x: number, y: number): Rack {
+  const equipment: InstalledEquipment[] = [];
+  
+  const configs = [
+    [
+      { eq: "eq-pdu-1u", u: 1 },
+      { eq: "eq-ups-2u", u: 2 },
+      { eq: "eq-patch-1u", u: 4 },
+      { eq: "eq-sw-1u-cisco", u: 5 },
+      { eq: "eq-srv-2u-dell", u: 6 },
+      { eq: "eq-srv-2u-dell", u: 8 },
+      { eq: "eq-srv-1u-hp", u: 10 },
+      { eq: "eq-srv-1u-hp", u: 11 },
+      { eq: "eq-srv-2u-hp", u: 12 },
+      { eq: "eq-stor-2u-netapp", u: 14 },
+      { eq: "eq-srv-1u-dell", u: 16 },
+      { eq: "eq-srv-1u-dell", u: 17 },
+    ],
+    [
+      { eq: "eq-ups-4u", u: 1 },
+      { eq: "eq-fw-1u-paloalto", u: 5 },
+      { eq: "eq-router-1u-cisco", u: 6 },
+      { eq: "eq-sw-1u-arista", u: 7 },
+      { eq: "eq-sw-1u-arista", u: 8 },
+      { eq: "eq-srv-2u-lenovo", u: 9 },
+      { eq: "eq-srv-2u-lenovo", u: 11 },
+      { eq: "eq-srv-4u-dell", u: 13 },
+      { eq: "eq-srv-1u-supermicro", u: 17 },
+    ],
+    [
+      { eq: "eq-stor-4u-netapp", u: 1 },
+      { eq: "eq-stor-4u-pure", u: 5 },
+      { eq: "eq-stor-2u-dell", u: 9 },
+      { eq: "eq-sw-2u-cisco", u: 11 },
+      { eq: "eq-srv-2u-dell", u: 13, status: "warning" as const },
+      { eq: "eq-srv-2u-dell", u: 15 },
+    ],
+  ];
+  
+  const configIndex = (x + y * 3) % configs.length;
+  const config = configs[configIndex];
+  
+  for (const item of config) {
+    const eq = equipmentCatalog.find(e => e.id === item.eq);
+    if (eq) {
+      equipment.push(createInstalledEquipment(item.eq, item.u, eq.uHeight, (item as any).status || "online"));
+    }
+  }
+  
   return {
     id,
     name,
     type: "enclosed_42U",
     totalUs: 42,
     slots: Array.from({ length: 42 }, (_, i) => ({ uPosition: i + 1, equipmentInstanceId: null })),
-    installedEquipment: [],
+    installedEquipment: equipment,
     powerCapacity: 20000,
     currentPowerDraw: power,
     inletTemp: inlet,
@@ -196,6 +257,10 @@ function createRack(id: string, name: string, power: number, inlet: number, exha
     positionX: x,
     positionY: y,
   };
+}
+
+function createRack(id: string, name: string, power: number, inlet: number, exhaust: number, airflow: number, x: number, y: number): Rack {
+  return createRackWithEquipment(id, name, power, inlet, exhaust, airflow, x, y);
 }
 
 const equipmentCatalog: Equipment[] = [
