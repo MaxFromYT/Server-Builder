@@ -156,6 +156,19 @@ export function DataCenter3D() {
               <span>Active racks</span>
               <span className="text-cyan-300">{rackCount}</span>
             </div>
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={sliderValue}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                const clamped = Number.isFinite(parsed) ? Math.min(500, Math.max(1, parsed)) : 1;
+                handleRackCountChange(clamped);
+              }}
+              className="w-full rounded-md border border-cyan-500/30 bg-black/40 px-2 py-1 text-xs text-white/80 focus:border-cyan-400/60 focus:outline-none"
+              data-testid="input-static-rack-count"
+            />
             <Slider
               value={[sliderValue]}
               onValueChange={(v) => handleRackCountChange(v[0])}

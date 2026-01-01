@@ -11,7 +11,7 @@ interface DatacenterFloorProps {
 export function DatacenterFloor({ size, showHeatmap = false, theme = "dark" }: DatacenterFloorProps) {
   const floorRef = useRef<THREE.Mesh>(null);
   const { racks } = useGame();
-  const ceilingHeight = 22;
+  const ceilingHeight = 36;
   const isLight = theme === "light";
 
   const gridTexture = useMemo(() => {
@@ -69,7 +69,7 @@ export function DatacenterFloor({ size, showHeatmap = false, theme = "dark" }: D
       />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-        <planeGeometry args={[size * 3, size * 3]} />
+        <planeGeometry args={[size * 12, size * 12]} />
         <meshBasicMaterial color={isLight ? "#e8eef7" : "#05070b"} />
       </mesh>
 

@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
 import { DatacenterFloor } from "./DatacenterFloor";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
-import { RaisedFloor, CableTrays, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
+import { RaisedFloor, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
 import { DataCenterNetworkMesh, NetworkTrafficStream } from "./NetworkTraffic";
 import { HolographicHUD, FloatingMetric } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
@@ -39,7 +39,14 @@ function AdvancedLights({ performanceMode = false, theme = "dark" }: { performan
   const isLight = theme === "light";
   return (
     <>
-      <ambientLight intensity={isLight ? 0.35 : 0.15} color={isLight ? "#cdd8ef" : "#4466aa"} />
+      <ambientLight intensity={isLight ? 0.55 : 0.25} color={isLight ? "#dbe8ff" : "#5b79c7"} />
+      {!performanceMode && (
+        <>
+          <pointLight position={[0, 18, 0]} intensity={isLight ? 0.8 : 0.6} color={isLight ? "#d9f0ff" : "#8bbcff"} />
+          <pointLight position={[20, 12, 20]} intensity={isLight ? 0.6 : 0.4} color={isLight ? "#e8f4ff" : "#7fd4ff"} />
+          <pointLight position={[-20, 12, -20]} intensity={isLight ? 0.6 : 0.4} color={isLight ? "#e8f4ff" : "#7fd4ff"} />
+        </>
+      )}
       <directionalLight
         position={[60, 100, 40]}
         intensity={performanceMode ? 0.8 : isLight ? 1.1 : 1.0}
@@ -124,8 +131,8 @@ function RackGrid({
   heatmapMode = false,
   forceSimplified = false,
 }: RackGridProps) {
-  const rackSpacing = 2.0;
-  const aisleSpacing = 4.0;
+  const rackSpacing = 2.8;
+  const aisleSpacing = 5.2;
 
   const maxCol = Math.max(...racks.map(r => r.positionX), 0);
   const maxRow = Math.max(...racks.map(r => r.positionY), 0);
@@ -205,8 +212,6 @@ function EnvironmentalDetails({ size }: { size: number }) {
 
   return (
     <group>
-      <CableTrays length={size * 1.5} rows={3} />
-      
       {cracPositions.map((pos, i) => (
         <CRACUnit key={`crac-${i}`} position={pos} />
       ))}
@@ -303,7 +308,7 @@ export function DatacenterScene({
 
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
-  const floorSize = Math.max(maxCol * 2 + 15, maxRow * 4 + 15, 25);
+  const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
   const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(() => [

@@ -18,9 +18,9 @@ interface Rack3DProps {
   forceSimplified?: boolean;
 }
 
-const RACK_WIDTH = 0.6;
-const RACK_DEPTH = 1.0;
-const RACK_HEIGHT = 2.0;
+const RACK_WIDTH = 0.85;
+const RACK_DEPTH = 1.4;
+const RACK_HEIGHT = 2.8;
 const U_HEIGHT = RACK_HEIGHT / 42;
 const FRAME_THICKNESS = 0.025;
 const POST_SIZE = 0.04;
