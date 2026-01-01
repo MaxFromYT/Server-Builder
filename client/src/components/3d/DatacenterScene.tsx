@@ -23,6 +23,7 @@ interface DatacenterSceneProps {
   rackCount?: number;
   showHeatmap?: boolean;
   performanceMode?: boolean;
+  visibleRacks?: Rack[];
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -235,6 +236,7 @@ export function DatacenterScene({
   rackCount = 9,
   showHeatmap = false,
   performanceMode = false,
+  visibleRacks,
   proceduralOptions
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
@@ -251,11 +253,14 @@ export function DatacenterScene({
 
   // Fix: Move proceduralOptions check inside useMemo where it's used
   const displayRacks = useMemo(() => {
+    if (visibleRacks) {
+      return visibleRacks;
+    }
     if (isUnlocked && rackCount > 9 && equipmentCatalog?.length > 0) {
       return generateProceduralRacks(rackCount, equipmentCatalog, proceduralOptions);
     }
     return racks || [];
-  }, [racks, isUnlocked, rackCount, equipmentCatalog, proceduralOptions]);
+  }, [equipmentCatalog, isUnlocked, rackCount, racks, proceduralOptions, visibleRacks]);
 
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
@@ -332,15 +337,17 @@ export function DatacenterScene({
         <Suspense fallback={<LoadingFallback />}>
           <AdvancedLights performanceMode={useLowEffects} />
           
-          <Stars
-            radius={200}
-            depth={100}
-            count={useLowEffects ? 250 : 1000}
-            factor={useLowEffects ? 1 : 2}
-            saturation={0.5}
-            fade
-            speed={useLowEffects ? 0.2 : 0.5}
-          />
+          {!useLowEffects && (
+            <Stars
+              radius={200}
+              depth={100}
+              count={1000}
+              factor={2}
+              saturation={0.5}
+              fade
+              speed={0.5}
+            />
+          )}
           
           <RaisedFloor size={floorSize} showHeatmap={showHeatmap} />
           
@@ -355,7 +362,7 @@ export function DatacenterScene({
             />
           )}
           
-          <EnvironmentalDetails size={floorSize} />
+          {!useLowEffects && <EnvironmentalDetails size={floorSize} />}
           
           {showEffects && !useLowEffects && (
             <AtmosphericLayer size={floorSize} intensity={displayRacks.length > 50 ? 0.5 : 1} />

@@ -19,7 +19,7 @@ export function DataCenter3D() {
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [showEffects, setShowEffects] = useState(true);
   const [showHUD, setShowHUD] = useState(true);
-  const [rackCount, setRackCount] = useState(500);
+  const [rackCount, setRackCount] = useState(42);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
@@ -29,7 +29,8 @@ export function DataCenter3D() {
   });
   const [showControls, setShowControls] = useState(false);
 
-  const selectedRack = racks?.find(r => r.id === selectedRackId) || null;
+  const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
+  const selectedRack = visibleRacks?.find(r => r.id === selectedRackId) || null;
 
   useEffect(() => {
     if (isStaticMode) {
@@ -70,13 +71,14 @@ export function DataCenter3D() {
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
         performanceMode={isStaticMode}
+        visibleRacks={visibleRacks}
       />
       
       <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
       
       <div className="fixed top-20 right-4 z-40">
         <MiniMap 
-          racks={racks || []} 
+          racks={visibleRacks || []} 
           selectedRackId={selectedRackId}
           onSelectRack={handleSelectRack}
           floorSize={25} 
@@ -92,7 +94,7 @@ export function DataCenter3D() {
       )}
 
       {isStaticMode && (
-        <div className="fixed top-20 left-4 z-40 max-w-xs bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-2 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
+        <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
           <div className="text-cyan-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             Static Editor
@@ -100,6 +102,30 @@ export function DataCenter3D() {
           <p className="text-[11px] text-white/70 leading-relaxed">
             Click a rack to open the editor. Add equipment by selecting empty slots and remove items with the trash icon.
           </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
+              <span>Visible racks</span>
+              <span className="text-cyan-300">{rackCount}</span>
+            </div>
+            <Slider
+              value={[rackCount]}
+              onValueChange={(v) => setRackCount(v[0])}
+              min={42}
+              max={500}
+              step={1}
+              className="w-full"
+              data-testid="slider-static-rack-count"
+            />
+            <div className="flex justify-between text-[9px] text-white/40 font-mono">
+              <span>42</span>
+              <span>500</span>
+            </div>
+          </div>
+          {rackCount > 100 && (
+            <div className="rounded-md border border-orange-400/30 bg-orange-500/10 p-2 text-[10px] text-orange-200">
+              Rendering more than 100 racks can slow down loading on some devices.
+            </div>
+          )}
           {selectedRack && (
             <div className="text-[11px] text-white/60 font-mono">
               Editing: <span className="text-cyan-300">{selectedRack.name}</span>
