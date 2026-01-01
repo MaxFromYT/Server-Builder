@@ -122,34 +122,18 @@ function RackFrame({ isSelected, thermalStatus }: { isSelected: boolean; thermal
         <meshStandardMaterial
           color={statusGlowHex}
           emissive={statusGlowHex}
-          emissiveIntensity={1.5}
+          emissiveIntensity={2.5}
         />
       </mesh>
-
-      <pointLight
-        position={[0, 0.05, RACK_DEPTH / 2 + 0.08]}
-        intensity={0.3}
-        color={statusGlowColor}
-        distance={1.2}
-        decay={2}
-      />
 
       <mesh position={[0, RACK_HEIGHT - 0.02, RACK_DEPTH / 2 + 0.005]}>
         <boxGeometry args={[RACK_WIDTH - 0.08, 0.015, 0.003]} />
         <meshStandardMaterial
           color={statusGlowHex}
           emissive={statusGlowHex}
-          emissiveIntensity={1.5}
+          emissiveIntensity={2.5}
         />
       </mesh>
-
-      <pointLight
-        position={[0, RACK_HEIGHT - 0.02, RACK_DEPTH / 2 + 0.08]}
-        intensity={0.3}
-        color={statusGlowColor}
-        distance={1.2}
-        decay={2}
-      />
 
       {[0.2, 0.4, 0.6, 0.8].map((y, i) => (
         <mesh key={`vent-${i}`} position={[0, y * RACK_HEIGHT + 0.1, -RACK_DEPTH / 2 + 0.02]}>
@@ -159,23 +143,14 @@ function RackFrame({ isSelected, thermalStatus }: { isSelected: boolean; thermal
       ))}
 
       {isSelected && (
-        <>
-          <pointLight
-            position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.3]}
-            intensity={0.5}
+        <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.006]}>
+          <planeGeometry args={[RACK_WIDTH - 0.04, RACK_HEIGHT - 0.02]} />
+          <meshBasicMaterial
             color="#4488ff"
-            distance={2}
-            decay={2}
+            transparent
+            opacity={0.15}
           />
-          <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.006]}>
-            <planeGeometry args={[RACK_WIDTH - 0.04, RACK_HEIGHT - 0.02]} />
-            <meshBasicMaterial
-              color="#4488ff"
-              transparent
-              opacity={0.1}
-            />
-          </mesh>
-        </>
+        </mesh>
       )}
     </group>
   );

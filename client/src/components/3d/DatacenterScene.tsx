@@ -16,25 +16,24 @@ interface DatacenterSceneProps {
 function Lights() {
   return (
     <>
-      <ambientLight intensity={0.15} color="#4488ff" />
+      <ambientLight intensity={0.25} color="#6688cc" />
       <directionalLight
         position={[50, 80, 30]}
-        intensity={0.8}
+        intensity={0.9}
         color="#ffffff"
         castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={200}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-far={150}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
       />
       <directionalLight
         position={[-30, 40, -20]}
-        intensity={0.3}
+        intensity={0.4}
         color="#88aaff"
       />
-      <pointLight position={[0, 20, 0]} intensity={0.5} color="#ffffff" distance={100} />
     </>
   );
 }

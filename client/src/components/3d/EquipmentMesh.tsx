@@ -24,34 +24,23 @@ function LEDIndicator({
   blinkSpeed?: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
 
   useFrame((state) => {
-    if (blinkSpeed > 0 && meshRef.current && lightRef.current) {
+    if (blinkSpeed > 0 && meshRef.current) {
       const blink = Math.sin(state.clock.elapsedTime * blinkSpeed) > 0 ? 1 : 0.2;
-      (meshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = intensity * blink;
-      lightRef.current.intensity = 0.1 * intensity * blink;
+      (meshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = intensity * blink * 2;
     }
   });
 
   return (
-    <group position={position}>
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[0.008, 8, 8]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={intensity}
-        />
-      </mesh>
-      <pointLight
-        ref={lightRef}
+    <mesh ref={meshRef} position={position}>
+      <sphereGeometry args={[0.006, 6, 6]} />
+      <meshStandardMaterial
         color={color}
-        intensity={0.1 * intensity}
-        distance={0.3}
-        decay={2}
+        emissive={color}
+        emissiveIntensity={intensity * 2}
       />
-    </group>
+    </mesh>
   );
 }
 
