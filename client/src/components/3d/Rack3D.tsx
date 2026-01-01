@@ -15,6 +15,7 @@ interface Rack3DProps {
   isSelected: boolean;
   onSelect: () => void;
   equipmentCatalog: Map<string, Equipment>;
+  forceSimplified?: boolean;
 }
 
 const RACK_WIDTH = 0.6;
@@ -139,6 +140,10 @@ function RackFrame({ isSelected, thermalStatus, statusGlowIntensity }: { isSelec
           emissiveIntensity={statusGlowIntensity}
         />
       </mesh>
+      <mesh position={[0, RACK_HEIGHT - 0.06, RACK_DEPTH / 2 + 0.01]}>
+        <boxGeometry args={[RACK_WIDTH - 0.1, 0.03, 0.01]} />
+        <meshBasicMaterial color={statusGlowHex} />
+      </mesh>
 
       {[0.2, 0.4, 0.6, 0.8].map((y, i) => (
         <mesh key={`vent-${i}`} position={[0, y * RACK_HEIGHT + 0.1, -RACK_DEPTH / 2 + 0.02]}>
@@ -181,22 +186,24 @@ function SimplifiedRack({ thermalStatus }: { thermalStatus: string }) {
           roughness={0.4}
         />
       </mesh>
+      <mesh position={[0, RACK_HEIGHT - 0.05, RACK_DEPTH / 2 + 0.01]}>
+        <boxGeometry args={[RACK_WIDTH - 0.08, 0.025, 0.01]} />
+        <meshBasicMaterial color={statusGlowHex} />
+      </mesh>
       <mesh position={[0, 0.02, RACK_DEPTH / 2 + 0.01]}>
         <boxGeometry args={[RACK_WIDTH - 0.1, 0.015, 0.003]} />
-        <meshStandardMaterial
-          color={statusGlowHex}
-          emissive={statusGlowHex}
-          emissiveIntensity={1}
-        />
+        <meshBasicMaterial color={statusGlowHex} />
       </mesh>
     </group>
   );
 }
 
-export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog }: Rack3DProps) {
+export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog, forceSimplified = false }: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
+  const appearDelay = 0;
+  const appearDuration = 0.9;
 
   const thermalStatus = useMemo(() => {
     if (rack.inletTemp > 30) return "critical";
@@ -209,12 +216,18 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
 
   useFrame((state) => {
     if (groupRef.current) {
-      const targetY = hovered || isSelected ? 0.05 : 0;
+      const elapsed = state.clock.getElapsedTime();
+      const appearT = THREE.MathUtils.clamp((elapsed - appearDelay) / appearDuration, 0, 1);
+      const eased = appearT * appearT * (3 - 2 * appearT);
+      const appearLift = THREE.MathUtils.lerp(-0.35, 0, eased);
+      const targetY = appearLift + (hovered || isSelected ? 0.05 : 0);
       groupRef.current.position.y = THREE.MathUtils.lerp(
         groupRef.current.position.y,
         targetY,
         0.15
       );
+      const scale = THREE.MathUtils.lerp(0.86, 1, eased);
+      groupRef.current.scale.setScalar(scale);
 
       const distance = camera.position.distanceTo(
         new THREE.Vector3(position[0], position[1] + RACK_HEIGHT / 2, position[2])
@@ -227,8 +240,9 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
   });
 
   const sortedEquipment = useMemo(() => {
+    if (forceSimplified) return [];
     return [...rack.installedEquipment].sort((a, b) => a.uStart - b.uStart);
-  }, [rack.installedEquipment]);
+  }, [forceSimplified, rack.installedEquipment]);
 
   const statusGlowIntensity = 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
 
@@ -250,7 +264,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
         document.body.style.cursor = "auto";
       }}
     >
-      {isDetailedView ? (
+      {isDetailedView && !forceSimplified ? (
         <>
           <RackFrame isSelected={isSelected} thermalStatus={thermalStatus} statusGlowIntensity={statusGlowIntensity} />
 
@@ -277,7 +291,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
         <SimplifiedRack thermalStatus={thermalStatus} />
       )}
 
-      {(hovered || isSelected) && (
+      {(hovered || isSelected) && !forceSimplified && (
         <group>
           <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[RACK_WIDTH + 0.1, RACK_DEPTH + 0.1]} />
@@ -287,10 +301,10 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
               opacity={0.15}
             />
           </mesh>
-          <Html position={[0, RACK_HEIGHT + 0.5, 0]} center distanceFactor={10}>
-            <Card className="p-3 min-w-[180px] bg-black/80 backdrop-blur-md border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+          <Html position={[0.8, RACK_HEIGHT + 0.45, 0]} distanceFactor={10}>
+            <Card className="p-3 min-w-[200px] bg-black/80 backdrop-blur-md border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.25)]">
               <div className="flex justify-between items-start mb-2">
-                <div className="font-mono text-xs text-cyan-400 font-bold tracking-tight">RACK {rack.name}</div>
+                <div className="font-mono text-xs text-cyan-200 font-bold tracking-tight">RACK {rack.name}</div>
                 <Badge variant="outline" className={`text-[9px] uppercase h-4 px-1 ${
                   thermalStatus === 'critical' ? 'border-red-500 text-red-400' :
                   thermalStatus === 'warning' ? 'border-amber-500 text-amber-400' :
