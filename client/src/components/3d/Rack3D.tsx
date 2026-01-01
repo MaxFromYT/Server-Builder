@@ -163,6 +163,20 @@ function RackFrame({ isSelected, thermalStatus, statusGlowIntensity }: { isSelec
           <primitive object={getPlaneGeometry([RACK_WIDTH - 0.04, RACK_HEIGHT - 0.02])} attach="geometry" />
           <primitive object={getBasicMaterial({ color: "#4488ff", transparent: true, opacity: 0.15 })} attach="material" />
         </mesh>
+      <mesh
+        position={[0, 1.4, 0]}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          const native = e.nativeEvent as PointerEvent;
+          const isPrimary =
+            native.pointerType !== "mouse" || native.button === 0 || native.buttons === 1;
+          if (isPrimary) onSelect();
+        }}
+      >
+        <boxGeometry args={[1.4, 3.2, 2.2]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       )}
     </group>
   );
