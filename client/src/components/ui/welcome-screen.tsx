@@ -27,9 +27,10 @@ export function WelcomeScreen({
 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden bg-black">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.3),_transparent_45%),radial-gradient(circle_at_70%_20%,_rgba(168,85,247,0.25),_transparent_45%),radial-gradient(circle_at_20%_80%,_rgba(20,184,166,0.3),_transparent_40%)] opacity-80" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/80" />
-      <div className="absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.15),_transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.35),_transparent_45%),radial-gradient(circle_at_70%_20%,_rgba(168,85,247,0.3),_transparent_45%),radial-gradient(circle_at_20%_80%,_rgba(20,184,166,0.35),_transparent_40%)] opacity-90" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
+      <div className="pointer-events-none absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.18),_transparent_60%)]" />
+      <div className="pointer-events-none absolute -inset-24 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(34,211,238,0.15),rgba(59,130,246,0.05),rgba(168,85,247,0.2),rgba(34,211,238,0.15))] blur-2xl opacity-60" />
 
       <div className="absolute inset-0 z-0">
         <Canvas
@@ -116,12 +117,13 @@ export function WelcomeScreen({
 
 function IntroScene() {
   const groupRef = useRef<THREE.Group>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const fogColor = new THREE.Color("#05070f");
 
   const rackGrid = useMemo(() => {
     const positions: [number, number, number, number][] = [];
-    for (let x = -6; x <= 6; x += 2) {
-      for (let z = -6; z <= 6; z += 2) {
+    for (let x = -8; x <= 8; x += 2) {
+      for (let z = -8; z <= 8; z += 2) {
         const height = 2.4 + Math.random() * 0.8;
         positions.push([x * 2.2, height / 2, z * 2.4, height]);
       }
@@ -130,20 +132,31 @@ function IntroScene() {
   }, []);
 
   useFrame(({ clock }) => {
-    if (!groupRef.current) return;
     const t = clock.getElapsedTime();
+    if (cameraRef.current) {
+      const radius = 18 + Math.sin(t * 0.2) * 2;
+      cameraRef.current.position.x = Math.cos(t * 0.15) * radius;
+      cameraRef.current.position.z = Math.sin(t * 0.15) * radius;
+      cameraRef.current.position.y = 8 + Math.sin(t * 0.3) * 1.5;
+      cameraRef.current.lookAt(0, 2, 0);
+    }
+    if (!groupRef.current) return;
     groupRef.current.rotation.y = t * 0.05;
+    groupRef.current.position.y = Math.sin(t * 0.5) * 0.1;
   });
 
   return (
     <>
       <fog attach="fog" args={[fogColor, 8, 40]} />
       <color attach="background" args={["#02030a"]} />
-      <PerspectiveCamera makeDefault position={[0, 8, 18]} fov={40} />
+      <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 8, 18]} fov={40} />
 
       <ambientLight intensity={0.6} color="#4dd6ff" />
       <directionalLight position={[10, 15, 10]} intensity={1.6} color="#b9e9ff" />
       <directionalLight position={[-10, 10, -8]} intensity={0.9} color="#9b5cff" />
+      <pointLight position={[0, 8, 0]} intensity={1.5} color="#22d3ee" />
+      <pointLight position={[0, 4, 12]} intensity={1.2} color="#38bdf8" />
+      <pointLight position={[-12, 6, -8]} intensity={1.0} color="#c084fc" />
 
       <group ref={groupRef}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
@@ -154,10 +167,14 @@ function IntroScene() {
         {rackGrid.map(([x, y, z, h], index) => (
           <IntroRack key={`${x}-${z}-${index}`} position={[x, y, z]} height={h} />
         ))}
+
+        <IntroSweep />
+        <IntroSweep offset={6} color="#a855f7" />
       </group>
 
       <DreiSparkles count={200} speed={0.4} size={1.6} color="#22d3ee" scale={[40, 20, 40]} />
       <DreiSparkles count={120} speed={0.2} size={2.4} color="#a855f7" scale={[45, 25, 45]} />
+      <DreiSparkles count={60} speed={0.15} size={3.2} color="#5eead4" scale={[50, 25, 50]} />
     </>
   );
 }
@@ -251,6 +268,14 @@ function IntroRack({
   const [hovered, setHovered] = useState(false);
   const rackRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
+  const lights = useMemo(
+    () =>
+      Array.from({ length: 6 }).map((_, index) => ({
+        y: 0.2 + index * (height / 7),
+        hue: Math.random() > 0.5 ? "#22d3ee" : "#a855f7",
+      })),
+    [height]
+  );
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -278,6 +303,16 @@ function IntroRack({
           roughness={0.3}
         />
       </mesh>
+      {lights.map((light, index) => (
+        <mesh key={index} position={[0, light.y, 0.92]}>
+          <boxGeometry args={[0.9, 0.08, 0.05]} />
+          <meshStandardMaterial
+            color={light.hue}
+            emissive={light.hue}
+            emissiveIntensity={hovered ? 1.4 : 0.6}
+          />
+        </mesh>
+      ))}
       <mesh ref={glowRef} position={[0, height / 2, 0]}>
         <boxGeometry args={[1.4, height * 1.05, 2]} />
         <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.4} transparent opacity={0.15} />
@@ -287,6 +322,29 @@ function IntroRack({
         <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.9} />
       </mesh>
     </group>
+  );
+}
+
+function IntroSweep({
+  offset = 0,
+  color = "#22d3ee",
+}: {
+  offset?: number;
+  color?: string;
+}) {
+  const sweepRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!sweepRef.current) return;
+    const t = clock.getElapsedTime();
+    sweepRef.current.position.z = ((t * 2 + offset) % 24) - 12;
+  });
+
+  return (
+    <mesh ref={sweepRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -12]}>
+      <planeGeometry args={[80, 6]} />
+      <meshBasicMaterial color={color} transparent opacity={0.08} />
+    </mesh>
   );
 }
 
