@@ -142,28 +142,47 @@ export function PowerFlowVisualization({
   );
 }
 
-export function DataCenterNetworkMesh({ racks }: { racks: { position: [number, number, number] }[] }) {
+export function DataCenterNetworkMesh({
+  racks,
+  maxConnections = 50,
+  maxStreams = 15,
+}: {
+  racks: { position: [number, number, number] }[];
+  maxConnections?: number;
+  maxStreams?: number;
+}) {
   const connections = useMemo(() => {
+    if (racks.length < 2) return [];
     const result: { start: [number, number, number]; end: [number, number, number]; intensity: number }[] = [];
-    
-    for (let i = 0; i < racks.length; i++) {
-      for (let j = i + 1; j < racks.length; j++) {
-        if (Math.random() < 0.4) {
-          result.push({
-            start: [racks[i].position[0], racks[i].position[1] + 1.5, racks[i].position[2]],
-            end: [racks[j].position[0], racks[j].position[1] + 1.5, racks[j].position[2]],
-            intensity: 0.3 + Math.random() * 0.7,
-          });
-        }
+    const targetCount = Math.min(maxConnections, racks.length * 2);
+
+    for (let i = 0; i < targetCount; i++) {
+      const startIndex = Math.floor(Math.random() * racks.length);
+      let endIndex = Math.floor(Math.random() * racks.length);
+      if (endIndex === startIndex) {
+        endIndex = (endIndex + 1) % racks.length;
       }
+      result.push({
+        start: [
+          racks[startIndex].position[0],
+          racks[startIndex].position[1] + 1.5,
+          racks[startIndex].position[2],
+        ],
+        end: [
+          racks[endIndex].position[0],
+          racks[endIndex].position[1] + 1.5,
+          racks[endIndex].position[2],
+        ],
+        intensity: 0.3 + Math.random() * 0.7,
+      });
     }
-    
+
     return result;
-  }, [racks]);
+  }, [maxConnections, racks]);
 
   return (
     <group>
-      {connections.slice(0, 15).map((conn, i) => (
+      {connections.slice(0, maxStreams).map((conn, i) => (
         <NetworkTrafficStream
           key={i}
           start={conn.start}
