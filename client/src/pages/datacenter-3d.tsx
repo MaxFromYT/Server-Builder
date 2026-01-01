@@ -3,6 +3,7 @@ import { useGame } from "@/lib/game-context";
 import { DatacenterScene } from "@/components/3d/DatacenterScene";
 import { GameHUD } from "@/components/3d/GameHUD";
 import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
+import { MiniMap } from "@/components/3d/MiniMap";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -19,6 +20,7 @@ export function DataCenter3D() {
   const [showEffects, setShowEffects] = useState(true);
   const [showHUD, setShowHUD] = useState(true);
   const [rackCount, setRackCount] = useState(9);
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -60,9 +62,19 @@ export function DataCenter3D() {
         showHUD={showHUD}
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
+        showHeatmap={showHeatmap}
       />
       
       <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} />
+      
+      <div className="fixed top-20 right-4 z-40">
+        <MiniMap 
+          racks={racks || []} 
+          selectedRackId={selectedRackId}
+          onSelectRack={handleSelectRack}
+          floorSize={25} 
+        />
+      </div>
       
       {selectedRack && (
         <RackDetailPanel
@@ -143,6 +155,15 @@ export function DataCenter3D() {
                   data-testid="button-toggle-hud"
                 >
                   HUD
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowHeatmap(!showHeatmap)}
+                  className={`text-xs ${showHeatmap ? 'bg-orange-500/20 text-orange-300' : 'text-white/50'}`}
+                  data-testid="button-toggle-heatmap"
+                >
+                  Heatmap
                 </Button>
               </div>
             </div>

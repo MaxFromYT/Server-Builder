@@ -1,8 +1,14 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { DatacenterFloor } from "./DatacenterFloor";
 
-export function RaisedFloor({ size = 30 }: { size?: number }) {
+interface RaisedFloorProps {
+  size: number;
+  showHeatmap?: boolean;
+}
+
+export function RaisedFloor({ size = 30, showHeatmap = false }: RaisedFloorProps) {
   const tileSize = 0.6;
   const tilesPerSide = Math.ceil(size / tileSize);
   
@@ -18,41 +24,7 @@ export function RaisedFloor({ size = 30 }: { size?: number }) {
   }, [tilesPerSide, tileSize]);
 
   return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <planeGeometry args={[size * 2.5, size * 2.5]} />
-        <meshStandardMaterial color="#1a1d24" roughness={0.7} metalness={0.3} />
-      </mesh>
-      
-      {tiles.map((tile, i) => (
-        <group key={i} position={[tile.x, 0, tile.z]}>
-          <mesh position={[0, 0.001, 0]} receiveShadow>
-            <boxGeometry args={[tileSize - 0.02, 0.015, tileSize - 0.02]} />
-            <meshStandardMaterial
-              color={tile.isVent ? "#0a0c10" : "#22262e"}
-              roughness={tile.isVent ? 0.9 : 0.6}
-              metalness={tile.isVent ? 0.1 : 0.4}
-            />
-          </mesh>
-          
-          {tile.isVent && (
-            <>
-              {Array.from({ length: 8 }).map((_, j) => (
-                <mesh key={j} position={[0, 0.02, (j - 3.5) * (tileSize / 10)]}>
-                  <boxGeometry args={[tileSize - 0.08, 0.005, 0.015]} />
-                  <meshStandardMaterial color="#1a1d24" metalness={0.8} roughness={0.3} />
-                </mesh>
-              ))}
-            </>
-          )}
-        </group>
-      ))}
-      
-      <gridHelper
-        args={[size * 2.2, size * 2.2 / tileSize, "#2a3040", "#1e222a"]}
-        position={[0, 0.025, 0]}
-      />
-    </group>
+    <DatacenterFloor size={size} showHeatmap={showHeatmap} />
   );
 }
 

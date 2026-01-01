@@ -21,6 +21,7 @@ interface DatacenterSceneProps {
   cameraMode?: "orbit" | "auto" | "cinematic";
   showHUD?: boolean;
   rackCount?: number;
+  showHeatmap?: boolean;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -218,7 +219,8 @@ export function DatacenterScene({
   showEffects = true,
   cameraMode = "orbit",
   showHUD = true,
-  rackCount = 9
+  rackCount = 9,
+  showHeatmap = false
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
   const controlsRef = useRef<any>(null);
@@ -322,7 +324,7 @@ export function DatacenterScene({
             speed={0.5}
           />
           
-          <RaisedFloor size={floorSize} />
+          <RaisedFloor size={floorSize} showHeatmap={showHeatmap} />
           
           {displayRacks.length > 0 && (
             <RackGrid
