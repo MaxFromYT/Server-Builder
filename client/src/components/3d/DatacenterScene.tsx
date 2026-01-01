@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Environment, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
 import { Suspense, useState, useRef, useMemo, useCallback, useEffect, type RefObject } from "react";
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
@@ -8,7 +8,7 @@ import { EquipmentMesh } from "./EquipmentMesh";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
 import { RaisedFloor, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
 import { DataCenterNetworkMesh } from "./NetworkTraffic";
-import { HolographicHUD, FloatingMetric } from "./HolographicHUD";
+import { HolographicHUD } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
 import { generateProceduralRacks } from "./ProceduralRacks";
 import { PerformanceOverlay } from "./PerformanceOverlay";
@@ -40,7 +40,13 @@ interface DatacenterSceneProps {
   };
 }
 
-function AdvancedLights({ performanceMode = false, theme = "dark" }: { performanceMode?: boolean; theme?: "dark" | "light" }) {
+function AdvancedLights({
+  performanceMode = false,
+  theme = "dark",
+}: {
+  performanceMode?: boolean;
+  theme?: "dark" | "light";
+}) {
   const isLight = theme === "light";
   return (
     <>
@@ -87,16 +93,8 @@ function AdvancedLights({ performanceMode = false, theme = "dark" }: { performan
           />
         </>
       )}
-      <directionalLight
-        position={[-40, 50, -30]}
-        intensity={isLight ? 0.45 : 0.3}
-        color={isLight ? "#d1e2ff" : "#6688ff"}
-      />
-      <directionalLight
-        position={[0, 20, -50]}
-        intensity={isLight ? 0.25 : 0.2}
-        color={isLight ? "#ffd2b3" : "#ff8844"}
-      />
+      <directionalLight position={[-40, 50, -30]} intensity={isLight ? 0.45 : 0.3} color={isLight ? "#d1e2ff" : "#6688ff"} />
+      <directionalLight position={[0, 20, -50]} intensity={isLight ? 0.25 : 0.2} color={isLight ? "#ffd2b3" : "#ff8844"} />
       <hemisphereLight
         color={isLight ? "#cfe2ff" : "#88aaff"}
         groundColor={isLight ? "#e9eef7" : "#442200"}
@@ -171,19 +169,15 @@ function RackGrid({
   const rackSpacing = 2.8;
   const aisleSpacing = 5.2;
 
-  const maxCol = Math.max(...racks.map(r => r.positionX), 0);
-  const maxRow = Math.max(...racks.map(r => r.positionY), 0);
+  const maxCol = Math.max(...racks.map((r) => r.positionX), 0);
+  const maxRow = Math.max(...racks.map((r) => r.positionY), 0);
   const centerX = (maxCol * rackSpacing) / 2;
   const centerZ = (maxRow * aisleSpacing) / 2;
 
   const rackPositions = useMemo(() => {
-    return racks.map(rack => ({
+    return racks.map((rack) => ({
       rack,
-      position: [
-        rack.positionX * rackSpacing - centerX,
-        0,
-        rack.positionY * aisleSpacing - centerZ
-      ] as [number, number, number]
+      position: [rack.positionX * rackSpacing - centerX, 0, rack.positionY * aisleSpacing - centerZ] as [number, number, number],
     }));
   }, [racks, rackSpacing, aisleSpacing, centerX, centerZ]);
 
@@ -201,16 +195,17 @@ function RackGrid({
             detailBudget={detailBudget}
             lodIndex={index}
           />
-          
+
           {showHeatShimmer && rack.exhaustTemp > 35 && (
             <HeatShimmer
-              position={[position[0], 2.5, position[1] - 0.5]}
+              // FIX: third component should be Z, so use position[2]
+              position={[position[0], 2.5, position[2] - 0.5]}
               intensity={(rack.exhaustTemp - 30) / 20}
             />
           )}
         </group>
       ))}
-      
+
       {showNetworkMesh && (
         <DataCenterNetworkMesh
           racks={rackPositions.map(({ position, rack }) => ({
@@ -241,9 +236,7 @@ function EnvironmentalDetails({ size }: { size: number }) {
     const positions: [number, number, number][] = [];
     for (let x = -2; x <= 2; x++) {
       for (let z = -2; z <= 2; z++) {
-        if (Math.random() > 0.7) {
-          positions.push([x * 6, 20, z * 6]);
-        }
+        if (Math.random() > 0.7) positions.push([x * 6, 20, z * 6]);
       }
     }
     return positions;
@@ -254,16 +247,16 @@ function EnvironmentalDetails({ size }: { size: number }) {
       {cracPositions.map((pos, i) => (
         <CRACUnit key={`crac-${i}`} position={pos} />
       ))}
-      
+
       <FireSuppressionSystem position={[-size * 0.6, 0, -size * 0.6]} />
       <FireSuppressionSystem position={[size * 0.6, 0, -size * 0.6]} />
       <FireSuppressionSystem position={[-size * 0.6, 0, size * 0.6]} />
       <FireSuppressionSystem position={[size * 0.6, 0, size * 0.6]} />
-      
+
       {emergencyLightPositions.map((pos, i) => (
         <EmergencyLight key={`emergency-${i}`} position={pos} />
       ))}
-      
+
       <StatusPanel position={[-size * 0.9, 1.5, 0]} />
       <StatusPanel position={[size * 0.9, 1.5, 0]} />
     </group>
@@ -274,23 +267,13 @@ function AtmosphericLayer({ size, intensity = 1 }: { size: number; intensity?: n
   return (
     <group>
       <DustMotes count={Math.floor(300 * intensity)} size={size} />
-      
+
       <VolumetricLight position={[0, 13, 0]} color="#4488ff" intensity={0.5} />
       <VolumetricLight position={[-8, 13, 0]} color="#4488ff" intensity={0.3} />
       <VolumetricLight position={[8, 13, 0]} color="#4488ff" intensity={0.3} />
-      
-      <AirflowParticles
-        start={[-size * 0.7, 0.5, 0]}
-        end={[0, 0.5, 0]}
-        count={30}
-        color="#00aaff"
-      />
-      <AirflowParticles
-        start={[size * 0.7, 0.5, 0]}
-        end={[0, 0.5, 0]}
-        count={30}
-        color="#00aaff"
-      />
+
+      <AirflowParticles start={[-size * 0.7, 0.5, 0]} end={[0, 0.5, 0]} count={30} color="#00aaff" />
+      <AirflowParticles start={[size * 0.7, 0.5, 0]} end={[0, 0.5, 0]} count={30} color="#00aaff" />
     </group>
   );
 }
@@ -305,6 +288,7 @@ function AssetPreloadQueue({
   batchSize?: number;
 }) {
   const [visibleCount, setVisibleCount] = useState(0);
+
   const preloadRack = useMemo<Rack>(() => {
     const slots = Array.from({ length: 42 }).map((_, index) => ({
       uPosition: index + 1,
@@ -333,9 +317,7 @@ function AssetPreloadQueue({
     const interval = window.setInterval(() => {
       setVisibleCount((prev) => {
         const next = Math.min(equipment.length, prev + batchSize);
-        if (next >= equipment.length) {
-          window.clearInterval(interval);
-        }
+        if (next >= equipment.length) window.clearInterval(interval);
         return next;
       });
     }, 60);
@@ -344,14 +326,8 @@ function AssetPreloadQueue({
 
   return (
     <group position={[0, -80, 0]}>
-      <Rack3D
-        rack={preloadRack}
-        position={[0, 0, 0]}
-        isSelected={false}
-        onSelect={() => {}}
-        equipmentCatalog={equipmentCatalog}
-        forceSimplified
-      />
+      <Rack3D rack={preloadRack} position={[0, 0, 0]} isSelected={false} onSelect={() => {}} equipmentCatalog={equipmentCatalog} forceSimplified />
+
       {equipment.slice(0, visibleCount).map((item, index) => {
         const installed: InstalledEquipment = {
           id: `preload-${item.id}`,
@@ -380,19 +356,9 @@ function AssetPreloadQueue({
   );
 }
 
-const CINEMATIC_WAYPOINTS = [
-  { position: [30, 20, 30] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  { position: [20, 5, 20] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  { position: [0, 3, 15] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  { position: [-20, 8, 10] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  { position: [-30, 15, -10] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  { position: [0, 25, -25] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  { position: [30, 20, 30] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-];
-
-export function DatacenterScene({ 
-  onSelectRack, 
-  selectedRackId, 
+export function DatacenterScene({
+  onSelectRack,
+  selectedRackId,
   isUnlocked,
   showEffects = true,
   cameraMode = "orbit",
@@ -404,32 +370,53 @@ export function DatacenterScene({
   visibleRacks,
   forceSimplified = false,
   lodResetToken = 0,
-  proceduralOptions
+  proceduralOptions,
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog, preloadQueue } = useGame();
   const { theme } = useTheme();
   const { toast } = useToast();
   const controlsRef = useRef<any>(null);
+
   const [dynamicQuality, setDynamicQuality] = useState<"low" | "high">(qualityMode);
-  const isLight = theme === "light";
   const [detailBudget, setDetailBudget] = useState(0);
+
+  // UI lock: disables OrbitControls while user is interacting with UI
+  const [uiLock, setUiLock] = useState(false);
+
   const detailRampRef = useRef<number | null>(null);
   const ceilingHeight = 36;
   const minCameraHeight = 0.6;
 
+  const isLight = theme === "light";
+
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      const el = e.target as HTMLElement | null;
+      const isUI = Boolean(el?.closest?.('[data-ui="true"]'));
+      if (isUI) setUiLock(true);
+    };
+
+    const clear = () => setUiLock(false);
+
+    window.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointerup", clear, true);
+    window.addEventListener("pointercancel", clear, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointerup", clear, true);
+      window.removeEventListener("pointercancel", clear, true);
+    };
+  }, []);
+
   const equipmentMap = useMemo(() => {
     const map = new Map<string, Equipment>();
-    if (equipmentCatalog) {
-      equipmentCatalog.forEach((eq: Equipment) => map.set(eq.id, eq));
-    }
+    if (equipmentCatalog) equipmentCatalog.forEach((eq: Equipment) => map.set(eq.id, eq));
     return map;
   }, [equipmentCatalog]);
 
-  // Fix: Move proceduralOptions check inside useMemo where it's used
   const displayRacks = useMemo(() => {
-    if (visibleRacks) {
-      return visibleRacks;
-    }
+    if (visibleRacks) return visibleRacks;
     if (isUnlocked && rackCount > 9 && equipmentCatalog?.length > 0) {
       return generateProceduralRacks(rackCount, equipmentCatalog, proceduralOptions);
     }
@@ -440,41 +427,48 @@ export function DatacenterScene({
     setDynamicQuality(qualityMode);
   }, [qualityMode]);
 
-  const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
-  const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
+  const maxCol = Math.max(...displayRacks.map((r) => r.positionX), 2);
+  const maxRow = Math.max(...displayRacks.map((r) => r.positionY), 2);
+
   const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
   const useLowEffects = performanceMode || dynamicQuality === "low" || displayRacks.length > 200;
 
-  const cinematicWaypoints = useMemo(() => [
-    { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-    { position: [floorSize * 0.5, 5, floorSize * 0.5] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-    { position: [0, 3, floorSize * 0.4] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-    { position: [-floorSize * 0.5, 8, floorSize * 0.3] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-    { position: [-floorSize * 0.8, 15, -floorSize * 0.3] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-    { position: [0, 25, -floorSize * 0.7] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-    { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
-  ], [floorSize]);
+  const cinematicWaypoints = useMemo(
+    () => [
+      { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+      { position: [floorSize * 0.5, 5, floorSize * 0.5] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+      { position: [0, 3, floorSize * 0.4] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+      { position: [-floorSize * 0.5, 8, floorSize * 0.3] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+      { position: [-floorSize * 0.8, 15, -floorSize * 0.3] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+      { position: [0, 25, -floorSize * 0.7] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+      { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    ],
+    [floorSize]
+  );
 
   const handlePointerMissed = useCallback(() => {
     onSelectRack(null);
   }, [onSelectRack]);
 
   useEffect(() => {
-    if (detailRampRef.current) {
-      window.clearInterval(detailRampRef.current);
-    }
+    if (detailRampRef.current) window.clearInterval(detailRampRef.current);
+
     if (forceSimplified || useLowEffects) {
       setDetailBudget(0);
       return;
     }
+
     const total = displayRacks.length;
     if (total === 0) {
       setDetailBudget(0);
       return;
     }
+
     const initial = Math.min(12, total);
     const batch = Math.min(40, Math.max(8, Math.ceil(total * 0.04)));
+
     setDetailBudget(initial);
+
     detailRampRef.current = window.setInterval(() => {
       setDetailBudget((prev) => {
         const next = Math.min(total, prev + batch);
@@ -485,6 +479,7 @@ export function DatacenterScene({
         return next;
       });
     }, 50);
+
     return () => {
       if (detailRampRef.current) {
         window.clearInterval(detailRampRef.current);
@@ -493,47 +488,32 @@ export function DatacenterScene({
     };
   }, [displayRacks.length, forceSimplified, lodResetToken, useLowEffects]);
 
-  const handleOrbitControlsChange = useCallback(() => {
-    const controls = controlsRef.current;
-    if (!controls) return;
-    const maxHeight = ceilingHeight - 0.5;
-    if (controls.object.position.y > maxHeight) {
-      controls.object.position.y = maxHeight;
-      controls.update();
-    }
-    if (controls.object.position.y < minCameraHeight) {
-      controls.object.position.y = minCameraHeight;
-      controls.update();
-    }
-  }, [ceilingHeight, minCameraHeight]);
-
   return (
     <div className="w-full h-full relative" data-testid="datacenter-scene-3d">
       <Canvas
         shadows={!performanceMode}
         dpr={performanceMode ? 1 : [1, 2]}
-        gl={{ 
-          antialias: !performanceMode, 
+        gl={{
+          antialias: !performanceMode,
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.0,
-          powerPreference: "high-performance"
+          powerPreference: "high-performance",
         }}
-        style={{ background: isLight ? "linear-gradient(180deg, #edf4ff 0%, #e5ebf7 40%, #d7dfea 100%)" : "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)" }}
+        style={{
+          background: isLight
+            ? "linear-gradient(180deg, #edf4ff 0%, #e5ebf7 40%, #d7dfea 100%)"
+            : "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)",
+        }}
         onPointerMissed={handlePointerMissed}
       >
         <fog attach="fog" args={[isLight ? "#dfe7f2" : "#080a10", 20, 120]} />
-        
-        <PerspectiveCamera
-          makeDefault
-          position={[25, 18, 25]}
-          fov={50}
-          near={0.1}
-          far={500}
-        />
-        
+
+        <PerspectiveCamera makeDefault position={[25, 18, 25]} fov={50} near={0.1} far={500} />
+
         {cameraMode === "orbit" && (
           <OrbitControls
             ref={controlsRef}
+            enabled={!uiLock}
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
@@ -544,7 +524,7 @@ export function DatacenterScene({
             target={[0, 3, 0]}
             enableDamping
             dampingFactor={0.05}
-            onChange={handleOrbitControlsChange}
+            // onChange removed, CameraBounds already clamps height smoothly
             mouseButtons={{
               LEFT: THREE.MOUSE.ROTATE,
               MIDDLE: THREE.MOUSE.DOLLY,
@@ -554,17 +534,13 @@ export function DatacenterScene({
         )}
 
         {cameraMode === "orbit" && (
-          <CameraBounds
-            controlsRef={controlsRef}
-            minHeight={minCameraHeight}
-            maxHeight={ceilingHeight - 0.5}
-          />
+          <CameraBounds controlsRef={controlsRef} minHeight={minCameraHeight} maxHeight={ceilingHeight - 0.5} />
         )}
-        
+
         {cameraMode === "auto" && (
           <CameraController autoOrbit orbitSpeed={0.08} maxHeight={ceilingHeight - 0.5} minHeight={minCameraHeight} />
         )}
-        
+
         {cameraMode === "cinematic" && (
           <CinematicFlythrough
             waypoints={cinematicWaypoints}
@@ -578,21 +554,13 @@ export function DatacenterScene({
 
         <Suspense fallback={<LoadingFallback />}>
           <AdvancedLights performanceMode={useLowEffects} theme={theme} />
-          
+
           {!useLowEffects && (
-            <Stars
-              radius={200}
-              depth={100}
-              count={1000}
-              factor={2}
-              saturation={0.5}
-              fade
-              speed={0.5}
-            />
+            <Stars radius={200} depth={100} count={1000} factor={2} saturation={0.5} fade speed={0.5} />
           )}
-          
+
           <RaisedFloor size={floorSize} showHeatmap={showHeatmap} theme={theme} />
-          
+
           {displayRacks.length > 0 && (
             <RackGrid
               racks={displayRacks}
@@ -603,25 +571,20 @@ export function DatacenterScene({
               showNetworkMesh={!useLowEffects}
               heatmapMode={showHeatmap}
               forceSimplified={forceSimplified || dynamicQuality === "low"}
+              detailBudget={detailBudget}
             />
           )}
 
-          {preloadQueue.length > 0 && (
-            <AssetPreloadQueue equipment={preloadQueue} equipmentCatalog={equipmentMap} />
-          )}
-          
+          {preloadQueue.length > 0 && <AssetPreloadQueue equipment={preloadQueue} equipmentCatalog={equipmentMap} />}
+
           {!useLowEffects && <EnvironmentalDetails size={floorSize} />}
-          
+
           {showEffects && !useLowEffects && (
             <AtmosphericLayer size={floorSize} intensity={displayRacks.length > 50 ? 0.5 : 1} />
           )}
-          
-          {showHUD && (
-            <HolographicHUD
-              position={[0, 10, -floorSize * 0.7]}
-              visible={true}
-            />
-          )}
+
+          {showHUD && <HolographicHUD position={[0, 10, -floorSize * 0.7]} visible={true} />}
+
           <PerformanceOverlay
             visible={showHUD}
             onQualityChange={(quality, reason) => {
@@ -641,39 +604,24 @@ export function DatacenterScene({
               }
             }}
           />
+
           <ScenePrecompiler />
           <Preload all />
         </Suspense>
       </Canvas>
-      
+
       {isUnlocked && (
-        <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md rounded-md px-3 py-2 border border-cyan-500/30">
+        <div
+          data-ui="true"
+          className="absolute top-4 left-4 bg-black/60 backdrop-blur-md rounded-md px-3 py-2 border border-cyan-500/30"
+        >
           <div className="text-cyan-400 text-xs font-mono flex items-center gap-2">
             <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
             ADMIN MODE ACTIVE
           </div>
-          <div className="text-cyan-600 text-[10px] font-mono mt-1">
-            {displayRacks.length} RACKS ONLINE
-          </div>
+          <div className="text-cyan-600 text-[10px] font-mono mt-1">{displayRacks.length} RACKS ONLINE</div>
         </div>
       )}
-      
     </div>
-  );
-}
-
-function CameraModeButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded text-xs font-mono transition-all ${
-        active 
-          ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/50" 
-          : "bg-black/40 text-gray-400 border border-gray-700/50 hover:bg-gray-800/50"
-      }`}
-      data-testid={`button-camera-${label.toLowerCase().replace(' ', '-')}`}
-    >
-      {label}
-    </button>
   );
 }
