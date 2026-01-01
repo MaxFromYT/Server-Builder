@@ -155,6 +155,25 @@ export function DataCenter3D() {
     setShowPerfOverlay(false);
   };
 
+  const handleSetMode = (mode: SessionMode) => {
+    setSessionMode(mode);
+    if (mode === "explore") {
+      setFocusMode(true);
+      setShowOverlays(false);
+      setShowToolbars(false);
+      setCameraMode("cinematic");
+      setShowHUD(true);
+      setShowEffects(true);
+    } else {
+      setFocusMode(false);
+      setShowOverlays(true);
+      setShowToolbars(true);
+      setCameraMode("orbit");
+      setShowHUD(true);
+      setShowEffects(true);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) return;
@@ -207,6 +226,13 @@ export function DataCenter3D() {
 
       {!introVisible && (
         <>
+          <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-cyan-500/30 bg-black/60 px-6 py-2 text-center shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg">
+            <div className="text-xs uppercase tracking-[0.4em] text-cyan-300/80">
+              Hyperscale
+            </div>
+            <div className="text-sm text-white/70">Datacenter Operations Console</div>
+          </div>
+
           <div
             data-ui="true"
             className="fixed top-4 left-4 z-50 w-[320px] rounded-2xl border border-cyan-500/30 bg-black/60 p-4 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg"
@@ -242,6 +268,26 @@ export function DataCenter3D() {
                 <Button
                   size="sm"
                   variant="secondary"
+                  onClick={() => handleSetMode("build")}
+                  className={`bg-white/10 text-white hover:bg-white/20 ${
+                    sessionMode === "build" ? "border border-cyan-400/60" : ""
+                  }`}
+                >
+                  Build Mode
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleSetMode("explore")}
+                  className={`bg-white/10 text-white hover:bg-white/20 ${
+                    sessionMode === "explore" ? "border border-purple-400/60" : ""
+                  }`}
+                >
+                  Explore Mode
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
                   onClick={handleShowIntro}
                   className="bg-white/10 text-white hover:bg-white/20"
                 >
@@ -263,6 +309,14 @@ export function DataCenter3D() {
                 >
                   Perf HUD
                 </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setQualityMode((prev) => (prev === "high" ? "low" : "high"))}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Quality: {qualityMode.toUpperCase()}
+                </Button>
               </div>
             </div>
           </div>
@@ -278,22 +332,7 @@ export function DataCenter3D() {
       <WelcomeScreen
         isVisible={introVisible}
         onStart={(mode) => {
-          setSessionMode(mode);
-          if (mode === "explore") {
-            setFocusMode(true);
-            setShowOverlays(false);
-            setShowToolbars(false);
-            setCameraMode("cinematic");
-            setShowHUD(true);
-            setShowEffects(true);
-          } else {
-            setFocusMode(false);
-            setShowOverlays(true);
-            setShowToolbars(true);
-            setCameraMode("orbit");
-            setShowHUD(true);
-            setShowEffects(true);
-          }
+          handleSetMode(mode);
         }}
       />
 
