@@ -1,5 +1,19 @@
-import { useState } from "react";
-import { Lock, Unlock, DollarSign, Star, Activity, AlertTriangle, Thermometer, Zap, Server, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Lock,
+  Unlock,
+  DollarSign,
+  Star,
+  Activity,
+  AlertTriangle,
+  Thermometer,
+  Zap,
+  Server,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useGame } from "@/lib/game-context";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SettingsPanel } from "@/components/ui/settings-panel";
 
 interface GameHUDProps {
   isUnlocked: boolean;
@@ -19,6 +34,8 @@ export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProp
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const criticalAlerts = alerts?.filter(a => a.severity === "critical" && !a.acknowledged).length || 0;
   const warningAlerts = alerts?.filter(a => a.severity === "warning" && !a.acknowledged).length || 0;
@@ -31,6 +48,27 @@ export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProp
       setCodeError(false);
     } else {
       setCodeError(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    handleFullscreenChange();
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  const handleFullscreenToggle = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      await document.documentElement.requestFullscreen();
+    } catch {
+      setIsFullscreen(Boolean(document.fullscreenElement));
     }
   };
 
@@ -94,6 +132,24 @@ export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProp
 
         <ThemeToggle />
 
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={() => setShowSettings(true)}
+          data-testid="button-settings"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={handleFullscreenToggle}
+          data-testid="button-fullscreen"
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+
         {showUnlock && (
           <Button
             size="icon"
@@ -108,7 +164,7 @@ export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProp
       </div>
 
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40" data-testid="game-hud-bottom">
-        <Card className="p-3 bg-background/80 backdrop-blur-md border-border/50">
+        <Card className="flex items-center gap-6 p-3 bg-background/80 backdrop-blur-md border-border/50">
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>Drag to rotate</span>
             <div className="w-px h-4 bg-border" />
@@ -116,8 +172,13 @@ export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProp
             <div className="w-px h-4 bg-border" />
             <span>Click rack to inspect</span>
           </div>
+          <div className="ml-auto flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+            <span className="rounded-full bg-cyan-400/20 px-2 py-1 text-cyan-300">Max Doubin</span>
+          </div>
         </Card>
       </div>
+
+      <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
 
       {showUnlock && (
         <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
