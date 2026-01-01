@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { generateProceduralRacks } from "@/components/3d/ProceduralRacks";
-import { enhanceEquipmentCatalogItem, staticEquipmentCatalog, type EquipmentCatalogItem } from "@/lib/static-equipment";
+import { staticEquipmentCatalog } from "@/lib/static-equipment";
+import { addAutosaveSnapshot, loadAutosaveSnapshots } from "@/lib/save-system";
 import type { 
   GameMode, 
   GameState, 
@@ -57,7 +58,7 @@ interface GameContextType {
   refetchRacks: () => void;
   addEquipmentToRack: (rackId: string, equipmentId: string, uStart: number) => boolean;
   removeEquipmentFromRack: (rackId: string, equipmentInstanceId: string) => boolean;
-  preloadQueue: Equipment[];
+  setRacksFromSave: (racks: Rack[]) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -128,7 +129,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const [staticRacksState, setStaticRacksState] = useState<Rack[]>(staticRacks);
-  const [preloadQueue, setPreloadQueue] = useState<Equipment[]>([]);
+  const autosaveTimer = useRef<number | null>(null);
+  const hasLoadedAutosave = useRef(false);
 
   // Fetch initial game data
   const { data, isLoading, refetch: refetchInit } = useQuery<InitData>({
@@ -327,6 +329,35 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [useStaticData]
   );
 
+  const setRacksFromSave = useCallback((racks: Rack[]) => {
+    if (!useStaticData) return;
+    setStaticRacksState(racks);
+  }, [useStaticData]);
+
+  useEffect(() => {
+    if (!useStaticData || hasLoadedAutosave.current) return;
+    const snapshots = loadAutosaveSnapshots();
+    if (snapshots.length > 0) {
+      setStaticRacksState(snapshots[0].racks);
+    }
+    hasLoadedAutosave.current = true;
+  }, [useStaticData]);
+
+  useEffect(() => {
+    if (!useStaticData) return;
+    if (autosaveTimer.current) {
+      window.clearTimeout(autosaveTimer.current);
+    }
+    autosaveTimer.current = window.setTimeout(() => {
+      addAutosaveSnapshot(staticRacksState);
+    }, 1200);
+    return () => {
+      if (autosaveTimer.current) {
+        window.clearTimeout(autosaveTimer.current);
+      }
+    };
+  }, [staticRacksState, useStaticData]);
+
   const contextValue: GameContextType = {
     isLoading,
     isStaticMode: useStaticData,
@@ -360,7 +391,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     refetchRacks,
     addEquipmentToRack,
     removeEquipmentFromRack,
-    preloadQueue,
+    setRacksFromSave,
   };
 
   return (

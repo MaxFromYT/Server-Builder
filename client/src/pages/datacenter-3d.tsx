@@ -6,29 +6,25 @@ import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
 import { MiniMap } from "@/components/3d/MiniMap";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { WelcomeScreen } from "@/components/ui/welcome-screen";
-import { BuildToolbar } from "@/components/3d/BuildToolbar";
+import { Onboarding } from "@/components/ui/onboarding";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Camera, Play, Sparkles, Eye, EyeOff, RotateCcw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/lib/theme-provider";
+import { buildSummaryText, downloadBuildSummary } from "@/lib/export";
+import { loadAutosaveSnapshots, loadSaveSlots, rollbackAutosaveSnapshot, saveSlot } from "@/lib/save-system";
+import { Camera, Play, Sparkles, Eye, EyeOff, RotateCcw, Info, Save, Upload, Undo2, FileText, Clipboard } from "lucide-react";
 import type { Rack } from "@shared/schema";
-import { BuildProvider, useBuild } from "@/lib/build-context";
-import { SettingsProvider } from "@/lib/settings";
+import type { AutosaveSnapshot, SaveSlot } from "@/lib/save-system";
 
 type CameraMode = "orbit" | "auto" | "cinematic";
 
 export function DataCenter3D() {
-  return (
-    <SettingsProvider>
-      <BuildProvider>
-        <DataCenter3DContent />
-      </BuildProvider>
-    </SettingsProvider>
-  );
-}
-
-function DataCenter3DContent() {
-  const { isLoading, racks, isStaticMode } = useGame();
-  const { selectedIds, selectRack, clearSelection } = useBuild();
+  const { isLoading, racks, isStaticMode, setRacksFromSave } = useGame();
+  const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
+  const { toast } = useToast();
+  const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [showEffects, setShowEffects] = useState(true);
@@ -50,6 +46,17 @@ function DataCenter3DContent() {
     tempBase: 20
   });
   const [showControls, setShowControls] = useState(false);
+  const [saveSlots, setSaveSlots] = useState<SaveSlot[]>(() => loadSaveSlots());
+  const [autosaves, setAutosaves] = useState<AutosaveSnapshot[]>(() => loadAutosaveSnapshots());
+  const [slotLabels, setSlotLabels] = useState<Record<string, string>>(() => {
+    const slots = loadSaveSlots();
+    const defaults = ["slot-1", "slot-2", "slot-3"];
+    return defaults.reduce<Record<string, string>>((acc, id, index) => {
+      const match = slots.find((slot) => slot.id === id);
+      acc[id] = match?.label ?? `Slot ${index + 1}`;
+      return acc;
+    }, {});
+  });
 
   const selectedRackId = selectedIds[0] ?? null;
   const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
@@ -115,6 +122,68 @@ function DataCenter3DContent() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isStaticMode) return;
+    setAutosaves(loadAutosaveSnapshots());
+    setSaveSlots(loadSaveSlots());
+  }, [isStaticMode, racks]);
+
+  const handleSaveSlot = (slotId: string) => {
+    if (!isStaticMode) {
+      toast({
+        title: "Saving disabled",
+        description: "Save slots are only available in the local sandbox mode.",
+      });
+      return;
+    }
+    const label = slotLabels[slotId] ?? slotId;
+    const saved = saveSlot(slotId, racks, label);
+    setSaveSlots(loadSaveSlots());
+    toast({
+      title: "Saved snapshot",
+      description: `${saved.label} updated at ${new Date(saved.savedAt).toLocaleTimeString()}.`,
+    });
+  };
+
+  const handleLoadSlot = (slot: SaveSlot) => {
+    if (!isStaticMode) return;
+    setRacksFromSave(slot.racks);
+    setSelectedRackId(null);
+    toast({
+      title: "Loaded snapshot",
+      description: `${slot.label} restored.`,
+    });
+  };
+
+  const handleLoadAutosave = (snapshot: AutosaveSnapshot) => {
+    if (!isStaticMode) return;
+    setRacksFromSave(snapshot.racks);
+    setSelectedRackId(null);
+    toast({
+      title: "Autosave loaded",
+      description: `Restored ${new Date(snapshot.savedAt).toLocaleTimeString()}.`,
+    });
+  };
+
+  const handleRollback = () => {
+    if (!isStaticMode) return;
+    const snapshot = rollbackAutosaveSnapshot();
+    if (!snapshot) {
+      toast({
+        title: "No rollback available",
+        description: "Create another autosave to enable rollback.",
+      });
+      return;
+    }
+    setRacksFromSave(snapshot.racks);
+    setSelectedRackId(null);
+    setAutosaves(loadAutosaveSnapshots());
+    toast({
+      title: "Rolled back",
+      description: `Returned to ${new Date(snapshot.savedAt).toLocaleTimeString()}.`,
+    });
+  };
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -165,6 +234,7 @@ function DataCenter3DContent() {
       )}
 
       <WelcomeScreen isVisible={showIntro} />
+      {showOverlays && !focusMode && <Onboarding />}
 
       {isStaticMode && showOverlays && !focusMode && !selectedRack && (
         <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
@@ -274,7 +344,10 @@ function DataCenter3DContent() {
             </div>
 
             <div className="space-y-2">
-              <div className="text-white/60 text-[10px] font-mono uppercase">Camera Mode</div>
+              <div className="flex items-center justify-between text-white/60 text-[10px] font-mono uppercase">
+                <span>Camera Mode</span>
+                <InlineHelp tip="Switch between free orbit, auto spin, and cinematic camera movement." />
+              </div>
               <div className="flex gap-1">
                 <CameraModeBtn 
                   active={cameraMode === "orbit"} 
@@ -298,7 +371,10 @@ function DataCenter3DContent() {
             </div>
 
             <div className="space-y-2">
-              <div className="text-white/60 text-[10px] font-mono uppercase">Effects</div>
+              <div className="flex items-center justify-between text-white/60 text-[10px] font-mono uppercase">
+                <span>Effects</span>
+                <InlineHelp tip="Toggle particle, HUD, and thermal overlays." />
+              </div>
               <div className="flex gap-1">
                 <Button
                   size="sm"
@@ -331,7 +407,10 @@ function DataCenter3DContent() {
               </div>
             </div>
             <div className="space-y-2">
-              <div className="text-white/60 text-[10px] font-mono uppercase">Interface</div>
+              <div className="flex items-center justify-between text-white/60 text-[10px] font-mono uppercase">
+                <span>Interface</span>
+                <InlineHelp tip="Show or hide panels and enter focus mode." />
+              </div>
               <div className="flex gap-1">
                 <Button
                   size="sm"
@@ -432,6 +511,152 @@ function DataCenter3DContent() {
                 </div>
               </div>
             )}
+
+            <div className="space-y-2 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between text-white/60 text-[10px] font-mono uppercase">
+                <span>Accessibility</span>
+                <InlineHelp tip="Scale the UI and toggle a high-contrast palette." />
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-white/60 font-mono">
+                <span>Font scale</span>
+                <span className="text-cyan-300">{Math.round(fontScale * 100)}%</span>
+              </div>
+              <Slider
+                value={[fontScale * 100]}
+                onValueChange={(value) => setFontScale(value[0] / 100)}
+                min={85}
+                max={125}
+                step={5}
+                className="w-full"
+                data-testid="slider-font-scale"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={toggleHighContrast}
+                className={`text-xs ${highContrast ? "bg-cyan-500/20 text-cyan-200" : "text-white/50"}`}
+                data-testid="button-high-contrast"
+              >
+                {highContrast ? "High contrast: On" : "High contrast: Off"}
+              </Button>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between text-white/60 text-[10px] font-mono uppercase">
+                <span>Save & Export</span>
+                <InlineHelp tip="Store local snapshots and export a text summary of the racks." />
+              </div>
+              <div className="space-y-2 text-[10px] font-mono text-white/60">
+                {["slot-1", "slot-2", "slot-3"].map((slotId, index) => {
+                  const slot = saveSlots.find((item) => item.id === slotId);
+                  const label = slotLabels[slotId] ?? `Slot ${index + 1}`;
+                  return (
+                    <div key={slotId} className="flex items-center gap-2">
+                      <input
+                        value={label}
+                        onChange={(event) =>
+                          setSlotLabels((prev) => ({
+                            ...prev,
+                            [slotId]: event.target.value,
+                          }))
+                        }
+                        className="flex-1 rounded border border-white/10 bg-black/40 px-2 py-1 text-[10px] text-white/70 focus:outline-none focus:border-cyan-400/60"
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleSaveSlot(slotId)}
+                        className="h-7 w-7"
+                        disabled={!isStaticMode}
+                        data-testid={`button-save-${slotId}`}
+                      >
+                        <Save className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => slot && handleLoadSlot(slot)}
+                        className="h-7 w-7"
+                        disabled={!slot || !isStaticMode}
+                        data-testid={`button-load-${slotId}`}
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="space-y-1 text-[10px] font-mono text-white/60">
+                <div className="flex items-center justify-between">
+                  <span>Autosaves</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleRollback}
+                    className="text-[10px]"
+                    disabled={autosaves.length < 2 || !isStaticMode}
+                    data-testid="button-rollback-autosave"
+                  >
+                    <Undo2 className="h-3 w-3 mr-1" />
+                    Rollback
+                  </Button>
+                </div>
+                {autosaves.slice(0, 3).map((snapshot) => (
+                  <button
+                    key={snapshot.id}
+                    onClick={() => handleLoadAutosave(snapshot)}
+                    className="w-full text-left rounded border border-white/10 bg-black/30 px-2 py-1 text-[10px] text-white/60 hover:text-white"
+                    disabled={!isStaticMode}
+                  >
+                    {new Date(snapshot.savedAt).toLocaleTimeString()}
+                  </button>
+                ))}
+                {autosaves.length === 0 && (
+                  <p className="text-white/40">No autosaves yet.</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => downloadBuildSummary(racks)}
+                  className="text-xs"
+                  data-testid="button-export-summary"
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  Export
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      const summary = buildSummaryText(racks);
+                      await navigator.clipboard.writeText(summary);
+                      toast({
+                        title: "Summary copied",
+                        description: "Build summary copied to clipboard.",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Copy failed",
+                        description: "Clipboard access is unavailable in this environment.",
+                      });
+                    }
+                  }}
+                  className="text-xs"
+                  data-testid="button-copy-summary"
+                >
+                  <Clipboard className="h-3 w-3 mr-1" />
+                  Copy
+                </Button>
+              </div>
+              {!isStaticMode && (
+                <p className="text-[10px] text-white/40">
+                  Save slots are only available for local sandbox builds.
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -452,6 +677,21 @@ function DataCenter3DContent() {
         </div>
       )}
     </div>
+  );
+}
+
+function InlineHelp({ tip }: { tip: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="text-white/40 hover:text-white/70">
+          <Info className="h-3 w-3" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="max-w-xs text-[10px]">
+        {tip}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
