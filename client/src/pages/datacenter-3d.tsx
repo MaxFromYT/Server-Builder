@@ -6,16 +6,29 @@ import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
 import { MiniMap } from "@/components/3d/MiniMap";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { WelcomeScreen } from "@/components/ui/welcome-screen";
+import { BuildToolbar } from "@/components/3d/BuildToolbar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Camera, Play, Sparkles, Grid3X3, Eye, EyeOff, RotateCcw } from "lucide-react";
+import { Camera, Play, Sparkles, Eye, EyeOff, RotateCcw } from "lucide-react";
 import type { Rack } from "@shared/schema";
+import { BuildProvider, useBuild } from "@/lib/build-context";
+import { SettingsProvider } from "@/lib/settings";
 
 type CameraMode = "orbit" | "auto" | "cinematic";
 
 export function DataCenter3D() {
+  return (
+    <SettingsProvider>
+      <BuildProvider>
+        <DataCenter3DContent />
+      </BuildProvider>
+    </SettingsProvider>
+  );
+}
+
+function DataCenter3DContent() {
   const { isLoading, racks, isStaticMode } = useGame();
-  const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
+  const { selectedIds, selectRack, clearSelection } = useBuild();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [showEffects, setShowEffects] = useState(true);
@@ -37,6 +50,7 @@ export function DataCenter3D() {
   });
   const [showControls, setShowControls] = useState(false);
 
+  const selectedRackId = selectedIds[0] ?? null;
   const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
   const selectedRack = visibleRacks?.find(r => r.id === selectedRackId) || null;
   const effectiveEffects = showEffects && !fastRamp;
@@ -72,7 +86,11 @@ export function DataCenter3D() {
   };
 
   const handleSelectRack = (rack: Rack | null) => {
-    setSelectedRackId(rack?.id || null);
+    if (!rack) {
+      clearSelection();
+      return;
+    }
+    selectRack(rack.id);
   };
 
   const handleRackCountChange = (next: number) => {
@@ -118,7 +136,10 @@ export function DataCenter3D() {
       />
       
       {showOverlays && !focusMode && (
-        <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
+        <>
+          <BuildToolbar />
+          <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
+        </>
       )}
       
       {showOverlays && !focusMode && (
@@ -135,7 +156,7 @@ export function DataCenter3D() {
       {selectedRack && showOverlays && !focusMode && (
         <RackDetailPanel
           rack={selectedRack}
-          onClose={() => setSelectedRackId(null)}
+          onClose={clearSelection}
           isUnlocked={isUnlocked}
         />
       )}
