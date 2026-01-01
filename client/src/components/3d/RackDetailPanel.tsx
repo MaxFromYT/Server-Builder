@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { X, Thermometer, Zap, Server, HardDrive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Equipment3D, EmptySlot } from "./Equipment3D";
 import { EquipmentPicker } from "./EquipmentPicker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useGame } from "@/lib/game-context";
+import { useToast } from "@/hooks/use-toast";
 import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 
 interface RackDetailPanelProps {
@@ -28,9 +30,8 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
   const [showPicker, setShowPicker] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<number>(1);
 
-  const { data: equipmentCatalog = [] } = useQuery<Equipment[]>({
-    queryKey: ["/api/equipment"],
-  });
+  const { equipmentCatalog, isStaticMode, removeEquipmentFromRack } = useGame();
+  const { toast } = useToast();
 
   const removeEquipmentMutation = useMutation({
     mutationFn: async (equipmentInstanceId: string) => {
@@ -91,7 +92,20 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
                 size="icon"
                 variant="destructive"
                 className="absolute -right-2 top-1/2 -translate-y-1/2 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeEquipmentMutation.mutate(eqData.installed.id)}
+                onClick={() => {
+                  if (isStaticMode) {
+                    const ok = removeEquipmentFromRack(rack.id, eqData.installed.id);
+                    if (!ok) {
+                      toast({
+                        title: "Removal failed",
+                        description: "Unable to remove this equipment right now.",
+                        variant: "destructive",
+                      });
+                    }
+                    return;
+                  }
+                  removeEquipmentMutation.mutate(eqData.installed.id);
+                }}
                 data-testid={`remove-equipment-${eqData.installed.id}`}
               >
                 <Trash2 className="w-3 h-3" />

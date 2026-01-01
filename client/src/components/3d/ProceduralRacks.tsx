@@ -52,9 +52,16 @@ export function generateProceduralRacks(
     fillRateMultiplier?: number;
     errorRate?: number;
     tempBase?: number;
+    dense?: boolean;
   } = {}
 ): Rack[] {
-  const { seed = 42, fillRateMultiplier = 1, errorRate = 1, tempBase = 20 } = options;
+  const {
+    seed = 42,
+    fillRateMultiplier = 1,
+    errorRate = 1,
+    tempBase = 20,
+    dense = false,
+  } = options;
   const random = seededRandom(seed);
   const racks: Rack[] = [];
   
@@ -67,7 +74,7 @@ export function generateProceduralRacks(
     const aisleOffset = Math.floor(col / 2) * 2;
     
     const template = RACK_TEMPLATES[Math.floor(random() * RACK_TEMPLATES.length)];
-    const fillRate = Math.min(0.95, template.fillRate * fillRateMultiplier);
+    const fillRate = Math.min(1, template.fillRate * fillRateMultiplier);
     const slots = Array.from({ length: 42 }, (_, j) => ({
       uPosition: j + 1,
       equipmentInstanceId: null,
@@ -101,7 +108,7 @@ export function generateProceduralRacks(
       
       currentU += eq.uHeight;
       
-      if (random() > 0.7) currentU += 1;
+      if (!dense && random() > 0.7) currentU += 1;
     }
     
     const basePower = installedEquipment.reduce((sum, inst) => {

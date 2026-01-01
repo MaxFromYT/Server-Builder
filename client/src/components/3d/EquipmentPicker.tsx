@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { X, Server, HardDrive, Network, Cpu, Shield, Router, Plug, Cable } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useGame } from "@/lib/game-context";
+import { useToast } from "@/hooks/use-toast";
 import type { Equipment, Rack } from "@shared/schema";
 
 interface EquipmentPickerProps {
@@ -51,11 +53,11 @@ const categoryConfig: Record<string, { label: string; icon: typeof Server; types
 
 export function EquipmentPicker({ rack, selectedSlot, onClose, onSuccess }: EquipmentPickerProps) {
   const [selectedCategory, setSelectedCategory] = useState("servers");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const { equipmentCatalog, isStaticMode, addEquipmentToRack } = useGame();
+  const { toast } = useToast();
   
-  const { data: equipmentCatalog = [] } = useQuery<Equipment[]>({
-    queryKey: ["/api/equipment"],
-  });
-
   const addEquipmentMutation = useMutation({
     mutationFn: async ({ equipmentId, uStart }: { equipmentId: string; uStart: number }) => {
       const response = await apiRequest("POST", `/api/racks/${rack.id}/equipment`, {
@@ -89,6 +91,27 @@ export function EquipmentPicker({ rack, selectedSlot, onClose, onSuccess }: Equi
 
   const handleAddEquipment = (equipment: Equipment) => {
     if (!canFitEquipment(equipment)) return;
+    if (isStaticMode) {
+      setIsSaving(true);
+      setSaveError(false);
+      const ok = addEquipmentToRack(rack.id, equipment.id, selectedSlot);
+      setSaveError(!ok);
+      setIsSaving(false);
+      if (ok) {
+        toast({
+          title: "Equipment added",
+          description: `${equipment.name} installed in ${rack.name}.`,
+        });
+        onSuccess();
+      } else {
+        toast({
+          title: "Install failed",
+          description: "That slot is occupied or out of range.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
     addEquipmentMutation.mutate({ equipmentId: equipment.id, uStart: selectedSlot });
   };
 
@@ -181,13 +204,13 @@ export function EquipmentPicker({ rack, selectedSlot, onClose, onSuccess }: Equi
           </ScrollArea>
         </Tabs>
 
-        {addEquipmentMutation.isPending && (
+        {(addEquipmentMutation.isPending || isSaving) && (
           <div className="p-4 border-t border-border bg-muted/30">
             <p className="text-sm text-center text-muted-foreground">Adding equipment...</p>
           </div>
         )}
 
-        {addEquipmentMutation.isError && (
+        {(addEquipmentMutation.isError || saveError) && (
           <div className="p-4 border-t border-destructive/30 bg-destructive/10">
             <p className="text-sm text-center text-destructive">
               Failed to add equipment. Please try again.
