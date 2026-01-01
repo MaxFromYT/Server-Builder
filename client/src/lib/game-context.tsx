@@ -35,7 +35,7 @@ interface GameContextType {
   networkNodes: NetworkNode[];
   networkLinks: NetworkLink[];
   facilityMetrics: FacilityMetrics;
-  equipmentCatalog: Equipment[];
+  equipmentCatalog: EquipmentCatalogItem[];
   
   inventory: {
     cpus: CPU[];
@@ -152,6 +152,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     staleTime: 60000,
     enabled: !useStaticData,
   });
+
+  useEffect(() => {
+    const catalog = useStaticData ? staticEquipmentCatalog : equipmentData ?? [];
+    setPreloadQueue(catalog);
+  }, [equipmentData, useStaticData]);
 
   const refetchRacks = useCallback(() => {
     refetchRacksQuery();
@@ -368,7 +373,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     networkNodes: data?.networkNodes ?? [],
     networkLinks: data?.networkLinks ?? [],
     facilityMetrics: data?.facilityMetrics ?? defaultMetrics,
-    equipmentCatalog: useStaticData ? staticEquipmentCatalog : equipmentData ?? [],
+    equipmentCatalog: useMemo(() => {
+      if (useStaticData) {
+        return staticEquipmentCatalog;
+      }
+      return (equipmentData ?? []).map((equipment) => enhanceEquipmentCatalogItem(equipment));
+    }, [equipmentData, useStaticData]),
     inventory: data?.inventory ?? defaultInventory,
     selectedRackId,
     setSelectedRackId,

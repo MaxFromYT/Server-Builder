@@ -12,6 +12,8 @@ const sceneLabels = [
 
 export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
   const [sceneIndex, setSceneIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [selectedMode, setSelectedMode] = useState<"explore" | "build">("build");
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -19,6 +21,15 @@ export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
     }, 1800);
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    setProgress(0);
+    const interval = window.setInterval(() => {
+      setProgress((prev) => (prev >= 100 ? 100 : prev + 8));
+    }, 180);
+    return () => window.clearInterval(interval);
+  }, [isVisible]);
 
   return (
     <div
@@ -30,16 +41,16 @@ export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
       <div className="absolute inset-0 bg-black/90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.25),_transparent_55%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(99,102,241,0.18),_transparent_60%)]" />
-      <div className="relative mx-6 flex max-w-xl flex-col items-center gap-6 rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-black/90 via-slate-900/80 to-black/90 px-12 py-12 text-center shadow-[0_0_60px_rgba(34,211,238,0.35)] backdrop-blur-2xl">
+      <div className="relative mx-6 flex max-w-2xl flex-col items-center gap-6 rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-black/90 via-slate-900/80 to-black/90 px-12 py-12 text-center shadow-[0_0_60px_rgba(34,211,238,0.35)] backdrop-blur-2xl">
         <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-cyan-300/70">
-          Initializing Hyperscale Systems
+          Welcome to Hyperscale Studio
         </div>
         <div className="relative">
           <div className="text-4xl font-display font-bold tracking-[0.45em] text-white drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]">
             HYPERSCALE
           </div>
           <div className="mt-3 text-[11px] font-mono uppercase tracking-[0.35em] text-cyan-200/80">
-            by Max Doubin
+            Datacenter builder · Max Doubin
           </div>
         </div>
         <div
@@ -66,8 +77,45 @@ export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
           </div>
           <div className="absolute h-24 w-24 animate-hero-pulse rounded-full border border-cyan-400/20" />
         </div>
-        <div className="text-xs font-mono uppercase tracking-[0.25em] text-cyan-200/70">
-          Spinning up server matrix…
+        <div className="w-full space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.3em] text-cyan-300/70">
+            <span>Boot sequence</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full border border-cyan-300/30 bg-white/5">
+            <div
+              className="h-full bg-gradient-to-r from-cyan-400 via-cyan-200 to-purple-400 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="text-xs font-mono uppercase tracking-[0.25em] text-cyan-200/70">
+            {progress < 60 ? "Calibrating thermal grids…" : "Finalizing multi-site sync…"}
+          </div>
+        </div>
+        <div className="w-full space-y-3">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-cyan-300/70">
+            Select session mode
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { id: "build", title: "Build Mode", description: "Place racks, snap rows, duplicate bays." },
+              { id: "explore", title: "Explore Mode", description: "Tour the facility and inspect systems." },
+            ].map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setSelectedMode(option.id as "build" | "explore")}
+                className={`rounded-xl border px-4 py-3 text-left text-[10px] font-mono transition-all ${
+                  selectedMode === option.id
+                    ? "border-cyan-300/60 bg-cyan-500/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+                    : "border-white/10 bg-white/5 text-white/60 hover:border-cyan-300/40"
+                }`}
+              >
+                <div className="uppercase tracking-[0.2em]">{option.title}</div>
+                <div className="mt-2 text-[9px] text-white/50">{option.description}</div>
+              </button>
+            ))}
+          </div>
         </div>
         <div className="w-full space-y-2">
           <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-cyan-300/70">

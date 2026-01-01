@@ -1,17 +1,17 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
-import { Suspense, useState, useRef, useMemo, useCallback } from "react";
+import { OrbitControls, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
+import { Suspense, useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
-import { DatacenterFloor } from "./DatacenterFloor";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
 import { RaisedFloor, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
-import { DataCenterNetworkMesh, NetworkTrafficStream } from "./NetworkTraffic";
+import { DataCenterNetworkMesh } from "./NetworkTraffic";
 import { HolographicHUD, FloatingMetric } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
 import { generateProceduralRacks } from "./ProceduralRacks";
-import type { Rack, Equipment } from "@shared/schema";
+import { EquipmentMesh } from "./EquipmentMesh";
+import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 import * as THREE from "three";
 
 interface DatacenterSceneProps {
@@ -27,6 +27,7 @@ interface DatacenterSceneProps {
   qualityMode?: "low" | "high";
   visibleRacks?: Rack[];
   forceSimplified?: boolean;
+  lodResetToken?: number;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -119,6 +120,7 @@ interface RackGridProps {
   showNetworkMesh?: boolean;
   heatmapMode?: boolean;
   forceSimplified?: boolean;
+  detailBudget?: number;
 }
 
 function RackGrid({
@@ -130,6 +132,7 @@ function RackGrid({
   showNetworkMesh = true,
   heatmapMode = false,
   forceSimplified = false,
+  detailBudget,
 }: RackGridProps) {
   const rackSpacing = 2.8;
   const aisleSpacing = 5.2;
@@ -152,7 +155,7 @@ function RackGrid({
 
   return (
     <group>
-      {rackPositions.map(({ rack, position }) => (
+      {rackPositions.map(({ rack, position }, index) => (
         <group key={rack.id}>
           <Rack3D
             rack={rack}
@@ -161,6 +164,8 @@ function RackGrid({
             onSelect={() => onSelectRack(rack)}
             equipmentCatalog={equipmentCatalog}
             forceSimplified={forceSimplified}
+            detailBudget={detailBudget}
+            lodIndex={index}
           />
           
           {showHeatShimmer && rack.exhaustTemp > 35 && (
@@ -256,6 +261,91 @@ function AtmosphericLayer({ size, intensity = 1 }: { size: number; intensity?: n
   );
 }
 
+function AssetPreloadQueue({
+  equipment,
+  equipmentCatalog,
+  batchSize = 6,
+}: {
+  equipment: Equipment[];
+  equipmentCatalog: Map<string, Equipment>;
+  batchSize?: number;
+}) {
+  const [visibleCount, setVisibleCount] = useState(0);
+  const preloadRack = useMemo<Rack>(() => {
+    const slots = Array.from({ length: 42 }).map((_, index) => ({
+      uPosition: index + 1,
+      equipmentInstanceId: null,
+    }));
+    return {
+      id: "preload-rack",
+      name: "Preload Rack",
+      type: "enclosed_42U",
+      totalUs: 42,
+      slots,
+      installedEquipment: [],
+      powerCapacity: 12000,
+      currentPowerDraw: 0,
+      inletTemp: 22,
+      exhaustTemp: 24,
+      airflowRestriction: 0.1,
+      positionX: 0,
+      positionY: 0,
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!equipment.length) return;
+    setVisibleCount(0);
+    const interval = window.setInterval(() => {
+      setVisibleCount((prev) => {
+        const next = Math.min(equipment.length, prev + batchSize);
+        if (next >= equipment.length) {
+          window.clearInterval(interval);
+        }
+        return next;
+      });
+    }, 60);
+    return () => window.clearInterval(interval);
+  }, [batchSize, equipment.length]);
+
+  return (
+    <group position={[0, -80, 0]}>
+      <Rack3D
+        rack={preloadRack}
+        position={[0, 0, 0]}
+        isSelected={false}
+        onSelect={() => {}}
+        equipmentCatalog={equipmentCatalog}
+        forceSimplified
+      />
+      {equipment.slice(0, visibleCount).map((item, index) => {
+        const installed: InstalledEquipment = {
+          id: `preload-${item.id}`,
+          equipmentId: item.id,
+          uStart: 1,
+          uEnd: Math.max(1, item.uHeight),
+          status: "online",
+          cpuLoad: 30,
+          memoryUsage: 40,
+          networkActivity: 20,
+        };
+
+        return (
+          <EquipmentMesh
+            key={`preload-equipment-${item.id}-${index}`}
+            equipment={item}
+            installed={installed}
+            position={[index * 1.2, 0.2, 0]}
+            rackWidth={0.85}
+            rackDepth={1.4}
+            uHeight={2.8 / 42}
+          />
+        );
+      })}
+    </group>
+  );
+}
+
 const CINEMATIC_WAYPOINTS = [
   { position: [30, 20, 30] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
   { position: [20, 5, 20] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
@@ -279,13 +369,15 @@ export function DatacenterScene({
   qualityMode = "high",
   visibleRacks,
   forceSimplified = false,
+  lodResetToken = 0,
   proceduralOptions
 }: DatacenterSceneProps) {
-  const { racks, equipmentCatalog } = useGame();
+  const { racks, equipmentCatalog, preloadQueue } = useGame();
   const { theme } = useTheme();
   const controlsRef = useRef<any>(null);
-  const [autoOrbit, setAutoOrbit] = useState(cameraMode === "auto");
   const isLight = theme === "light";
+  const [detailBudget, setDetailBudget] = useState(0);
+  const detailRampRef = useRef<number | null>(null);
 
   const equipmentMap = useMemo(() => {
     const map = new Map<string, Equipment>();
@@ -310,6 +402,7 @@ export function DatacenterScene({
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
   const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
+  const ceilingHeight = 36;
 
   const cinematicWaypoints = useMemo(() => [
     { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
@@ -324,6 +417,50 @@ export function DatacenterScene({
   const handlePointerMissed = useCallback(() => {
     onSelectRack(null);
   }, [onSelectRack]);
+
+  useEffect(() => {
+    if (detailRampRef.current) {
+      window.clearInterval(detailRampRef.current);
+    }
+    if (forceSimplified || useLowEffects) {
+      setDetailBudget(0);
+      return;
+    }
+    const total = displayRacks.length;
+    if (total === 0) {
+      setDetailBudget(0);
+      return;
+    }
+    const initial = Math.min(12, total);
+    const batch = Math.min(40, Math.max(8, Math.ceil(total * 0.04)));
+    setDetailBudget(initial);
+    detailRampRef.current = window.setInterval(() => {
+      setDetailBudget((prev) => {
+        const next = Math.min(total, prev + batch);
+        if (next >= total && detailRampRef.current) {
+          window.clearInterval(detailRampRef.current);
+          detailRampRef.current = null;
+        }
+        return next;
+      });
+    }, 50);
+    return () => {
+      if (detailRampRef.current) {
+        window.clearInterval(detailRampRef.current);
+        detailRampRef.current = null;
+      }
+    };
+  }, [displayRacks.length, forceSimplified, lodResetToken, useLowEffects]);
+
+  const handleOrbitControlsChange = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const maxHeight = ceilingHeight - 0.5;
+    if (controls.object.position.y > maxHeight) {
+      controls.object.position.y = maxHeight;
+      controls.update();
+    }
+  }, [ceilingHeight]);
 
   return (
     <div className="w-full h-full relative" data-testid="datacenter-scene-3d">
@@ -362,11 +499,12 @@ export function DatacenterScene({
             target={[0, 3, 0]}
             enableDamping
             dampingFactor={0.05}
+            onChange={handleOrbitControlsChange}
           />
         )}
         
         {cameraMode === "auto" && (
-          <CameraController autoOrbit orbitSpeed={0.08} />
+          <CameraController autoOrbit orbitSpeed={0.08} maxHeight={ceilingHeight - 0.5} />
         )}
         
         {cameraMode === "cinematic" && (
@@ -375,6 +513,7 @@ export function DatacenterScene({
             speed={0.5}
             loop
             active
+            maxHeight={ceilingHeight - 0.5}
           />
         )}
 
@@ -405,7 +544,12 @@ export function DatacenterScene({
               showNetworkMesh={!useLowEffects}
               heatmapMode={showHeatmap}
               forceSimplified={forceSimplified}
+              detailBudget={detailBudget}
             />
+          )}
+
+          {preloadQueue.length > 0 && (
+            <AssetPreloadQueue equipment={preloadQueue} equipmentCatalog={equipmentMap} />
           )}
           
           {!useLowEffects && <EnvironmentalDetails size={floorSize} />}

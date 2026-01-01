@@ -38,6 +38,7 @@ export function DataCenter3D() {
   const [focusMode, setFocusMode] = useState(false);
   const [fastRamp, setFastRamp] = useState(false);
   const fastRampTimer = useRef<number | null>(null);
+  const [lodResetToken, setLodResetToken] = useState(0);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -57,6 +58,7 @@ export function DataCenter3D() {
     }, {});
   });
 
+  const selectedRackId = selectedIds[0] ?? null;
   const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
   const selectedRack = visibleRacks?.find(r => r.id === selectedRackId) || null;
   const effectiveEffects = showEffects && !fastRamp;
@@ -92,13 +94,18 @@ export function DataCenter3D() {
   };
 
   const handleSelectRack = (rack: Rack | null) => {
-    setSelectedRackId(rack?.id || null);
+    if (!rack) {
+      clearSelection();
+      return;
+    }
+    selectRack(rack.id);
   };
 
   const handleRackCountChange = (next: number) => {
     setSliderValue(next);
     setRackCount(next);
     setFastRamp(true);
+    setLodResetToken((prev) => prev + 1);
     if (fastRampTimer.current) {
       window.clearTimeout(fastRampTimer.current);
     }
@@ -197,10 +204,14 @@ export function DataCenter3D() {
         qualityMode={qualityMode}
         visibleRacks={visibleRacks}
         forceSimplified={isStaticMode && fastRamp}
+        lodResetToken={lodResetToken}
       />
       
       {showOverlays && !focusMode && (
-        <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
+        <>
+          <BuildToolbar />
+          <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
+        </>
       )}
       
       {showOverlays && !focusMode && (
@@ -217,7 +228,7 @@ export function DataCenter3D() {
       {selectedRack && showOverlays && !focusMode && (
         <RackDetailPanel
           rack={selectedRack}
-          onClose={() => setSelectedRackId(null)}
+          onClose={clearSelection}
           isUnlocked={isUnlocked}
         />
       )}
