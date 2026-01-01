@@ -13,6 +13,7 @@ interface Rack3DProps {
 export function Rack3D({ id, position, isSelected, onSelect }: Rack3DProps) {
   const meshRef = useRef<Mesh>(null);
   const { mode } = useBuild();
+  const baseHeight = 1.6;
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
@@ -23,7 +24,7 @@ export function Rack3D({ id, position, isSelected, onSelect }: Rack3DProps) {
   });
 
   return (
-    <group position={position}>
+    <group position={[position[0], position[1] + baseHeight, position[2]]}>
       {/* Main rack body */}
       <mesh ref={meshRef}>
         <boxGeometry args={[1.4, 3.2, 2.2]} />

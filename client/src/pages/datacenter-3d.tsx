@@ -41,7 +41,6 @@ import {
 import type { Rack } from "@shared/schema";
 import type { AutosaveSnapshot, SaveSlot } from "@/lib/save-system";
 import { useBuild } from "@/lib/build-context";
-import { PerformanceOverlay } from "@/components/3d/PerformanceOverlay";
 
 type CameraMode = "orbit" | "auto" | "cinematic";
 type SessionMode = "build" | "explore";
@@ -205,6 +204,7 @@ export function DataCenter3D() {
         cameraMode={sceneCameraMode}
         showEffects={introVisible ? true : effectiveEffects}
         showHUD={introVisible ? false : showHUD}
+        showPerfOverlay={showPerfOverlay}
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
@@ -212,12 +212,7 @@ export function DataCenter3D() {
         visibleRacks={visibleRacks}
         forceSimplified={isStaticMode && fastRamp}
         lodResetToken={lodResetToken}
-      />
-
-      <PerformanceOverlay
-        visible={showPerfOverlay}
-        qualityMode={qualityMode}
-        onWarningChange={setPerfWarning}
+        onPerfWarningChange={setPerfWarning}
       />
 
       <WelcomeScreen
