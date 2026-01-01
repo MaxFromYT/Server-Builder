@@ -1,7 +1,9 @@
 import { useRef, useMemo } from "react";
+import { Instances, Instance } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Equipment, InstalledEquipment } from "@shared/schema";
+import { getBoxGeometry, getCircleGeometry, getSphereGeometry, getStandardMaterial } from "@/lib/asset-pool";
 
 interface EquipmentMeshProps {
   equipment: Equipment;
@@ -34,32 +36,16 @@ function LEDIndicator({
 
   return (
     <mesh ref={meshRef} position={position}>
-      <sphereGeometry args={[0.006, 6, 6]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={intensity * 2}
+      <primitive object={getSphereGeometry([0.006, 6, 6])} attach="geometry" />
+      <primitive
+        object={getStandardMaterial({
+          color,
+          emissive: color,
+          emissiveIntensity: intensity * 2,
+        })}
+        attach="material"
       />
     </mesh>
-  );
-}
-
-function NetworkPort({ position, isActive }: { position: [number, number, number]; isActive: boolean }) {
-  return (
-    <group position={position}>
-      <mesh>
-        <boxGeometry args={[0.012, 0.008, 0.004]} />
-        <meshStandardMaterial color="#1a1a1a" metalness={0.5} roughness={0.5} />
-      </mesh>
-      {isActive && (
-        <LEDIndicator
-          position={[0, 0.006, 0.003]}
-          color="#00ff44"
-          intensity={0.8}
-          blinkSpeed={Math.random() * 10 + 5}
-        />
-      )}
-    </group>
   );
 }
 
@@ -75,12 +61,12 @@ function FanGrill({ position, size, isSpinning }: { position: [number, number, n
   return (
     <group position={position}>
       <mesh>
-        <circleGeometry args={[size / 2, 16]} />
-        <meshStandardMaterial color="#1a1a1a" metalness={0.3} roughness={0.7} />
+        <primitive object={getCircleGeometry([size / 2, 16])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#1a1a1a", metalness: 0.3, roughness: 0.7 })} attach="material" />
       </mesh>
       <mesh ref={fanRef} position={[0, 0, 0.001]}>
-        <circleGeometry args={[size / 2.5, 6]} />
-        <meshStandardMaterial color="#333333" metalness={0.5} roughness={0.5} />
+        <primitive object={getCircleGeometry([size / 2.5, 6])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#333333", metalness: 0.5, roughness: 0.5 })} attach="material" />
       </mesh>
     </group>
   );
@@ -90,8 +76,8 @@ function DriveBay({ position, hasActivity }: { position: [number, number, number
   return (
     <group position={position}>
       <mesh>
-        <boxGeometry args={[0.025, 0.015, 0.003]} />
-        <meshStandardMaterial color="#2a2a2a" metalness={0.6} roughness={0.4} />
+        <primitive object={getBoxGeometry([0.025, 0.015, 0.003])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#2a2a2a", metalness: 0.6, roughness: 0.4 })} attach="material" />
       </mesh>
       <LEDIndicator
         position={[0.008, 0.004, 0.002]}
@@ -132,25 +118,21 @@ export function EquipmentMesh({ equipment, installed, position, rackWidth, rackD
 
   const portCount = equipment.portCount || 0;
   const networkActivity = installed.networkActivity || 0;
+  const portBodyGeometry = getBoxGeometry([0.012, 0.008, 0.004]);
+  const portBodyMaterial = getStandardMaterial({ color: "#1a1a1a", metalness: 0.5, roughness: 0.5 });
+  const outletBodyGeometry = getBoxGeometry([0.02, 0.015, 0.003]);
+  const outletBodyMaterial = getStandardMaterial({ color: "#1a1a1a" });
 
   return (
     <group ref={groupRef} position={position}>
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[equipmentWidth, equipmentHeight - 0.003, equipmentDepth]} />
-        <meshStandardMaterial
-          color={equipmentColor}
-          metalness={0.7}
-          roughness={0.3}
-        />
+        <primitive object={getBoxGeometry([equipmentWidth, equipmentHeight - 0.003, equipmentDepth])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: equipmentColor, metalness: 0.7, roughness: 0.3 })} attach="material" />
       </mesh>
 
       <mesh position={[0, 0, equipmentDepth / 2 + 0.001]}>
-        <planeGeometry args={[equipmentWidth, equipmentHeight - 0.005]} />
-        <meshStandardMaterial
-          color="#0a0a0a"
-          metalness={0.5}
-          roughness={0.5}
-        />
+        <primitive object={getBoxGeometry([equipmentWidth, equipmentHeight - 0.005, 0.0005])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#0a0a0a", metalness: 0.5, roughness: 0.5 })} attach="material" />
       </mesh>
 
       <LEDIndicator
@@ -162,15 +144,29 @@ export function EquipmentMesh({ equipment, installed, position, rackWidth, rackD
 
       {isServer && (
         <>
+          <Instances geometry={portBodyGeometry} material={portBodyMaterial}>
+            {Array.from({ length: Math.min(4, Math.floor(portCount / 2)) }).map((_, i) => (
+              <Instance
+                key={`port-body-${i}`}
+                position={[
+                  equipmentWidth / 2 - 0.03 - i * 0.018,
+                  -equipmentHeight / 2 + 0.015,
+                  equipmentDepth / 2 + 0.003
+                ]}
+              />
+            ))}
+          </Instances>
           {Array.from({ length: Math.min(4, Math.floor(portCount / 2)) }).map((_, i) => (
-            <NetworkPort
-              key={`port-${i}`}
+            <LEDIndicator
+              key={`port-led-${i}`}
               position={[
                 equipmentWidth / 2 - 0.03 - i * 0.018,
-                -equipmentHeight / 2 + 0.015,
-                equipmentDepth / 2 + 0.003
+                -equipmentHeight / 2 + 0.021,
+                equipmentDepth / 2 + 0.006
               ]}
-              isActive={networkActivity > 20 + i * 15}
+              color="#00ff44"
+              intensity={0.8}
+              blinkSpeed={networkActivity > 20 + i * 15 ? Math.random() * 10 + 5 : 0}
             />
           ))}
 
@@ -192,11 +188,14 @@ export function EquipmentMesh({ equipment, installed, position, rackWidth, rackD
           )}
 
           <mesh position={[0, equipmentHeight / 2 - 0.012, equipmentDepth / 2 + 0.003]}>
-            <planeGeometry args={[equipmentWidth * 0.3, 0.008]} />
-            <meshStandardMaterial
-              color="#ffffff"
-              emissive="#ffffff"
-              emissiveIntensity={0.1}
+            <primitive object={getBoxGeometry([equipmentWidth * 0.3, 0.008, 0.0005])} attach="geometry" />
+            <primitive
+              object={getStandardMaterial({
+                color: "#ffffff",
+                emissive: "#ffffff",
+                emissiveIntensity: 0.1,
+              })}
+              attach="material"
             />
           </mesh>
         </>
@@ -204,18 +203,37 @@ export function EquipmentMesh({ equipment, installed, position, rackWidth, rackD
 
       {isSwitch && (
         <>
+          <Instances geometry={portBodyGeometry} material={portBodyMaterial}>
+            {Array.from({ length: Math.min(portCount, 24) }).map((_, i) => {
+              const row = Math.floor(i / 12);
+              const col = i % 12;
+              return (
+                <Instance
+                  key={`switch-port-body-${i}`}
+                  position={[
+                    -equipmentWidth / 2 + 0.03 + col * 0.04,
+                    equipmentHeight / 2 - 0.015 - row * 0.018,
+                    equipmentDepth / 2 + 0.003
+                  ]}
+                />
+              );
+            })}
+          </Instances>
           {Array.from({ length: Math.min(portCount, 24) }).map((_, i) => {
             const row = Math.floor(i / 12);
             const col = i % 12;
+            const isActive = Math.random() > 0.3;
             return (
-              <NetworkPort
-                key={`switch-port-${i}`}
+              <LEDIndicator
+                key={`switch-port-led-${i}`}
                 position={[
                   -equipmentWidth / 2 + 0.03 + col * 0.04,
-                  equipmentHeight / 2 - 0.015 - row * 0.018,
-                  equipmentDepth / 2 + 0.003
+                  equipmentHeight / 2 - 0.009 - row * 0.018,
+                  equipmentDepth / 2 + 0.006
                 ]}
-                isActive={Math.random() > 0.3}
+                color="#00ff44"
+                intensity={0.6}
+                blinkSpeed={isActive ? Math.random() * 10 + 4 : 0}
               />
             );
           })}
@@ -264,50 +282,67 @@ export function EquipmentMesh({ equipment, installed, position, rackWidth, rackD
 
       {isNetwork && (
         <>
-          {Array.from({ length: Math.min(portCount, 8) }).map((_, i) => (
-            <NetworkPort
-              key={`net-port-${i}`}
-              position={[
-                -equipmentWidth / 2 + 0.04 + i * 0.055,
-                0,
-                equipmentDepth / 2 + 0.003
-              ]}
-              isActive={Math.random() > 0.4}
-            />
-          ))}
+          <Instances geometry={portBodyGeometry} material={portBodyMaterial}>
+            {Array.from({ length: Math.min(portCount, 8) }).map((_, i) => (
+              <Instance
+                key={`net-port-body-${i}`}
+                position={[
+                  -equipmentWidth / 2 + 0.04 + i * 0.055,
+                  0,
+                  equipmentDepth / 2 + 0.003
+                ]}
+              />
+            ))}
+          </Instances>
+          {Array.from({ length: Math.min(portCount, 8) }).map((_, i) => {
+            const isActive = Math.random() > 0.4;
+            return (
+              <LEDIndicator
+                key={`net-port-led-${i}`}
+                position={[
+                  -equipmentWidth / 2 + 0.04 + i * 0.055,
+                  0.006,
+                  equipmentDepth / 2 + 0.006
+                ]}
+                color="#00ff44"
+                intensity={0.6}
+                blinkSpeed={isActive ? Math.random() * 12 + 4 : 0}
+              />
+            );
+          })}
 
           <mesh position={[equipmentWidth / 2 - 0.05, 0, equipmentDepth / 2 + 0.003]}>
-            <planeGeometry args={[0.06, equipmentHeight * 0.6]} />
-            <meshStandardMaterial
-              color="#111111"
-              metalness={0.8}
-              roughness={0.2}
-            />
+            <primitive object={getBoxGeometry([0.06, equipmentHeight * 0.6, 0.0005])} attach="geometry" />
+            <primitive object={getStandardMaterial({ color: "#111111", metalness: 0.8, roughness: 0.2 })} attach="material" />
           </mesh>
         </>
       )}
 
       {isPDU && (
         <>
+          <Instances geometry={outletBodyGeometry} material={outletBodyMaterial}>
+            {Array.from({ length: Math.min(portCount, 12) }).map((_, i) => (
+              <Instance
+                key={`outlet-body-${i}`}
+                position={[
+                  -equipmentWidth / 2 + 0.04 + i * 0.04,
+                  0,
+                  equipmentDepth / 2 + 0.003
+                ]}
+              />
+            ))}
+          </Instances>
           {Array.from({ length: Math.min(portCount, 12) }).map((_, i) => (
-            <group
-              key={`outlet-${i}`}
+            <LEDIndicator
+              key={`outlet-led-${i}`}
               position={[
                 -equipmentWidth / 2 + 0.04 + i * 0.04,
-                0,
-                equipmentDepth / 2 + 0.003
+                0.01,
+                equipmentDepth / 2 + 0.005
               ]}
-            >
-              <mesh>
-                <boxGeometry args={[0.02, 0.015, 0.003]} />
-                <meshStandardMaterial color="#1a1a1a" />
-              </mesh>
-              <LEDIndicator
-                position={[0, 0.01, 0.002]}
-                color={equipment.ledColor || "#ffaa00"}
-                intensity={0.5}
-              />
-            </group>
+              color={equipment.ledColor || "#ffaa00"}
+              intensity={0.5}
+            />
           ))}
         </>
       )}
@@ -315,11 +350,14 @@ export function EquipmentMesh({ equipment, installed, position, rackWidth, rackD
       {isUPS && (
         <>
           <mesh position={[0, equipmentHeight / 2 - 0.02, equipmentDepth / 2 + 0.003]}>
-            <planeGeometry args={[0.08, 0.02]} />
-            <meshStandardMaterial
-              color="#00ff44"
-              emissive="#00ff44"
-              emissiveIntensity={0.5}
+            <primitive object={getBoxGeometry([0.08, 0.02, 0.0005])} attach="geometry" />
+            <primitive
+              object={getStandardMaterial({
+                color: "#00ff44",
+                emissive: "#00ff44",
+                emissiveIntensity: 0.5,
+              })}
+              attach="material"
             />
           </mesh>
 

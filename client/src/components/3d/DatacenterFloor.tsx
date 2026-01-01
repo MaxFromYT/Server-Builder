@@ -1,6 +1,7 @@
 import { useRef, useMemo } from "react";
 import * as THREE from "three";
 import { useGame } from "@/lib/game-context";
+import { createStreamingCanvasTexture } from "@/lib/asset-manager";
 
 interface DatacenterFloorProps {
   size: number;
@@ -15,34 +16,32 @@ export function DatacenterFloor({ size, showHeatmap = false, theme = "dark" }: D
   const isLight = theme === "light";
 
   const gridTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d')!;
-    
-    ctx.strokeStyle = isLight ? '#cbd5f5' : '#1e293b';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, 128, 128);
-    
-    ctx.strokeStyle = isLight ? '#94a3d8' : '#334155';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(32, 32, 64, 64);
+    return createStreamingCanvasTexture({
+      lowResolution: 64,
+      highResolution: 256,
+      repeat: size / 2,
+      draw: (ctx, dimension) => {
+        const scale = dimension / 128;
+        ctx.clearRect(0, 0, dimension, dimension);
+        ctx.strokeStyle = isLight ? "#cbd5f5" : "#1e293b";
+        ctx.lineWidth = 2 * scale;
+        ctx.strokeRect(0, 0, dimension, dimension);
 
-    ctx.strokeStyle = isLight ? 'rgba(14, 116, 144, 0.35)' : 'rgba(56, 189, 248, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, 64);
-    ctx.lineTo(128, 64);
-    ctx.moveTo(64, 0);
-    ctx.lineTo(64, 128);
-    ctx.stroke();
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(size / 2, size / 2);
-    return texture;
-  }, [size]);
+        ctx.strokeStyle = isLight ? "#94a3d8" : "#334155";
+        ctx.lineWidth = 1 * scale;
+        ctx.strokeRect(32 * scale, 32 * scale, 64 * scale, 64 * scale);
+
+        ctx.strokeStyle = isLight ? "rgba(14, 116, 144, 0.35)" : "rgba(56, 189, 248, 0.2)";
+        ctx.lineWidth = 1 * scale;
+        ctx.beginPath();
+        ctx.moveTo(0, 64 * scale);
+        ctx.lineTo(dimension, 64 * scale);
+        ctx.moveTo(64 * scale, 0);
+        ctx.lineTo(64 * scale, dimension);
+        ctx.stroke();
+      },
+    });
+  }, [isLight, size]);
 
   return (
     <group>

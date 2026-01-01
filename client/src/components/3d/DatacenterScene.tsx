@@ -1,6 +1,6 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
-import { Suspense, useState, useRef, useMemo, useCallback } from "react";
+import { Suspense, useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
@@ -11,8 +11,10 @@ import { DataCenterNetworkMesh, NetworkTrafficStream } from "./NetworkTraffic";
 import { HolographicHUD, FloatingMetric } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
 import { generateProceduralRacks } from "./ProceduralRacks";
+import { PerformanceOverlay } from "./PerformanceOverlay";
 import type { Rack, Equipment } from "@shared/schema";
 import * as THREE from "three";
+import { precompileSceneMaterials } from "@/lib/asset-manager";
 
 interface DatacenterSceneProps {
   onSelectRack: (rack: Rack | null) => void;
@@ -108,6 +110,16 @@ function LoadingFallback() {
       <meshStandardMaterial color="#00aaff" wireframe />
     </mesh>
   );
+}
+
+function ScenePrecompiler() {
+  const { gl, scene, camera } = useThree();
+
+  useEffect(() => {
+    precompileSceneMaterials(gl, scene, camera);
+  }, [gl, scene, camera]);
+
+  return null;
 }
 
 interface RackGridProps {
@@ -285,6 +297,7 @@ export function DatacenterScene({
   const { theme } = useTheme();
   const controlsRef = useRef<any>(null);
   const [autoOrbit, setAutoOrbit] = useState(cameraMode === "auto");
+  const [dynamicQuality, setDynamicQuality] = useState<"low" | "high">(qualityMode);
   const isLight = theme === "light";
 
   const equipmentMap = useMemo(() => {
@@ -306,10 +319,14 @@ export function DatacenterScene({
     return racks || [];
   }, [equipmentCatalog, isUnlocked, rackCount, racks, proceduralOptions, visibleRacks]);
 
+  useEffect(() => {
+    setDynamicQuality(qualityMode);
+  }, [qualityMode]);
+
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
-  const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
+  const useLowEffects = performanceMode || dynamicQuality === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(() => [
     { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
@@ -404,7 +421,7 @@ export function DatacenterScene({
               showHeatShimmer={showEffects && !useLowEffects}
               showNetworkMesh={!useLowEffects}
               heatmapMode={showHeatmap}
-              forceSimplified={forceSimplified}
+              forceSimplified={forceSimplified || dynamicQuality === "low"}
             />
           )}
           
@@ -420,6 +437,11 @@ export function DatacenterScene({
               visible={true}
             />
           )}
+          <PerformanceOverlay
+            visible={showHUD}
+            onQualityChange={(quality) => setDynamicQuality(quality)}
+          />
+          <ScenePrecompiler />
           <Preload all />
         </Suspense>
       </Canvas>

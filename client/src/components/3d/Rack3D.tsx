@@ -1,9 +1,10 @@
-import { Html } from "@react-three/drei";
+import { Html, Instances, Instance } from "@react-three/drei";
 import { useRef, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 import { EquipmentMesh } from "./EquipmentMesh";
+import { getBoxGeometry, getPlaneGeometry, getStandardMaterial, getPhysicalMaterial, getBasicMaterial } from "@/lib/asset-pool";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -24,6 +25,8 @@ const RACK_HEIGHT = 2.8;
 const U_HEIGHT = RACK_HEIGHT / 42;
 const FRAME_THICKNESS = 0.025;
 const POST_SIZE = 0.04;
+const RAIL_GEOMETRY = getBoxGeometry([RACK_WIDTH - POST_SIZE * 2, FRAME_THICKNESS, FRAME_THICKNESS]);
+const RAIL_MATERIAL = getStandardMaterial({ color: "#1a1d24", metalness: 0.8, roughness: 0.2 });
 
 function RackFrame({ isSelected, thermalStatus, statusGlowIntensity }: { isSelected: boolean; thermalStatus: string; statusGlowIntensity: number }) {
   const frameColor = "#1a1d24";
@@ -56,110 +59,106 @@ function RackFrame({ isSelected, thermalStatus, statusGlowIntensity }: { isSelec
         [RACK_WIDTH / 2 - POST_SIZE / 2, RACK_HEIGHT / 2, RACK_DEPTH / 2 - POST_SIZE / 2],
       ].map((pos, i) => (
         <mesh key={`post-${i}`} position={pos as [number, number, number]} castShadow>
-          <boxGeometry args={[POST_SIZE, RACK_HEIGHT, POST_SIZE]} />
-          <meshStandardMaterial
-            color={highlightColor}
-            metalness={0.85}
-            roughness={0.15}
+          <primitive object={getBoxGeometry([POST_SIZE, RACK_HEIGHT, POST_SIZE])} attach="geometry" />
+          <primitive
+            object={getStandardMaterial({ color: highlightColor, metalness: 0.85, roughness: 0.15 })}
+            attach="material"
           />
         </mesh>
       ))}
 
-      {[0, RACK_HEIGHT].map((y, i) => (
-        <group key={`rails-${i}`}>
-          <mesh position={[0, y, -RACK_DEPTH / 2 + FRAME_THICKNESS / 2]} castShadow>
-            <boxGeometry args={[RACK_WIDTH - POST_SIZE * 2, FRAME_THICKNESS, FRAME_THICKNESS]} />
-            <meshStandardMaterial color={frameColor} metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[0, y, RACK_DEPTH / 2 - FRAME_THICKNESS / 2]} castShadow>
-            <boxGeometry args={[RACK_WIDTH - POST_SIZE * 2, FRAME_THICKNESS, FRAME_THICKNESS]} />
-            <meshStandardMaterial color={frameColor} metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[-RACK_WIDTH / 2 + FRAME_THICKNESS / 2, y, 0]} castShadow>
-            <boxGeometry args={[FRAME_THICKNESS, FRAME_THICKNESS, RACK_DEPTH - POST_SIZE * 2]} />
-            <meshStandardMaterial color={frameColor} metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[RACK_WIDTH / 2 - FRAME_THICKNESS / 2, y, 0]} castShadow>
-            <boxGeometry args={[FRAME_THICKNESS, FRAME_THICKNESS, RACK_DEPTH - POST_SIZE * 2]} />
-            <meshStandardMaterial color={frameColor} metalness={0.8} roughness={0.2} />
-          </mesh>
-        </group>
-      ))}
+      <Instances geometry={RAIL_GEOMETRY} material={RAIL_MATERIAL} castShadow>
+        {[0, RACK_HEIGHT].map((y, i) => (
+          <group key={`rails-${i}`}>
+            <Instance position={[0, y, -RACK_DEPTH / 2 + FRAME_THICKNESS / 2]} />
+            <Instance position={[0, y, RACK_DEPTH / 2 - FRAME_THICKNESS / 2]} />
+          </group>
+        ))}
+      </Instances>
+      <Instances geometry={getBoxGeometry([FRAME_THICKNESS, FRAME_THICKNESS, RACK_DEPTH - POST_SIZE * 2])} material={RAIL_MATERIAL} castShadow>
+        {[0, RACK_HEIGHT].map((y, i) => (
+          <group key={`rails-depth-${i}`}>
+            <Instance position={[-RACK_WIDTH / 2 + FRAME_THICKNESS / 2, y, 0]} />
+            <Instance position={[RACK_WIDTH / 2 - FRAME_THICKNESS / 2, y, 0]} />
+          </group>
+        ))}
+      </Instances>
 
       <mesh position={[-RACK_WIDTH / 2 + 0.015, RACK_HEIGHT / 2, 0]}>
-        <boxGeometry args={[0.008, RACK_HEIGHT - 0.05, RACK_DEPTH - 0.15]} />
-        <meshStandardMaterial color="#0a0c10" metalness={0.3} roughness={0.7} />
+        <primitive object={getBoxGeometry([0.008, RACK_HEIGHT - 0.05, RACK_DEPTH - 0.15])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#0a0c10", metalness: 0.3, roughness: 0.7 })} attach="material" />
       </mesh>
       <mesh position={[RACK_WIDTH / 2 - 0.015, RACK_HEIGHT / 2, 0]}>
-        <boxGeometry args={[0.008, RACK_HEIGHT - 0.05, RACK_DEPTH - 0.15]} />
-        <meshStandardMaterial color="#0a0c10" metalness={0.3} roughness={0.7} />
+        <primitive object={getBoxGeometry([0.008, RACK_HEIGHT - 0.05, RACK_DEPTH - 0.15])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#0a0c10", metalness: 0.3, roughness: 0.7 })} attach="material" />
       </mesh>
 
       <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.003]} receiveShadow>
-        <planeGeometry args={[RACK_WIDTH - 0.06, RACK_HEIGHT - 0.04]} />
-        <meshPhysicalMaterial
-          color="#1a2030"
-          transparent
-          opacity={0.3}
-          metalness={0.1}
-          roughness={0.1}
-          transmission={0.7}
-          thickness={0.01}
-          side={THREE.DoubleSide}
+        <primitive object={getPlaneGeometry([RACK_WIDTH - 0.06, RACK_HEIGHT - 0.04])} attach="geometry" />
+        <primitive
+          object={getPhysicalMaterial({
+            color: "#1a2030",
+            transparent: true,
+            opacity: 0.3,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.7,
+            thickness: 0.01,
+            side: THREE.DoubleSide,
+          })}
+          attach="material"
         />
       </mesh>
 
       <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.004]}>
-        <planeGeometry args={[RACK_WIDTH - 0.08, RACK_HEIGHT - 0.06]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.02}
-        />
+        <primitive object={getPlaneGeometry([RACK_WIDTH - 0.08, RACK_HEIGHT - 0.06])} attach="geometry" />
+        <primitive object={getBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.02 })} attach="material" />
       </mesh>
 
       <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.002]}>
-        <boxGeometry args={[RACK_WIDTH - 0.04, 0.01, 0.002]} />
-        <meshStandardMaterial color={frameColor} metalness={0.9} roughness={0.1} />
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.04, 0.01, 0.002])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: frameColor, metalness: 0.9, roughness: 0.1 })} attach="material" />
       </mesh>
 
       <mesh position={[0, 0.02, RACK_DEPTH / 2 + 0.005]}>
-        <boxGeometry args={[RACK_WIDTH - 0.08, 0.015, 0.003]} />
-        <meshStandardMaterial
-          color={statusGlowHex}
-          emissive={statusGlowHex}
-          emissiveIntensity={statusGlowIntensity}
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.08, 0.015, 0.003])} attach="geometry" />
+        <primitive
+          object={getStandardMaterial({
+            color: statusGlowHex,
+            emissive: statusGlowHex,
+            emissiveIntensity: statusGlowIntensity,
+          })}
+          attach="material"
         />
       </mesh>
 
       <mesh position={[0, RACK_HEIGHT - 0.02, RACK_DEPTH / 2 + 0.005]}>
-        <boxGeometry args={[RACK_WIDTH - 0.08, 0.015, 0.003]} />
-        <meshStandardMaterial
-          color={statusGlowHex}
-          emissive={statusGlowHex}
-          emissiveIntensity={statusGlowIntensity}
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.08, 0.015, 0.003])} attach="geometry" />
+        <primitive
+          object={getStandardMaterial({
+            color: statusGlowHex,
+            emissive: statusGlowHex,
+            emissiveIntensity: statusGlowIntensity,
+          })}
+          attach="material"
         />
       </mesh>
       <mesh position={[0, RACK_HEIGHT - 0.06, RACK_DEPTH / 2 + 0.01]}>
-        <boxGeometry args={[RACK_WIDTH - 0.1, 0.03, 0.01]} />
-        <meshBasicMaterial color={statusGlowHex} />
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.1, 0.03, 0.01])} attach="geometry" />
+        <primitive object={getBasicMaterial({ color: statusGlowHex })} attach="material" />
       </mesh>
 
       {[0.2, 0.4, 0.6, 0.8].map((y, i) => (
         <mesh key={`vent-${i}`} position={[0, y * RACK_HEIGHT + 0.1, -RACK_DEPTH / 2 + 0.02]}>
-          <boxGeometry args={[RACK_WIDTH - 0.1, 0.02, 0.005]} />
-          <meshStandardMaterial color="#0a0c10" />
+          <primitive object={getBoxGeometry([RACK_WIDTH - 0.1, 0.02, 0.005])} attach="geometry" />
+          <primitive object={getStandardMaterial({ color: "#0a0c10" })} attach="material" />
         </mesh>
       ))}
 
       {isSelected && (
         <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.006]}>
-          <planeGeometry args={[RACK_WIDTH - 0.04, RACK_HEIGHT - 0.02]} />
-          <meshBasicMaterial
-            color="#4488ff"
-            transparent
-            opacity={0.15}
-          />
+          <primitive object={getPlaneGeometry([RACK_WIDTH - 0.04, RACK_HEIGHT - 0.02])} attach="geometry" />
+          <primitive object={getBasicMaterial({ color: "#4488ff", transparent: true, opacity: 0.15 })} attach="material" />
         </mesh>
       )}
     </group>
@@ -179,20 +178,16 @@ function SimplifiedRack({ thermalStatus }: { thermalStatus: string }) {
   return (
     <group>
       <mesh position={[0, RACK_HEIGHT / 2, 0]} castShadow>
-        <boxGeometry args={[RACK_WIDTH - 0.02, RACK_HEIGHT, RACK_DEPTH - 0.02]} />
-        <meshStandardMaterial
-          color="#1a1d24"
-          metalness={0.6}
-          roughness={0.4}
-        />
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.02, RACK_HEIGHT, RACK_DEPTH - 0.02])} attach="geometry" />
+        <primitive object={getStandardMaterial({ color: "#1a1d24", metalness: 0.6, roughness: 0.4 })} attach="material" />
       </mesh>
       <mesh position={[0, RACK_HEIGHT - 0.05, RACK_DEPTH / 2 + 0.01]}>
-        <boxGeometry args={[RACK_WIDTH - 0.08, 0.025, 0.01]} />
-        <meshBasicMaterial color={statusGlowHex} />
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.08, 0.025, 0.01])} attach="geometry" />
+        <primitive object={getBasicMaterial({ color: statusGlowHex })} attach="material" />
       </mesh>
       <mesh position={[0, 0.02, RACK_DEPTH / 2 + 0.01]}>
-        <boxGeometry args={[RACK_WIDTH - 0.1, 0.015, 0.003]} />
-        <meshBasicMaterial color={statusGlowHex} />
+        <primitive object={getBoxGeometry([RACK_WIDTH - 0.1, 0.015, 0.003])} attach="geometry" />
+        <primitive object={getBasicMaterial({ color: statusGlowHex })} attach="material" />
       </mesh>
     </group>
   );
@@ -232,7 +227,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog,
       const distance = camera.position.distanceTo(
         new THREE.Vector3(position[0], position[1] + RACK_HEIGHT / 2, position[2])
       );
-      const shouldBeDetailed = distance < 20 || isSelected || hovered;
+      const shouldBeDetailed = distance < 18 || isSelected || hovered;
       if (shouldBeDetailed !== isDetailedView) {
         setIsDetailedView(shouldBeDetailed);
       }
@@ -294,11 +289,10 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog,
       {(hovered || isSelected) && !forceSimplified && (
         <group>
           <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[RACK_WIDTH + 0.1, RACK_DEPTH + 0.1]} />
-            <meshBasicMaterial
-              color={isSelected ? "#4488ff" : "#ffffff"}
-              transparent
-              opacity={0.15}
+            <primitive object={getPlaneGeometry([RACK_WIDTH + 0.1, RACK_DEPTH + 0.1])} attach="geometry" />
+            <primitive
+              object={getBasicMaterial({ color: isSelected ? "#4488ff" : "#ffffff", transparent: true, opacity: 0.15 })}
+              attach="material"
             />
           </mesh>
           <Html position={[0.8, RACK_HEIGHT + 0.45, 0]} distanceFactor={10}>
