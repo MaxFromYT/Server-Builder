@@ -55,6 +55,9 @@ export function WelcomeScreen({
             <p className="text-sm text-white/70">
               Pick a mode. Build is interactive editing. Explore is cinematic flythrough.
             </p>
+            <p className="text-xs text-cyan-200/70 uppercase tracking-[0.3em]">
+              Created by Max Doubin
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -97,7 +100,7 @@ export function WelcomeScreen({
           <InfoCard
             icon={<Cpu className="h-4 w-4 text-cyan-200" />}
             title="Performance"
-            body="If FPS drops, the engine auto-throttles effects. Press H to toggle HUD."
+            body="Use the Quality toggle to tune visuals. Press H to toggle the HUD."
           />
           <InfoCard
             icon={<Shield className="h-4 w-4 text-cyan-200" />}
@@ -108,6 +111,16 @@ export function WelcomeScreen({
             icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
             title="Modes"
             body="Build mode shows editing toolbars. Explore mode can default to cinematic camera."
+          />
+          <InfoCard
+            icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
+            title="How to Play"
+            body="Design your datacenter: place racks, add servers, and watch live traffic. Explore for cinematic tours."
+          />
+          <InfoCard
+            icon={<Shield className="h-4 w-4 text-cyan-200" />}
+            title="Help & Credits"
+            body="Use the Control Dock to switch modes, set rack density, and open diagnostics. Created by Max Doubin."
           />
         </div>
       </div>

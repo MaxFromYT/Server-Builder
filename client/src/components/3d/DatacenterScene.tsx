@@ -29,8 +29,7 @@ import { PerformanceOverlay } from "./PerformanceOverlay";
 import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 import * as THREE from "three";
 import { precompileSceneMaterials } from "@/lib/asset-manager";
-import { useToast } from "@/hooks/use-toast";
-import { logInfo } from "@/lib/error-log";
+import { useBuild } from "@/lib/build-context";
 
 interface DatacenterSceneProps {
   onSelectRack: (rack: Rack | null) => void;
@@ -170,6 +169,9 @@ interface RackGridProps {
   heatmapMode?: boolean;
   forceSimplified?: boolean;
   detailBudget?: number;
+  buildMode: ReturnType<typeof useBuild>["mode"];
+  canMove: boolean;
+  onMoveRack: (rackId: string, positionX: number, positionY: number) => void;
 }
 
 function RackGrid({
@@ -182,9 +184,21 @@ function RackGrid({
   heatmapMode = false,
   forceSimplified = false,
   detailBudget,
+  buildMode,
+  canMove,
+  onMoveRack,
 }: RackGridProps) {
   const rackSpacing = 2.8;
   const aisleSpacing = 5.2;
+  const { camera, raycaster, mouse } = useThree();
+  const draggingRef = useRef<{
+    rackId: string;
+    offsetX: number;
+    offsetZ: number;
+    lastX: number;
+    lastY: number;
+  } | null>(null);
+  const floorPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
 
   const maxCol = Math.max(...racks.map((r) => r.positionX), 0);
   const maxRow = Math.max(...racks.map((r) => r.positionY), 0);
@@ -202,6 +216,34 @@ function RackGrid({
     }));
   }, [racks, rackSpacing, aisleSpacing, centerX, centerZ]);
 
+  useFrame(() => {
+    const drag = draggingRef.current;
+    if (!drag) return;
+    raycaster.setFromCamera(mouse, camera);
+    const intersection = new THREE.Vector3();
+    if (!raycaster.ray.intersectPlane(floorPlane, intersection)) return;
+    const targetX = intersection.x + drag.offsetX;
+    const targetZ = intersection.z + drag.offsetZ;
+    const positionX = Math.round((targetX + centerX) / rackSpacing);
+    const positionY = Math.round((targetZ + centerZ) / aisleSpacing);
+    if (positionX === drag.lastX && positionY === drag.lastY) return;
+    drag.lastX = positionX;
+    drag.lastY = positionY;
+    onMoveRack(drag.rackId, positionX, positionY);
+  });
+
+  useEffect(() => {
+    const stopDrag = () => {
+      draggingRef.current = null;
+    };
+    window.addEventListener("pointerup", stopDrag);
+    window.addEventListener("pointercancel", stopDrag);
+    return () => {
+      window.removeEventListener("pointerup", stopDrag);
+      window.removeEventListener("pointercancel", stopDrag);
+    };
+  }, []);
+
   return (
     <group>
       {rackPositions.map(({ rack, position }, index) => (
@@ -215,6 +257,17 @@ function RackGrid({
             forceSimplified={forceSimplified}
             detailBudget={detailBudget}
             lodIndex={index}
+            buildMode={buildMode}
+            onDragStart={(point) => {
+              if (!canMove || buildMode !== "place") return;
+              draggingRef.current = {
+                rackId: rack.id,
+                offsetX: position[0] - point.x,
+                offsetZ: position[2] - point.z,
+                lastX: rack.positionX,
+                lastY: rack.positionY,
+              };
+            }}
           />
 
           {/* FIX: shimmer Z uses position[2], not position[1] */}
@@ -233,8 +286,8 @@ function RackGrid({
             position,
             heat: rack.exhaustTemp,
           }))}
-          maxConnections={Math.min(60, rackPositions.length * 2)}
-          maxStreams={Math.min(24, Math.floor(rackPositions.length / 2))}
+          maxConnections={Math.min(160, rackPositions.length * 4)}
+          maxStreams={Math.min(120, rackPositions.length * 2)}
           heatmapInfluence={heatmapMode ? 1 : 0}
         />
       )}
@@ -401,13 +454,11 @@ export function DatacenterScene({
   onPerfWarningChange,
   proceduralOptions,
 }: DatacenterSceneProps) {
-  const { racks, equipmentCatalog, preloadQueue } = useGame();
+  const { racks, equipmentCatalog, preloadQueue, updateRackPosition } = useGame();
+  const { mode: buildMode } = useBuild();
   const { theme } = useTheme();
-  const { toast } = useToast();
 
   const controlsRef = useRef<any>(null);
-
-  const [dynamicQuality, setDynamicQuality] = useState<"low" | "high">(qualityMode);
 
   // NEW: UI lock disables OrbitControls while clicking UI
   const [uiLock, setUiLock] = useState(false);
@@ -433,15 +484,11 @@ export function DatacenterScene({
     return racks || [];
   }, [equipmentCatalog, isUnlocked, rackCount, racks, proceduralOptions, visibleRacks]);
 
-  useEffect(() => {
-    setDynamicQuality(qualityMode);
-  }, [qualityMode]);
-
   const maxCol = Math.max(...displayRacks.map((r) => r.positionX), 2);
   const maxRow = Math.max(...displayRacks.map((r) => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
 
-  const useLowEffects = performanceMode || dynamicQuality === "low" || displayRacks.length > 200;
+  const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(
     () => [
@@ -629,8 +676,13 @@ export function DatacenterScene({
               showHeatShimmer={showEffects && !useLowEffects}
               showNetworkMesh={!useLowEffects}
               heatmapMode={showHeatmap}
-              forceSimplified={forceSimplified || dynamicQuality === "low"}
+              forceSimplified={forceSimplified || qualityMode === "low"}
               detailBudget={detailBudget}
+              buildMode={buildMode}
+              canMove={isUnlocked}
+              onMoveRack={(rackId, positionX, positionY) => {
+                updateRackPosition(rackId, positionX, positionY);
+              }}
             />
           )}
 
@@ -646,24 +698,8 @@ export function DatacenterScene({
 
           <PerformanceOverlay
             visible={showPerfOverlay}
-            qualityMode={dynamicQuality}
+            qualityMode={qualityMode}
             onWarningChange={onPerfWarningChange}
-            onQualityChange={(quality, reason) => {
-              setDynamicQuality(quality);
-              if (quality === "low") {
-                toast({
-                  title: "Performance mode enabled",
-                  description: "FPS dropped below target. Effects reduced to keep things smooth.",
-                });
-                logInfo("Performance mode enabled.", { reason });
-              } else {
-                toast({
-                  title: "Performance restored",
-                  description: "Frame time stabilized. High quality restored.",
-                });
-                logInfo("Performance mode restored.", { reason });
-              }
-            }}
           />
 
           <ScenePrecompiler />

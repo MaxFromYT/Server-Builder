@@ -3,6 +3,7 @@ import { useRef, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Rack, Equipment } from "@shared/schema";
+import type { BuildMode } from "@/lib/build-context";
 import { EquipmentMesh } from "./EquipmentMesh";
 import {
   getBoxGeometry,
@@ -26,6 +27,8 @@ interface Rack3DProps {
   forceSimplified?: boolean;
   detailBudget?: number;
   lodIndex?: number;
+  buildMode?: BuildMode;
+  onDragStart?: (point: THREE.Vector3) => void;
 }
 
 const RACK_WIDTH = 0.85;
@@ -277,6 +280,8 @@ export function Rack3D({
   forceSimplified = false,
   detailBudget,
   lodIndex = 0,
+  buildMode,
+  onDragStart,
 }: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -295,7 +300,7 @@ export function Rack3D({
   const [isDetailedView, setIsDetailedView] = useState(true);
   const allowDetailed = !forceSimplified && (detailBudget === undefined || lodIndex < detailBudget);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (groupRef.current) {
       const elapsed = state.clock.getElapsedTime();
       const appearT = THREE.MathUtils.clamp((elapsed - appearDelay) / appearDuration, 0, 1);
@@ -310,6 +315,9 @@ export function Rack3D({
       );
       const scale = THREE.MathUtils.lerp(0.9, 1, eased);
       groupRef.current.scale.setScalar(scale);
+      if (buildMode === "rotate" && (hovered || isSelected)) {
+        groupRef.current.rotation.y += delta * 0.8;
+      }
 
       const distance = camera.position.distanceTo(
         new THREE.Vector3(position[0], position[1] + RACK_HEIGHT / 2, position[2])
@@ -335,6 +343,7 @@ export function Rack3D({
       onPointerDown={(e) => {
         e.stopPropagation();
         if (e.button !== 0) return;
+        onDragStart?.(e.point);
         onSelect();
       }}
       onPointerOver={(e) => {

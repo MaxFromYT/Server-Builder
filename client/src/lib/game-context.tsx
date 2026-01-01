@@ -60,6 +60,7 @@ interface GameContextType {
   refetchRacks: () => void;
   addEquipmentToRack: (rackId: string, equipmentId: string, uStart: number) => boolean;
   removeEquipmentFromRack: (rackId: string, equipmentInstanceId: string) => boolean;
+  updateRackPosition: (rackId: string, positionX: number, positionY: number) => boolean;
   setRacksFromSave: (racks: Rack[]) => void;
 }
 
@@ -347,6 +348,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [useStaticData]
   );
 
+  const updateRackPosition = useCallback(
+    (rackId: string, positionX: number, positionY: number) => {
+      if (!useStaticData) return false;
+      if (!Number.isFinite(positionX) || !Number.isFinite(positionY)) return false;
+      let didMove = false;
+      setStaticRacksState((prev) =>
+        prev.map((rack) => {
+          if (rack.id !== rackId) return rack;
+          didMove = true;
+          return {
+            ...rack,
+            positionX: Math.round(positionX),
+            positionY: Math.round(positionY),
+          };
+        })
+      );
+      return didMove;
+    },
+    [useStaticData]
+  );
+
   const setRacksFromSave = useCallback((racks: Rack[]) => {
     if (!useStaticData) return;
     const sanitized = sanitizeRacks(racks);
@@ -420,6 +442,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     refetchRacks,
     addEquipmentToRack,
     removeEquipmentFromRack,
+    updateRackPosition,
     setRacksFromSave,
   };
 

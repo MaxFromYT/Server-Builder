@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DebugOverlay } from "@/components/ui/debug-overlay";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { GameHeader } from "@/components/layout/game-header";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/lib/theme-provider";
 import { buildSummaryText, downloadBuildSummary } from "@/lib/export";
@@ -226,16 +227,19 @@ export function DataCenter3D() {
 
       {!introVisible && (
         <>
+          <div className="fixed top-0 left-0 right-0 z-40">
+            <GameHeader />
+          </div>
           <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-cyan-500/30 bg-black/60 px-6 py-2 text-center shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg">
             <div className="text-xs uppercase tracking-[0.4em] text-cyan-300/80">
               Hyperscale
             </div>
-            <div className="text-sm text-white/70">Datacenter Operations Console</div>
+            <div className="text-sm text-white/70">Datacenter Operations Console · Max Doubin</div>
           </div>
 
           <div
             data-ui="true"
-            className="fixed top-4 left-4 z-50 w-[320px] rounded-2xl border border-cyan-500/30 bg-black/60 p-4 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg"
+            className="fixed top-20 left-4 z-50 w-[320px] rounded-2xl border border-cyan-500/30 bg-black/60 p-4 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -244,7 +248,7 @@ export function DataCenter3D() {
                 </div>
                 <div className="text-xl font-semibold text-white">Datacenter Command</div>
                 <div className="text-[10px] text-white/60">
-                  Live orchestration for power, thermals, and topology.
+                  Live orchestration for power, thermals, and topology. Created by Max Doubin.
                 </div>
               </div>
               <ThemeToggle />
@@ -322,7 +326,7 @@ export function DataCenter3D() {
           </div>
 
           {showDiagnostics && (
-            <div className="fixed top-4 right-4 z-50 w-[260px]">
+            <div className="fixed top-20 right-4 z-50 w-[260px]">
               <DebugOverlay visible />
             </div>
           )}
