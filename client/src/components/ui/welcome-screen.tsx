@@ -10,18 +10,16 @@ export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
       }`}
       data-testid="welcome-screen"
     >
-      <div className="absolute inset-0 bg-black/90" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.25),_transparent_55%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(99,102,241,0.18),_transparent_60%)]" />
-      <div className="relative mx-6 flex max-w-xl flex-col items-center gap-6 rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-black/90 via-slate-900/80 to-black/90 px-12 py-12 text-center shadow-[0_0_60px_rgba(34,211,238,0.35)] backdrop-blur-2xl">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_55%)]" />
+      <div className="relative mx-6 flex max-w-xl flex-col items-center gap-6 rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-black/80 via-slate-900/70 to-black/80 px-10 py-10 text-center shadow-[0_0_45px_rgba(34,211,238,0.2)] backdrop-blur-xl">
         <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-cyan-300/70">
-          Initializing Hyperscale Systems
+          Initializing Hyper-Systems
         </div>
         <div className="relative">
-          <div className="text-4xl font-display font-bold tracking-[0.45em] text-white drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]">
+          <div className="text-3xl font-display font-bold tracking-[0.35em] text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">
             HYPERSCALE
           </div>
-          <div className="mt-3 text-[11px] font-mono uppercase tracking-[0.35em] text-cyan-200/80">
+          <div className="mt-2 text-[11px] font-mono uppercase tracking-[0.3em] text-cyan-200/80">
             by Max Doubin
           </div>
         </div>
@@ -36,7 +34,7 @@ export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
             {[0, 1, 2, 3, 4].map((layer) => (
               <div
                 key={layer}
-                className="absolute left-1/2 top-1/2 h-6 w-28 -translate-x-1/2 -translate-y-1/2 rounded-md border border-cyan-300/40 bg-gradient-to-r from-slate-950 via-slate-800 to-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.35)]"
+                className="absolute left-1/2 top-1/2 h-6 w-24 -translate-x-1/2 -translate-y-1/2 rounded-md border border-cyan-300/40 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
                 style={{
                   transform: `translateZ(${layer * 10}px)`,
                 }}

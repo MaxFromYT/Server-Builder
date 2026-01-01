@@ -126,14 +126,14 @@ export function DataCenter3D() {
         <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
           <div className="text-cyan-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            Operations Console
+            Static Editor
           </div>
           <p className="text-[11px] text-white/70 leading-relaxed">
-            Select a rack to open the editor. Add equipment by selecting empty slots and remove items with the trash icon.
+            Click a rack to open the editor. Add equipment by selecting empty slots and remove items with the trash icon.
           </p>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
-              <span>Active racks</span>
+              <span>Visible racks</span>
               <span className="text-cyan-300">{rackCount}</span>
             </div>
             <Slider
@@ -151,7 +151,7 @@ export function DataCenter3D() {
             </div>
           </div>
           <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
-            <span>Visual fidelity</span>
+            <span>Quality</span>
             <Button
               size="sm"
               variant="ghost"
@@ -167,7 +167,7 @@ export function DataCenter3D() {
               }`}
               data-testid="button-quality-mode"
             >
-              {qualityMode === "high" ? "Studio" : "Fast"}
+              {qualityMode === "high" ? "High" : "Fast"}
             </Button>
           </div>
           {rackCount > 100 && (
@@ -355,14 +355,14 @@ export function DataCenter3D() {
       <div className="fixed bottom-4 left-4 z-40 space-y-1 rounded-lg border border-cyan-500/20 bg-black/50 px-3 py-2 font-mono text-[10px] text-white/70 shadow-[0_0_18px_rgba(34,211,238,0.2)]">
         <div className="flex items-center gap-2 text-cyan-200/80">
           <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          Systems nominal · Visual engine synchronized
+          Systems nominal · Visual engine online
         </div>
         <div className="text-white/50">Drag to rotate · Scroll to zoom · Click rack to inspect</div>
         {isUnlocked && !isStaticMode && (
-          <div className="text-cyan-400/70">Admin suite: Use sliders to scale the simulation.</div>
+          <div className="text-cyan-400/70">Admin mode: Use sliders to scale the simulation.</div>
         )}
         {isStaticMode && (
-          <div className="text-cyan-300/80">Operations: Select a rack to add/remove equipment.</div>
+          <div className="text-cyan-300/80">Static editor: Select a rack to add/remove equipment.</div>
         )}
       </div>
     </div>
