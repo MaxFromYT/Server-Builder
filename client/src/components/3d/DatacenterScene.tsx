@@ -21,6 +21,12 @@ interface DatacenterSceneProps {
   cameraMode?: "orbit" | "auto" | "cinematic";
   showHUD?: boolean;
   rackCount?: number;
+  proceduralOptions?: {
+    seed?: number;
+    fillRateMultiplier?: number;
+    errorRate?: number;
+    tempBase?: number;
+  };
 }
 
 function AdvancedLights() {
@@ -228,10 +234,10 @@ export function DatacenterScene({
 
   const displayRacks = useMemo(() => {
     if (isUnlocked && rackCount > 9 && equipmentCatalog?.length > 0) {
-      return generateProceduralRacks(rackCount, equipmentCatalog);
+      return generateProceduralRacks(rackCount, equipmentCatalog, proceduralOptions);
     }
     return racks || [];
-  }, [racks, isUnlocked, rackCount, equipmentCatalog]);
+  }, [racks, isUnlocked, rackCount, equipmentCatalog, proceduralOptions]);
 
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);

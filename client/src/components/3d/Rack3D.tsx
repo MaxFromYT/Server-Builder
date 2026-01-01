@@ -1,8 +1,13 @@
+import { Html } from "@react-three/drei";
 import { useRef, useState, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 import { EquipmentMesh } from "./EquipmentMesh";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Activity, Thermometer, Zap } from "lucide-react";
 
 interface Rack3DProps {
   rack: Rack;
@@ -122,7 +127,7 @@ function RackFrame({ isSelected, thermalStatus }: { isSelected: boolean; thermal
         <meshStandardMaterial
           color={statusGlowHex}
           emissive={statusGlowHex}
-          emissiveIntensity={2.5}
+          emissiveIntensity={statusGlowIntensity}
         />
       </mesh>
 
@@ -131,7 +136,7 @@ function RackFrame({ isSelected, thermalStatus }: { isSelected: boolean; thermal
         <meshStandardMaterial
           color={statusGlowHex}
           emissive={statusGlowHex}
-          emissiveIntensity={2.5}
+          emissiveIntensity={statusGlowIntensity}
         />
       </mesh>
 
@@ -202,7 +207,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
 
   const [isDetailedView, setIsDetailedView] = useState(true);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (groupRef.current) {
       const targetY = hovered || isSelected ? 0.05 : 0;
       groupRef.current.position.y = THREE.MathUtils.lerp(
@@ -220,6 +225,10 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
       }
     }
   });
+
+  const statusGlowIntensity = useMemo(() => {
+    return 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
+  }, []);
 
   const sortedEquipment = useMemo(() => {
     return [...rack.installedEquipment].sort((a, b) => a.uStart - b.uStart);
@@ -271,14 +280,43 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
       )}
 
       {(hovered || isSelected) && (
-        <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[RACK_WIDTH + 0.1, RACK_DEPTH + 0.1]} />
-          <meshBasicMaterial
-            color={isSelected ? "#4488ff" : "#ffffff"}
-            transparent
-            opacity={0.15}
-          />
-        </mesh>
+        <group>
+          <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[RACK_WIDTH + 0.1, RACK_DEPTH + 0.1]} />
+            <meshBasicMaterial
+              color={isSelected ? "#4488ff" : "#ffffff"}
+              transparent
+              opacity={0.15}
+            />
+          </mesh>
+          <Html position={[0, RACK_HEIGHT + 0.5, 0]} center distanceFactor={10}>
+            <Card className="p-3 min-w-[180px] bg-black/80 backdrop-blur-md border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-mono text-xs text-cyan-400 font-bold tracking-tight">RACK {rack.name}</div>
+                <Badge variant="outline" className={`text-[9px] uppercase h-4 px-1 ${
+                  thermalStatus === 'critical' ? 'border-red-500 text-red-400' :
+                  thermalStatus === 'warning' ? 'border-amber-500 text-amber-400' :
+                  'border-green-500 text-green-400'
+                }`}>
+                  {thermalStatus}
+                </Badge>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[10px] text-white/70">
+                  <div className="flex items-center gap-1"><Thermometer className="w-3 h-3 text-cyan-500" /> {rack.inletTemp}°C</div>
+                  <div className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-500" /> {rack.currentPowerDraw}W</div>
+                </div>
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[8px] text-white/50 uppercase">
+                    <span>Power Usage</span>
+                    <span>{Math.round((rack.currentPowerDraw / rack.powerCapacity) * 100)}%</span>
+                  </div>
+                  <Progress value={(rack.currentPowerDraw / rack.powerCapacity) * 100} className="h-1 bg-white/10" indicatorClassName="bg-cyan-500 shadow-[0_0_5px_rgba(0,255,255,0.5)]" />
+                </div>
+              </div>
+            </Card>
+          </Html>
+        </group>
       )}
     </group>
   );

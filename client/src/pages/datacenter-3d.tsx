@@ -19,6 +19,12 @@ export function DataCenter3D() {
   const [showEffects, setShowEffects] = useState(true);
   const [showHUD, setShowHUD] = useState(true);
   const [rackCount, setRackCount] = useState(9);
+  const [proceduralOptions, setProceduralOptions] = useState({
+    seed: 42,
+    fillRateMultiplier: 1,
+    errorRate: 1,
+    tempBase: 20
+  });
   const [showControls, setShowControls] = useState(false);
 
   const selectedRack = racks?.find(r => r.id === selectedRackId) || null;
@@ -53,6 +59,7 @@ export function DataCenter3D() {
         showEffects={showEffects}
         showHUD={showHUD}
         rackCount={rackCount}
+        proceduralOptions={proceduralOptions}
       />
       
       <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} />
@@ -159,6 +166,54 @@ export function DataCenter3D() {
                   <span>9</span>
                   <span>500</span>
                 </div>
+
+                <div className="space-y-3 pt-2 border-t border-white/10">
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <div className="text-white/60 text-[10px] font-mono uppercase">Fill Rate</div>
+                      <div className="text-cyan-400 text-[10px] font-mono">{Math.round(proceduralOptions.fillRateMultiplier * 100)}%</div>
+                    </div>
+                    <Slider
+                      value={[proceduralOptions.fillRateMultiplier * 100]}
+                      onValueChange={(v) => setProceduralOptions(prev => ({ ...prev, fillRateMultiplier: v[0] / 100 }))}
+                      min={10}
+                      max={150}
+                      step={5}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <div className="text-white/60 text-[10px] font-mono uppercase">Fault Prop</div>
+                      <div className="text-red-400 text-[10px] font-mono">{proceduralOptions.errorRate}x</div>
+                    </div>
+                    <Slider
+                      value={[proceduralOptions.errorRate]}
+                      onValueChange={(v) => setProceduralOptions(prev => ({ ...prev, errorRate: v[0] }))}
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <div className="text-white/60 text-[10px] font-mono uppercase">Base Temp</div>
+                      <div className="text-orange-400 text-[10px] font-mono">{proceduralOptions.tempBase}°C</div>
+                    </div>
+                    <Slider
+                      value={[proceduralOptions.tempBase]}
+                      onValueChange={(v) => setProceduralOptions(prev => ({ ...prev, tempBase: v[0] }))}
+                      min={15}
+                      max={35}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex gap-1 mt-2">
                   <QuickRackBtn count={9} current={rackCount} onClick={setRackCount} />
                   <QuickRackBtn count={50} current={rackCount} onClick={setRackCount} />
