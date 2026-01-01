@@ -1,91 +1,128 @@
-import { Html } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
+import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 
-interface PerformanceOverlayProps {
-  visible: boolean;
-  onQualityChange?: (quality: "low" | "high", reason: string) => void;
-}
+export type QualityMode = "low" | "high";
 
-export function PerformanceOverlay({ visible, onQualityChange }: PerformanceOverlayProps) {
-  const [fps, setFps] = useState(60);
-  const [frameTime, setFrameTime] = useState(16.7);
-  const [quality, setQuality] = useState<"low" | "high">("high");
-  const frameCount = useRef(0);
-  const lastTime = useRef(performance.now());
-  const lastFrameTime = useRef(performance.now());
-  const lowPerformanceCount = useRef(0);
+type PerformanceOverlayProps = {
+  // Keep mounted for sampling, just hide the UI until user toggles it.
+  visible?: boolean;
 
-  useFrame(() => {
-    if (!visible) return;
+  // Display only. We do NOT auto change quality anymore.
+  qualityMode?: QualityMode;
 
-    frameCount.current++;
-    const now = performance.now();
-    const deltaTime = now - lastFrameTime.current;
-    lastFrameTime.current = now;
+  // Used to show a warning in diagnostics instead of spamming toasts.
+  onWarningChange?: (warning: string | null) => void;
 
-    if (frameCount.current % 30 === 0) {
-      const elapsed = now - lastTime.current;
-      const currentFps = Math.round((30 * 1000) / elapsed);
-      const currentFrameTime = Math.round(deltaTime * 10) / 10;
+  // Optional positioning override
+  positionClassName?: string;
+};
 
-      setFps(currentFps);
-      setFrameTime(currentFrameTime);
+export function PerformanceOverlay({
+  visible = false,
+  qualityMode = "high",
+  onWarningChange,
+  positionClassName = "fixed top-20 right-72",
+}: PerformanceOverlayProps) {
+  const [stats, setStats] = useState({ fps: 0, frameMs: 0 });
 
-      if (currentFps < 30 && quality === "high") {
-        lowPerformanceCount.current++;
-        if (lowPerformanceCount.current > 3) {
-          setQuality("low");
-          onQualityChange?.("low", `FPS dropped to ${currentFps}`);
-          lowPerformanceCount.current = 0;
-        }
-      } else if (currentFps > 45 && quality === "low") {
-        setQuality("high");
-        onQualityChange?.("high", `FPS improved to ${currentFps}`);
-      } else {
-        lowPerformanceCount.current = 0;
+  const accRef = useRef({ t: 0, frames: 0 });
+
+  // “Low FPS” warning gating so we do not spam.
+  const warnRef = useRef({
+    isLow: false,
+    lowStreakSeconds: 0,
+    recoverStreakSeconds: 0,
+    lastEmitted: null as string | null,
+  });
+
+  useFrame((_, delta) => {
+    // Aggregate for about 1 second so numbers are stable.
+    accRef.current.t += delta;
+    accRef.current.frames += 1;
+    if (accRef.current.t < 1) return;
+
+    const fps = accRef.current.frames / accRef.current.t;
+    const frameMs = (accRef.current.t / accRef.current.frames) * 1000;
+
+    accRef.current.t = 0;
+    accRef.current.frames = 0;
+
+    setStats({ fps, frameMs });
+
+    // Warning thresholds (tweak if you want)
+    const LOW_FPS = 35;
+    const RECOVER_FPS = 50;
+
+    if (fps < LOW_FPS) {
+      warnRef.current.lowStreakSeconds += 1;
+      warnRef.current.recoverStreakSeconds = 0;
+    } else if (fps > RECOVER_FPS) {
+      warnRef.current.recoverStreakSeconds += 1;
+      warnRef.current.lowStreakSeconds = 0;
+    } else {
+      // In-between, decay slowly so it is not jumpy.
+      warnRef.current.lowStreakSeconds = Math.max(0, warnRef.current.lowStreakSeconds - 1);
+      warnRef.current.recoverStreakSeconds = Math.max(0, warnRef.current.recoverStreakSeconds - 1);
+    }
+
+    // Emit warning only after sustained low FPS
+    if (!warnRef.current.isLow && warnRef.current.lowStreakSeconds >= 3) {
+      warnRef.current.isLow = true;
+      const msg =
+        "Low FPS detected. Quality is locked to your selection (no auto downgrade). Consider reducing rack count or toggling effects.";
+      if (warnRef.current.lastEmitted !== msg) {
+        warnRef.current.lastEmitted = msg;
+        onWarningChange?.(msg);
       }
+    }
 
-      lastTime.current = now;
+    // Clear warning only after sustained recovery
+    if (warnRef.current.isLow && warnRef.current.recoverStreakSeconds >= 3) {
+      warnRef.current.isLow = false;
+      if (warnRef.current.lastEmitted !== null) {
+        warnRef.current.lastEmitted = null;
+        onWarningChange?.(null);
+      }
     }
   });
 
   useEffect(() => {
-    if (!visible) {
-      lowPerformanceCount.current = 0;
-    }
-  }, [visible]);
+    return () => {
+      // Clear warning on unmount
+      onWarningChange?.(null);
+    };
+  }, [onWarningChange]);
 
-  if (!visible) return null;
+  const fpsRounded = Math.round(stats.fps);
+  const frameRounded = stats.frameMs ? stats.frameMs.toFixed(1) : "0.0";
+
+  const isLowNow = warnRef.current.isLow;
+  const qualityText = qualityMode.toUpperCase();
 
   return (
     <Html fullscreen>
-      <div className="pointer-events-none fixed top-4 right-4 z-50 select-none">
-        <div
-          className={`rounded-lg border px-3 py-2 backdrop-blur-md ${
-            quality === "low"
-              ? "border-orange-400/30 bg-orange-500/10 text-orange-200"
-              : "border-cyan-500/30 bg-black/60 text-cyan-200"
-          }`}
-        >
-          <div className="text-xs font-mono space-y-1">
-            <div className="flex justify-between gap-4">
-              <span>FPS:</span>
-              <span className={fps < 30 ? "text-orange-300" : ""}>{fps}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Frame:</span>
-              <span className={frameTime > 33 ? "text-orange-300" : ""}>{frameTime}ms</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Quality:</span>
-              <span className={quality === "low" ? "text-orange-300" : "text-cyan-300"}>
-                {quality.toUpperCase()}
-              </span>
+      {visible ? (
+        <div className={`pointer-events-none select-none z-50 ${positionClassName}`}>
+          <div className="rounded-lg border border-cyan-500/30 bg-black/60 px-3 py-2 backdrop-blur-md shadow-[0_0_18px_rgba(34,211,238,0.15)]">
+            <div className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest">Performance</div>
+            <div className="mt-1 grid grid-cols-3 gap-2 text-[10px] font-mono">
+              <div>
+                <div className="text-white/40">FPS</div>
+                <div className={isLowNow ? "text-orange-300" : "text-cyan-200"}>{fpsRounded}</div>
+              </div>
+              <div>
+                <div className="text-white/40">Frame</div>
+                <div className={isLowNow ? "text-orange-300" : "text-cyan-200"}>{frameRounded}ms</div>
+              </div>
+              <div>
+                <div className="text-white/40">Quality</div>
+                <div className={qualityMode === "high" ? "text-cyan-200" : "text-white/60"}>{qualityText}</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </Html>
   );
 }
