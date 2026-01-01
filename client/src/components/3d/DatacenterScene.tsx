@@ -22,6 +22,7 @@ interface DatacenterSceneProps {
   showHUD?: boolean;
   rackCount?: number;
   showHeatmap?: boolean;
+  performanceMode?: boolean;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -30,16 +31,16 @@ interface DatacenterSceneProps {
   };
 }
 
-function AdvancedLights() {
+function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean }) {
   return (
     <>
       <ambientLight intensity={0.15} color="#4466aa" />
       <directionalLight
         position={[60, 100, 40]}
-        intensity={1.0}
+        intensity={performanceMode ? 0.8 : 1.0}
         color="#ffffff"
-        castShadow
-        shadow-mapSize={[2048, 2048]}
+        castShadow={!performanceMode}
+        shadow-mapSize={performanceMode ? [1024, 1024] : [2048, 2048]}
         shadow-camera-far={200}
         shadow-camera-left={-80}
         shadow-camera-right={80}
@@ -81,9 +82,17 @@ interface RackGridProps {
   onSelectRack: (rack: Rack | null) => void;
   equipmentCatalog: Map<string, Equipment>;
   showHeatShimmer?: boolean;
+  showNetworkMesh?: boolean;
 }
 
-function RackGrid({ racks, selectedRackId, onSelectRack, equipmentCatalog, showHeatShimmer = true }: RackGridProps) {
+function RackGrid({
+  racks,
+  selectedRackId,
+  onSelectRack,
+  equipmentCatalog,
+  showHeatShimmer = true,
+  showNetworkMesh = true,
+}: RackGridProps) {
   const rackSpacing = 2.0;
   const aisleSpacing = 4.0;
 
@@ -124,9 +133,13 @@ function RackGrid({ racks, selectedRackId, onSelectRack, equipmentCatalog, showH
         </group>
       ))}
       
-      <DataCenterNetworkMesh
-        racks={rackPositions.map(({ position }) => ({ position }))}
-      />
+      {showNetworkMesh && (
+        <DataCenterNetworkMesh
+          racks={rackPositions.map(({ position }) => ({ position }))}
+          maxConnections={Math.min(50, rackPositions.length * 2)}
+          maxStreams={15}
+        />
+      )}
     </group>
   );
 }
@@ -221,6 +234,7 @@ export function DatacenterScene({
   showHUD = true,
   rackCount = 9,
   showHeatmap = false,
+  performanceMode = false,
   proceduralOptions
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
@@ -246,6 +260,7 @@ export function DatacenterScene({
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2 + 15, maxRow * 4 + 15, 25);
+  const useLowEffects = performanceMode || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(() => [
     { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
@@ -264,9 +279,10 @@ export function DatacenterScene({
   return (
     <div className="w-full h-full relative" data-testid="datacenter-scene-3d">
       <Canvas
-        shadows
+        shadows={!performanceMode}
+        dpr={performanceMode ? 1 : [1, 2]}
         gl={{ 
-          antialias: true, 
+          antialias: !performanceMode, 
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.0,
           powerPreference: "high-performance"
@@ -314,16 +330,16 @@ export function DatacenterScene({
         )}
 
         <Suspense fallback={<LoadingFallback />}>
-          <AdvancedLights />
+          <AdvancedLights performanceMode={useLowEffects} />
           
           <Stars
             radius={200}
             depth={100}
-            count={1000}
-            factor={2}
+            count={useLowEffects ? 250 : 1000}
+            factor={useLowEffects ? 1 : 2}
             saturation={0.5}
             fade
-            speed={0.5}
+            speed={useLowEffects ? 0.2 : 0.5}
           />
           
           <RaisedFloor size={floorSize} showHeatmap={showHeatmap} />
@@ -334,13 +350,14 @@ export function DatacenterScene({
               selectedRackId={selectedRackId}
               onSelectRack={onSelectRack}
               equipmentCatalog={equipmentMap}
-              showHeatShimmer={showEffects}
+              showHeatShimmer={showEffects && !useLowEffects}
+              showNetworkMesh={!useLowEffects}
             />
           )}
           
           <EnvironmentalDetails size={floorSize} />
           
-          {showEffects && (
+          {showEffects && !useLowEffects && (
             <AtmosphericLayer size={floorSize} intensity={displayRacks.length > 50 ? 0.5 : 1} />
           )}
           

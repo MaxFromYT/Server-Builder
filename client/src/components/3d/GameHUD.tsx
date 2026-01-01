@@ -11,9 +11,10 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 interface GameHUDProps {
   isUnlocked: boolean;
   onUnlock: () => void;
+  showUnlock?: boolean;
 }
 
-export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
+export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProps) {
   const { gameState, facilityMetrics, alerts, racks, generateMaxedDatacenter, isGeneratingMaxed } = useGame();
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [codeInput, setCodeInput] = useState("");
@@ -93,15 +94,17 @@ export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
 
         <ThemeToggle />
 
-        <Button
-          size="icon"
-          variant={isUnlocked ? "default" : "outline"}
-          onClick={() => setShowCodeDialog(true)}
-          data-testid="button-unlock"
-          className={isUnlocked ? "bg-noc-purple hover:bg-noc-purple/80" : ""}
-        >
-          {isUnlocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-        </Button>
+        {showUnlock && (
+          <Button
+            size="icon"
+            variant={isUnlocked ? "default" : "outline"}
+            onClick={() => setShowCodeDialog(true)}
+            data-testid="button-unlock"
+            className={isUnlocked ? "bg-noc-purple hover:bg-noc-purple/80" : ""}
+          >
+            {isUnlocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+          </Button>
+        )}
       </div>
 
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40" data-testid="game-hud-bottom">
@@ -116,7 +119,8 @@ export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
         </Card>
       </div>
 
-      <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
+      {showUnlock && (
+        <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -207,6 +211,7 @@ export function GameHUD({ isUnlocked, onUnlock }: GameHUDProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </>
   );
 }
