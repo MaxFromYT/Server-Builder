@@ -287,10 +287,14 @@ export function Rack3D({
     <group
       ref={groupRef}
       position={position}
-      onClick={(e) => {
+
+      
+      onPointerDown={(e) => {
         e.stopPropagation();
+        if (e.button !== 0) return; // left click only
         onSelect();
       }}
+
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
@@ -356,7 +360,12 @@ export function Rack3D({
               attach="material"
             />
           </mesh>
-          <Html position={[0.8, RACK_HEIGHT + 0.45, 0]} distanceFactor={10}>
+          <Html
+            position={[0.8, RACK_HEIGHT + 0.45, 0]}
+            distanceFactor={10}
+            wrapperClass="pointer-events-none"
+          >
+
             <Card className="p-3 min-w-[200px] bg-black/80 backdrop-blur-md border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.25)]">
               <div className="flex justify-between items-start mb-2">
                 <div className="font-mono text-xs text-cyan-200 font-bold tracking-tight">RACK {rack.name}</div>
