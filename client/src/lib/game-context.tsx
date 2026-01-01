@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { generateProceduralRacks } from "@/components/3d/ProceduralRacks";
+import { staticEquipmentCatalog } from "@/lib/static-equipment";
 import type { 
   GameMode, 
   GameState, 
@@ -21,6 +23,7 @@ import type {
 
 interface GameContextType {
   isLoading: boolean;
+  isStaticMode: boolean;
   gameState: GameState;
   setGameMode: (mode: GameMode) => void;
   
@@ -52,6 +55,8 @@ interface GameContextType {
   generateMaxedDatacenter: () => Promise<void>;
   isGeneratingMaxed: boolean;
   refetchRacks: () => void;
+  addEquipmentToRack: (rackId: string, equipmentId: string, uStart: number) => boolean;
+  removeEquipmentFromRack: (rackId: string, equipmentInstanceId: string) => boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -109,23 +114,39 @@ const defaultInventory = {
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+  const useStaticData = true;
+  const staticRacks = useMemo(
+    () =>
+      generateProceduralRacks(500, staticEquipmentCatalog, {
+        seed: 42,
+        fillRateMultiplier: 2,
+        errorRate: 1,
+        tempBase: 20,
+        dense: true,
+      }),
+    []
+  );
+  const [staticRacksState, setStaticRacksState] = useState<Rack[]>(staticRacks);
 
   // Fetch initial game data
   const { data, isLoading, refetch: refetchInit } = useQuery<InitData>({
     queryKey: ["/api/init"],
     staleTime: 30000,
+    enabled: !useStaticData,
   });
 
   // Separate racks query for more granular updates
   const { data: racksData, refetch: refetchRacksQuery } = useQuery<Rack[]>({
     queryKey: ["/api/racks"],
     staleTime: 5000,
+    enabled: !useStaticData,
   });
 
   // Equipment catalog query
   const { data: equipmentData } = useQuery<Equipment[]>({
     queryKey: ["/api/equipment"],
     staleTime: 60000,
+    enabled: !useStaticData,
   });
 
   const refetchRacks = useCallback(() => {
@@ -137,6 +158,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [isGeneratingMaxed, setIsGeneratingMaxed] = useState(false);
   
   const generateMaxedDatacenter = useCallback(async () => {
+    if (useStaticData) {
+      return;
+    }
     setIsGeneratingMaxed(true);
     try {
       await apiRequest("POST", "/api/datacenter/generate-maxed", {});
@@ -211,21 +235,107 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     updateIncidentMutation.mutate({ id, status });
   }, [updateIncidentMutation]);
 
+  const addEquipmentToRack = useCallback(
+    (rackId: string, equipmentId: string, uStart: number) => {
+      if (!useStaticData) return false;
+      const equipment = staticEquipmentCatalog.find((item) => item.id === equipmentId);
+      if (!equipment) return false;
+      const uEnd = uStart + equipment.uHeight - 1;
+      let didAdd = false;
+      setStaticRacksState((prev) =>
+        prev.map((rack) => {
+          if (rack.id !== rackId) return rack;
+          if (uEnd > rack.totalUs) return rack;
+          const isOccupied = rack.slots.some(
+            (slot) =>
+              slot.uPosition >= uStart &&
+              slot.uPosition <= uEnd &&
+              slot.equipmentInstanceId
+          );
+          if (isOccupied) return rack;
+          didAdd = true;
+          const instanceId = `inst-${equipment.id}-${uStart}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+          const updatedSlots = rack.slots.map((slot) =>
+            slot.uPosition >= uStart && slot.uPosition <= uEnd
+              ? { ...slot, equipmentInstanceId: instanceId }
+              : slot
+          );
+          return {
+            ...rack,
+            slots: updatedSlots,
+            installedEquipment: [
+              ...rack.installedEquipment,
+              {
+                id: instanceId,
+                equipmentId: equipment.id,
+                uStart,
+                uEnd,
+                status: "online",
+                cpuLoad: Math.random() * 80 + 10,
+                memoryUsage: Math.random() * 70 + 20,
+                networkActivity: Math.random() * 90 + 5,
+              },
+            ],
+            currentPowerDraw: rack.currentPowerDraw + equipment.powerDraw,
+          };
+        })
+      );
+      return didAdd;
+    },
+    [useStaticData]
+  );
+
+  const removeEquipmentFromRack = useCallback(
+    (rackId: string, equipmentInstanceId: string) => {
+      if (!useStaticData) return false;
+      const equipmentById = new Map(staticEquipmentCatalog.map((item) => [item.id, item]));
+      let didRemove = false;
+      setStaticRacksState((prev) =>
+        prev.map((rack) => {
+          if (rack.id !== rackId) return rack;
+          const installed = rack.installedEquipment.find((item) => item.id === equipmentInstanceId);
+          if (!installed) return rack;
+          didRemove = true;
+          const equipment = equipmentById.get(installed.equipmentId);
+          const updatedSlots = rack.slots.map((slot) =>
+            slot.equipmentInstanceId === equipmentInstanceId
+              ? { ...slot, equipmentInstanceId: null }
+              : slot
+          );
+          return {
+            ...rack,
+            slots: updatedSlots,
+            installedEquipment: rack.installedEquipment.filter(
+              (item) => item.id !== equipmentInstanceId
+            ),
+            currentPowerDraw: Math.max(
+              0,
+              rack.currentPowerDraw - (equipment?.powerDraw ?? 0)
+            ),
+          };
+        })
+      );
+      return didRemove;
+    },
+    [useStaticData]
+  );
+
   const contextValue: GameContextType = {
     isLoading,
+    isStaticMode: useStaticData,
     gameState: {
       ...(data?.gameState ?? defaultGameState),
       currentMode: localGameMode,
     },
     setGameMode,
-    racks: racksData ?? data?.racks ?? [],
+    racks: useStaticData ? staticRacksState : racksData ?? data?.racks ?? [],
     servers: data?.servers ?? [],
     alerts: data?.alerts ?? [],
     incidents: data?.incidents ?? [],
     networkNodes: data?.networkNodes ?? [],
     networkLinks: data?.networkLinks ?? [],
     facilityMetrics: data?.facilityMetrics ?? defaultMetrics,
-    equipmentCatalog: equipmentData ?? [],
+    equipmentCatalog: useStaticData ? staticEquipmentCatalog : equipmentData ?? [],
     inventory: data?.inventory ?? defaultInventory,
     selectedRackId,
     setSelectedRackId,
@@ -236,6 +346,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     generateMaxedDatacenter,
     isGeneratingMaxed,
     refetchRacks,
+    addEquipmentToRack,
+    removeEquipmentFromRack,
   };
 
   return (
