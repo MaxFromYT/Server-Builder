@@ -5,6 +5,7 @@ import { GameHUD } from "@/components/3d/GameHUD";
 import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
 import { MiniMap } from "@/components/3d/MiniMap";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { WelcomeScreen } from "@/components/ui/welcome-screen";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Camera, Play, Sparkles, Grid3X3, Eye, EyeOff, RotateCcw } from "lucide-react";
@@ -19,9 +20,10 @@ export function DataCenter3D() {
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [showEffects, setShowEffects] = useState(true);
   const [showHUD, setShowHUD] = useState(true);
-  const [rackCount, setRackCount] = useState(42);
+  const [rackCount, setRackCount] = useState(1);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [qualityMode, setQualityMode] = useState<"low" | "high">("low");
+  const [showIntro, setShowIntro] = useState(true);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -49,12 +51,24 @@ export function DataCenter3D() {
     setQualityMode("low");
     setShowEffects(false);
     if (rackCount > 100) return;
-    const timeout = window.setTimeout(() => {
+    const qualityTimeout = window.setTimeout(() => {
       setQualityMode("high");
+    }, 5000);
+    const effectsTimeout = window.setTimeout(() => {
       setShowEffects(true);
-    }, 1500);
-    return () => window.clearTimeout(timeout);
+    }, 6500);
+    return () => {
+      window.clearTimeout(qualityTimeout);
+      window.clearTimeout(effectsTimeout);
+    };
   }, [isStaticMode, rackCount]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setShowIntro(false);
+    }, 5000);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   const handleUnlock = () => {
     if (isStaticMode) return;
@@ -106,6 +120,8 @@ export function DataCenter3D() {
         />
       )}
 
+      <WelcomeScreen isVisible={showIntro} />
+
       {isStaticMode && (
         <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
           <div className="text-cyan-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
@@ -123,14 +139,14 @@ export function DataCenter3D() {
             <Slider
               value={[rackCount]}
               onValueChange={(v) => setRackCount(v[0])}
-              min={42}
+              min={1}
               max={500}
               step={1}
               className="w-full"
               data-testid="slider-static-rack-count"
             />
             <div className="flex justify-between text-[9px] text-white/40 font-mono">
-              <span>42</span>
+              <span>1</span>
               <span>500</span>
             </div>
           </div>
@@ -336,13 +352,17 @@ export function DataCenter3D() {
         )}
       </div>
 
-      <div className="fixed bottom-4 left-4 z-40 text-[10px] text-white/30 font-mono space-y-0.5">
-        <div>Drag to rotate | Scroll to zoom | Click rack to inspect</div>
+      <div className="fixed bottom-4 left-4 z-40 space-y-1 rounded-lg border border-cyan-500/20 bg-black/50 px-3 py-2 font-mono text-[10px] text-white/70 shadow-[0_0_18px_rgba(34,211,238,0.2)]">
+        <div className="flex items-center gap-2 text-cyan-200/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          Systems nominal · Visual engine online
+        </div>
+        <div className="text-white/50">Drag to rotate · Scroll to zoom · Click rack to inspect</div>
         {isUnlocked && !isStaticMode && (
-          <div className="text-cyan-500/50">Admin mode: Use slider to scale datacenter</div>
+          <div className="text-cyan-400/70">Admin mode: Use sliders to scale the simulation.</div>
         )}
         {isStaticMode && (
-          <div className="text-cyan-400/70">Static editor: Select a rack to add/remove equipment.</div>
+          <div className="text-cyan-300/80">Static editor: Select a rack to add/remove equipment.</div>
         )}
       </div>
     </div>

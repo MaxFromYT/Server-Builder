@@ -162,7 +162,7 @@ function EnvironmentalDetails({ size }: { size: number }) {
     for (let x = -2; x <= 2; x++) {
       for (let z = -2; z <= 2; z++) {
         if (Math.random() > 0.7) {
-          positions.push([x * 6, 13, z * 6]);
+          positions.push([x * 6, 20, z * 6]);
         }
       }
     }
@@ -314,7 +314,7 @@ export function DatacenterScene({
             enableZoom={true}
             enableRotate={true}
             minDistance={3}
-            maxDistance={150}
+            maxDistance={80}
             minPolarAngle={0.1}
             maxPolarAngle={Math.PI / 2.1}
             target={[0, 3, 0]}
@@ -391,15 +391,6 @@ export function DatacenterScene({
         </div>
       )}
       
-      <div className="absolute bottom-4 left-4 flex flex-col gap-1 pointer-events-none opacity-50">
-        <div className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
-          <div className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse" />
-          SYSTEMS NOMINAL
-        </div>
-        <div className="text-[9px] text-white/30 font-mono uppercase tracking-tighter">
-          Visual Engine v4.2 // Active
-        </div>
-      </div>
     </div>
   );
 }
