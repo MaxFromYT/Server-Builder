@@ -667,7 +667,7 @@ export function DatacenterScene({
 
       {isUnlocked && (
         <div
-          className="absolute top-4 left-4 bg-black/60 backdrop-blur-md rounded-md px-3 py-2 border border-cyan-500/30"
+          className="fixed top-4 left-4 pointer-events-none select-none bg-black/60 backdrop-blur-md rounded-md px-3 py-2 border border-cyan-500/30"
           data-ui="true"
         >
           <div className="text-cyan-400 text-xs font-mono flex items-center gap-2">
