@@ -2,7 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { gameModeSchema, insertRackSchema, insertServerConfigSchema } from "@shared/schema";
+import {
+  gameModeSchema,
+  insertRackSchema,
+  insertServerConfigSchema,
+  incidentSchema,
+} from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -60,11 +65,20 @@ export async function registerRoutes(
   });
 
   app.patch("/api/racks/:id", async (req, res) => {
-    const rack = await storage.updateRack(req.params.id, req.body);
-    if (!rack) {
-      return res.status(404).json({ error: "Rack not found" });
+    try {
+      const schema = insertRackSchema.partial();
+      const validated = schema.parse(req.body);
+      const rack = await storage.updateRack(req.params.id, validated);
+      if (!rack) {
+        return res.status(404).json({ error: "Rack not found" });
+      }
+      res.json(rack);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid rack update", details: error.errors });
+      }
+      throw error;
     }
-    res.json(rack);
   });
 
   app.delete("/api/racks/:id", async (req, res) => {
@@ -144,11 +158,20 @@ export async function registerRoutes(
   });
 
   app.patch("/api/servers/:id", async (req, res) => {
-    const server = await storage.updateServer(req.params.id, req.body);
-    if (!server) {
-      return res.status(404).json({ error: "Server not found" });
+    try {
+      const schema = insertServerConfigSchema.partial();
+      const validated = schema.parse(req.body);
+      const server = await storage.updateServer(req.params.id, validated);
+      if (!server) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+      res.json(server);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid server update", details: error.errors });
+      }
+      throw error;
     }
-    res.json(server);
   });
 
   // Alerts
@@ -185,15 +208,20 @@ export async function registerRoutes(
   });
 
   app.patch("/api/incidents/:id/status", async (req, res) => {
-    const { status } = req.body;
-    if (!status) {
-      return res.status(400).json({ error: "Status is required" });
+    try {
+      const schema = z.object({ status: incidentSchema.shape.status });
+      const { status } = schema.parse(req.body);
+      const incident = await storage.updateIncidentStatus(req.params.id, status);
+      if (!incident) {
+        return res.status(404).json({ error: "Incident not found" });
+      }
+      res.json(incident);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid status update", details: error.errors });
+      }
+      throw error;
     }
-    const incident = await storage.updateIncidentStatus(req.params.id, status);
-    if (!incident) {
-      return res.status(404).json({ error: "Incident not found" });
-    }
-    res.json(incident);
   });
 
   // Network

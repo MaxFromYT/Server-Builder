@@ -86,9 +86,14 @@ const getSnapshotId = () =>
 export const loadSaveSlots = (): SaveSlot[] => {
   if (typeof window === "undefined") return [];
   const raw = safeParse<SaveSlot[]>(localStorage.getItem(SAVE_SLOTS_KEY), []);
-  return raw
-    .map((slot) => ({ ...slot, racks: sanitizeRacks(slot.racks) }))
-    .filter((slot) => slot.racks.length > 0 || slot.racks.length === 0);
+  return raw.flatMap((slot) => {
+    const sanitized = sanitizeRacks(slot.racks);
+    if (slot.racks.length > 0 && sanitized.length === 0) {
+      logWarning("Dropped invalid save slot payload.", undefined, { slotId: slot.id });
+      return [];
+    }
+    return [{ ...slot, racks: sanitized }];
+  });
 };
 
 export const saveSlot = (id: string, racks: Rack[], label?: string): SaveSlot => {
@@ -136,9 +141,14 @@ export const loadAutosaveSnapshots = (): AutosaveSnapshot[] => {
     localStorage.getItem(AUTOSAVE_KEY),
     []
   );
-  return snapshots
-    .map((snapshot) => ({ ...snapshot, racks: sanitizeRacks(snapshot.racks) }))
-    .filter((snapshot) => snapshot.racks.length > 0 || snapshot.racks.length === 0);
+  return snapshots.flatMap((snapshot) => {
+    const sanitized = sanitizeRacks(snapshot.racks);
+    if (snapshot.racks.length > 0 && sanitized.length === 0) {
+      logWarning("Dropped invalid autosave payload.", undefined, { snapshotId: snapshot.id });
+      return [];
+    }
+    return [{ ...snapshot, racks: sanitized }];
+  });
 };
 
 export const addAutosaveSnapshot = (racks: Rack[]): AutosaveSnapshot[] => {
