@@ -141,16 +141,6 @@ export function DatacenterFloor({ size, showHeatmap = false, theme = "dark" }: D
         </mesh>
       ))}
 
-      {Array.from({ length: 6 }).map((_, i) => (
-        <mesh key={`ceiling-strip-${i}`} position={[-size * 0.6 + i * (size * 0.24), ceilingHeight - 0.6, -size * 0.4]}>
-          <boxGeometry args={[3.5, 0.05, 0.18]} />
-          <meshStandardMaterial
-            color={isLight ? "#c7d7ea" : "#0b1220"}
-            emissive={isLight ? "#9ec7f0" : "#38bdf8"}
-            emissiveIntensity={isLight ? 0.8 : 1.4}
-          />
-        </mesh>
-      ))}
     </group>
   );
 }

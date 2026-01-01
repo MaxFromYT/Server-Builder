@@ -15,6 +15,7 @@ interface Rack3DProps {
   isSelected: boolean;
   onSelect: () => void;
   equipmentCatalog: Map<string, Equipment>;
+  forceSimplified?: boolean;
 }
 
 const RACK_WIDTH = 0.6;
@@ -197,7 +198,7 @@ function SimplifiedRack({ thermalStatus }: { thermalStatus: string }) {
   );
 }
 
-export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog }: Rack3DProps) {
+export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog, forceSimplified = false }: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
@@ -239,8 +240,9 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
   });
 
   const sortedEquipment = useMemo(() => {
+    if (forceSimplified) return [];
     return [...rack.installedEquipment].sort((a, b) => a.uStart - b.uStart);
-  }, [rack.installedEquipment]);
+  }, [forceSimplified, rack.installedEquipment]);
 
   const statusGlowIntensity = 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
 
@@ -262,7 +264,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
         document.body.style.cursor = "auto";
       }}
     >
-      {isDetailedView ? (
+      {isDetailedView && !forceSimplified ? (
         <>
           <RackFrame isSelected={isSelected} thermalStatus={thermalStatus} statusGlowIntensity={statusGlowIntensity} />
 
@@ -289,7 +291,7 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
         <SimplifiedRack thermalStatus={thermalStatus} />
       )}
 
-      {(hovered || isSelected) && (
+      {(hovered || isSelected) && !forceSimplified && (
         <group>
           <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[RACK_WIDTH + 0.1, RACK_DEPTH + 0.1]} />

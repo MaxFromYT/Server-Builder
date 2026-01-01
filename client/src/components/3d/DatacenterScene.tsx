@@ -26,6 +26,7 @@ interface DatacenterSceneProps {
   performanceMode?: boolean;
   qualityMode?: "low" | "high";
   visibleRacks?: Rack[];
+  forceSimplified?: boolean;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -110,6 +111,7 @@ interface RackGridProps {
   showHeatShimmer?: boolean;
   showNetworkMesh?: boolean;
   heatmapMode?: boolean;
+  forceSimplified?: boolean;
 }
 
 function RackGrid({
@@ -120,6 +122,7 @@ function RackGrid({
   showHeatShimmer = true,
   showNetworkMesh = true,
   heatmapMode = false,
+  forceSimplified = false,
 }: RackGridProps) {
   const rackSpacing = 2.0;
   const aisleSpacing = 4.0;
@@ -150,6 +153,7 @@ function RackGrid({
             isSelected={rack.id === selectedRackId}
             onSelect={() => onSelectRack(rack)}
             equipmentCatalog={equipmentCatalog}
+            forceSimplified={forceSimplified}
           />
           
           {showHeatShimmer && rack.exhaustTemp > 35 && (
@@ -269,6 +273,7 @@ export function DatacenterScene({
   performanceMode = false,
   qualityMode = "high",
   visibleRacks,
+  forceSimplified = false,
   proceduralOptions
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
@@ -394,6 +399,7 @@ export function DatacenterScene({
               showHeatShimmer={showEffects && !useLowEffects}
               showNetworkMesh={!useLowEffects}
               heatmapMode={showHeatmap}
+              forceSimplified={forceSimplified}
             />
           )}
           

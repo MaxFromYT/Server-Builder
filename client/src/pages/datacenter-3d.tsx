@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGame } from "@/lib/game-context";
 import { DatacenterScene } from "@/components/3d/DatacenterScene";
 import { GameHUD } from "@/components/3d/GameHUD";
@@ -26,6 +26,9 @@ export function DataCenter3D() {
   const [qualityMode, setQualityMode] = useState<"low" | "high">("low");
   const [showIntro, setShowIntro] = useState(true);
   const [showOverlays, setShowOverlays] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
+  const [fastRamp, setFastRamp] = useState(false);
+  const fastRampTimer = useRef<number | null>(null);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -36,6 +39,7 @@ export function DataCenter3D() {
 
   const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
   const selectedRack = visibleRacks?.find(r => r.id === selectedRackId) || null;
+  const effectiveEffects = showEffects && !fastRamp;
 
   useEffect(() => {
     if (isStaticMode) {
@@ -71,6 +75,26 @@ export function DataCenter3D() {
     setSelectedRackId(rack?.id || null);
   };
 
+  const handleRackCountChange = (next: number) => {
+    setSliderValue(next);
+    setRackCount(next);
+    setFastRamp(true);
+    if (fastRampTimer.current) {
+      window.clearTimeout(fastRampTimer.current);
+    }
+    fastRampTimer.current = window.setTimeout(() => {
+      setFastRamp(false);
+    }, 500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (fastRampTimer.current) {
+        window.clearTimeout(fastRampTimer.current);
+      }
+    };
+  }, []);
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -82,19 +106,22 @@ export function DataCenter3D() {
         selectedRackId={selectedRackId}
         isUnlocked={isUnlocked}
         cameraMode={cameraMode}
-        showEffects={showEffects}
+        showEffects={effectiveEffects}
         showHUD={showHUD}
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
-        performanceMode={isStaticMode && qualityMode === "low"}
+        performanceMode={isStaticMode && (qualityMode === "low" || fastRamp)}
         qualityMode={qualityMode}
         visibleRacks={visibleRacks}
+        forceSimplified={isStaticMode && fastRamp}
       />
       
-      <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
+      {showOverlays && !focusMode && (
+        <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
+      )}
       
-      {showOverlays && (
+      {showOverlays && !focusMode && (
         <div className="fixed top-20 right-4 z-40">
           <MiniMap 
             racks={visibleRacks || []} 
@@ -105,7 +132,7 @@ export function DataCenter3D() {
         </div>
       )}
       
-      {selectedRack && showOverlays && (
+      {selectedRack && showOverlays && !focusMode && (
         <RackDetailPanel
           rack={selectedRack}
           onClose={() => setSelectedRackId(null)}
@@ -115,7 +142,7 @@ export function DataCenter3D() {
 
       <WelcomeScreen isVisible={showIntro} />
 
-      {isStaticMode && showOverlays && !selectedRack && (
+      {isStaticMode && showOverlays && !focusMode && !selectedRack && (
         <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
           <div className="text-cyan-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -131,10 +158,7 @@ export function DataCenter3D() {
             </div>
             <Slider
               value={[sliderValue]}
-              onValueChange={(v) => {
-                setSliderValue(v[0]);
-                setRackCount(v[0]);
-              }}
+              onValueChange={(v) => handleRackCountChange(v[0])}
               min={1}
               max={500}
               step={1}
@@ -184,7 +208,7 @@ export function DataCenter3D() {
         </div>
       )}
 
-      {showOverlays && (
+      {showOverlays && !focusMode && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none" data-testid="game-title">
           <h1 className="font-display text-2xl font-bold tracking-wider text-white drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             HYPERSCALE
@@ -282,6 +306,16 @@ export function DataCenter3D() {
                   {showOverlays ? <Eye className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
                   Panels
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setFocusMode(!focusMode)}
+                  className={`text-xs ${focusMode ? 'bg-purple-500/20 text-purple-200' : 'text-white/50'}`}
+                  data-testid="button-toggle-focus"
+                >
+                  {focusMode ? <Eye className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
+                  Focus
+                </Button>
               </div>
             </div>
 
@@ -365,7 +399,7 @@ export function DataCenter3D() {
         )}
       </div>
 
-      {showOverlays && (
+      {showOverlays && !focusMode && (
         <div className="fixed bottom-4 left-4 z-40 space-y-1 rounded-lg border border-cyan-500/20 bg-black/50 px-3 py-2 font-mono text-[10px] text-white/70 shadow-[0_0_18px_rgba(34,211,238,0.2)]">
           <div className="flex items-center gap-2 text-cyan-200/80">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
