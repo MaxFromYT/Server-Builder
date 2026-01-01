@@ -139,6 +139,10 @@ function RackFrame({ isSelected, thermalStatus, statusGlowIntensity }: { isSelec
           emissiveIntensity={statusGlowIntensity}
         />
       </mesh>
+      <mesh position={[0, RACK_HEIGHT - 0.06, RACK_DEPTH / 2 + 0.01]}>
+        <boxGeometry args={[RACK_WIDTH - 0.1, 0.03, 0.01]} />
+        <meshBasicMaterial color={statusGlowHex} />
+      </mesh>
 
       {[0.2, 0.4, 0.6, 0.8].map((y, i) => (
         <mesh key={`vent-${i}`} position={[0, y * RACK_HEIGHT + 0.1, -RACK_DEPTH / 2 + 0.02]}>
@@ -181,13 +185,13 @@ function SimplifiedRack({ thermalStatus }: { thermalStatus: string }) {
           roughness={0.4}
         />
       </mesh>
+      <mesh position={[0, RACK_HEIGHT - 0.05, RACK_DEPTH / 2 + 0.01]}>
+        <boxGeometry args={[RACK_WIDTH - 0.08, 0.025, 0.01]} />
+        <meshBasicMaterial color={statusGlowHex} />
+      </mesh>
       <mesh position={[0, 0.02, RACK_DEPTH / 2 + 0.01]}>
         <boxGeometry args={[RACK_WIDTH - 0.1, 0.015, 0.003]} />
-        <meshStandardMaterial
-          color={statusGlowHex}
-          emissive={statusGlowHex}
-          emissiveIntensity={1}
-        />
+        <meshBasicMaterial color={statusGlowHex} />
       </mesh>
     </group>
   );

@@ -5,9 +5,10 @@ import { useGame } from "@/lib/game-context";
 interface DatacenterFloorProps {
   size: number;
   showHeatmap?: boolean;
+  theme?: "dark" | "light";
 }
 
-export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorProps) {
+export function DatacenterFloor({ size, showHeatmap = false, theme = "dark" }: DatacenterFloorProps) {
   const floorRef = useRef<THREE.Mesh>(null);
   const { racks } = useGame();
   const ceilingHeight = 22;
@@ -18,11 +19,11 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
     canvas.height = 128;
     const ctx = canvas.getContext('2d')!;
     
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = isLight ? '#cbd5f5' : '#1e293b';
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, 128, 128);
     
-    ctx.strokeStyle = '#334155';
+    ctx.strokeStyle = isLight ? '#94a3d8' : '#334155';
     ctx.lineWidth = 1;
     ctx.strokeRect(32, 32, 64, 64);
 
@@ -115,6 +116,30 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
         <sphereGeometry args={[size * 1.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial color="#0a0e17" metalness={0.2} roughness={0.9} side={THREE.BackSide} />
       </mesh>
+
+      {Array.from({ length: 4 }).map((_, i) => (
+        <mesh key={`ceiling-panel-${i}`} position={[(i - 1.5) * 6, ceilingHeight - 1.2, 0]}>
+          <boxGeometry args={[4.5, 0.1, 2]} />
+          <meshStandardMaterial
+            color={isLight ? "#dfe7f2" : "#111827"}
+            emissive={isLight ? "#d4e4f5" : "#0d2b55"}
+            emissiveIntensity={isLight ? 0.2 : 0.5}
+            metalness={0.4}
+            roughness={0.35}
+          />
+        </mesh>
+      ))}
+
+      {Array.from({ length: 6 }).map((_, i) => (
+        <mesh key={`ceiling-strip-${i}`} position={[-size * 0.6 + i * (size * 0.24), ceilingHeight - 0.6, -size * 0.4]}>
+          <boxGeometry args={[3.5, 0.05, 0.18]} />
+          <meshStandardMaterial
+            color={isLight ? "#c7d7ea" : "#0b1220"}
+            emissive={isLight ? "#9ec7f0" : "#38bdf8"}
+            emissiveIntensity={isLight ? 0.8 : 1.4}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }

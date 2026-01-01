@@ -2,6 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, PerspectiveCamera, Stars } from "@react-three/drei";
 import { Suspense, useState, useRef, useMemo, useCallback } from "react";
 import { useGame } from "@/lib/game-context";
+import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
 import { DatacenterFloor } from "./DatacenterFloor";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
@@ -36,7 +37,7 @@ interface DatacenterSceneProps {
 function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean }) {
   return (
     <>
-      <ambientLight intensity={0.15} color="#4466aa" />
+      <ambientLight intensity={isLight ? 0.35 : 0.15} color={isLight ? "#cdd8ef" : "#4466aa"} />
       <directionalLight
         position={[60, 100, 40]}
         intensity={performanceMode ? 0.8 : 1.0}
@@ -74,18 +75,18 @@ function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean
       )}
       <directionalLight
         position={[-40, 50, -30]}
-        intensity={0.3}
-        color="#6688ff"
+        intensity={isLight ? 0.45 : 0.3}
+        color={isLight ? "#d1e2ff" : "#6688ff"}
       />
       <directionalLight
         position={[0, 20, -50]}
-        intensity={0.2}
-        color="#ff8844"
+        intensity={isLight ? 0.25 : 0.2}
+        color={isLight ? "#ffd2b3" : "#ff8844"}
       />
       <hemisphereLight
-        color="#88aaff"
-        groundColor="#442200"
-        intensity={0.15}
+        color={isLight ? "#cfe2ff" : "#88aaff"}
+        groundColor={isLight ? "#e9eef7" : "#442200"}
+        intensity={isLight ? 0.3 : 0.15}
       />
     </>
   );
@@ -264,8 +265,10 @@ export function DatacenterScene({
   proceduralOptions
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
+  const { theme } = useTheme();
   const controlsRef = useRef<any>(null);
   const [autoOrbit, setAutoOrbit] = useState(cameraMode === "auto");
+  const isLight = theme === "light";
 
   const equipmentMap = useMemo(() => {
     const map = new Map<string, Equipment>();
@@ -316,10 +319,10 @@ export function DatacenterScene({
           toneMappingExposure: 1.0,
           powerPreference: "high-performance"
         }}
-        style={{ background: "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)" }}
+        style={{ background: isLight ? "linear-gradient(180deg, #edf4ff 0%, #e5ebf7 40%, #d7dfea 100%)" : "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)" }}
         onPointerMissed={handlePointerMissed}
       >
-        <fog attach="fog" args={["#080a10", 20, 120]} />
+        <fog attach="fog" args={[isLight ? "#dfe7f2" : "#080a10", 20, 120]} />
         
         <PerspectiveCamera
           makeDefault
@@ -373,7 +376,7 @@ export function DatacenterScene({
             />
           )}
           
-          <RaisedFloor size={floorSize} showHeatmap={showHeatmap} />
+          <RaisedFloor size={floorSize} showHeatmap={showHeatmap} theme={theme} />
           
           {displayRacks.length > 0 && (
             <RackGrid

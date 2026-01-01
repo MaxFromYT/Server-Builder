@@ -112,7 +112,7 @@ export function DataCenter3D() {
         />
       </div>
       
-      {selectedRack && (
+      {selectedRack && showOverlays && (
         <RackDetailPanel
           rack={selectedRack}
           onClose={() => setSelectedRackId(null)}
@@ -268,6 +268,21 @@ export function DataCenter3D() {
                   data-testid="button-toggle-heatmap"
                 >
                   Heatmap
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-white/60 text-[10px] font-mono uppercase">Interface</div>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowOverlays(!showOverlays)}
+                  className={`text-xs ${showOverlays ? 'bg-cyan-500/20 text-cyan-300' : 'text-white/50'}`}
+                  data-testid="button-toggle-overlays"
+                >
+                  {showOverlays ? <Eye className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
+                  Panels
                 </Button>
               </div>
             </div>
