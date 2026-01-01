@@ -237,6 +237,16 @@ export function DatacenterScene({
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2 + 15, maxRow * 4 + 15, 25);
 
+  const cinematicWaypoints = useMemo(() => [
+    { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    { position: [floorSize * 0.5, 5, floorSize * 0.5] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    { position: [0, 3, floorSize * 0.4] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    { position: [-floorSize * 0.5, 8, floorSize * 0.3] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    { position: [-floorSize * 0.8, 15, -floorSize * 0.3] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    { position: [0, 25, -floorSize * 0.7] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+    { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+  ], [floorSize]);
+
   const handlePointerMissed = useCallback(() => {
     onSelectRack(null);
   }, [onSelectRack]);
@@ -286,7 +296,7 @@ export function DatacenterScene({
         
         {cameraMode === "cinematic" && (
           <CinematicFlythrough
-            waypoints={CINEMATIC_WAYPOINTS}
+            waypoints={cinematicWaypoints}
             speed={0.5}
             loop
             active
@@ -345,12 +355,14 @@ export function DatacenterScene({
         </div>
       )}
       
-      <div className="absolute bottom-4 left-4 flex gap-2">
-        <CameraModeButton 
-          active={cameraMode === "orbit"} 
-          label="FREE CAM"
-          onClick={() => {}}
-        />
+      <div className="absolute bottom-4 left-4 flex flex-col gap-1 pointer-events-none opacity-50">
+        <div className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+          <div className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse" />
+          SYSTEMS NOMINAL
+        </div>
+        <div className="text-[9px] text-white/30 font-mono uppercase tracking-tighter">
+          Visual Engine v4.2 // Active
+        </div>
       </div>
     </div>
   );

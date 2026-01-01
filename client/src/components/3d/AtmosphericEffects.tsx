@@ -37,8 +37,10 @@ export function DustMotes({ count = 500, size = 15 }: { count?: number; size?: n
       
       if (posArray[i * 3 + 1] > 12) posArray[i * 3 + 1] = 0;
       if (posArray[i * 3 + 1] < 0) posArray[i * 3 + 1] = 12;
-      if (Math.abs(posArray[i * 3]) > size) posArray[i * 3] *= -0.9;
-      if (Math.abs(posArray[i * 3 + 2]) > size) posArray[i * 3 + 2] *= -0.9;
+      if (posArray[i * 3] > size) posArray[i * 3] = -size;
+      if (posArray[i * 3] < -size) posArray[i * 3] = size;
+      if (posArray[i * 3 + 2] > size) posArray[i * 3 + 2] = -size;
+      if (posArray[i * 3 + 2] < -size) posArray[i * 3 + 2] = size;
     }
     
     geo.attributes.position.needsUpdate = true;
@@ -217,14 +219,16 @@ export function VolumetricLight({
   const shaderMaterial = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
+      uPosition: { value: new THREE.Vector3(...position) },
       uColor: { value: new THREE.Color(color) },
       uIntensity: { value: intensity },
     },
     vertexShader: `
       varying vec2 vUv;
+      uniform vec3 uPosition;
       void main() {
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position + uPosition, 1.0);
       }
     `,
     fragmentShader: `

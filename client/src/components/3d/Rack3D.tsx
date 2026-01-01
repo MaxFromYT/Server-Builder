@@ -89,7 +89,7 @@ function RackFrame({ isSelected, thermalStatus }: { isSelected: boolean; thermal
         <meshStandardMaterial color="#0a0c10" metalness={0.3} roughness={0.7} />
       </mesh>
 
-      <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.003]}>
+      <mesh position={[0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.003]} receiveShadow>
         <planeGeometry args={[RACK_WIDTH - 0.06, RACK_HEIGHT - 0.04]} />
         <meshPhysicalMaterial
           color="#1a2030"
