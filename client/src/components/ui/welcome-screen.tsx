@@ -77,14 +77,23 @@ export function WelcomeScreen({ isVisible }: WelcomeScreenProps) {
             {sceneLabels.map((scene, index) => (
               <div
                 key={scene.title}
-                className={`rounded-lg border px-3 py-3 text-left text-[10px] font-mono transition-all ${
+                className={`relative overflow-hidden rounded-xl border px-3 py-3 text-left text-[10px] font-mono transition-all ${
                   index === sceneIndex
                     ? "border-cyan-300/60 bg-cyan-500/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
                     : "border-white/10 bg-white/5 text-white/60"
                 }`}
               >
+                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.02),rgba(34,211,238,0.1),rgba(255,255,255,0.02))] opacity-70 animate-stream-sheen" />
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-white/5" />
+                </div>
                 <div className="uppercase tracking-[0.2em]">{scene.title}</div>
                 <div className="mt-1 text-[9px] text-white/50">{scene.subtitle}</div>
+                <div className="mt-3 flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] text-cyan-200/70">
+                  <span className={`h-1.5 w-1.5 rounded-full ${index === sceneIndex ? "bg-emerald-400 animate-pulse" : "bg-white/20"}`} />
+                  Live stream
+                </div>
               </div>
             ))}
           </div>

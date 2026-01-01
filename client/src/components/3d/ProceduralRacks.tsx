@@ -134,7 +134,7 @@ export function generateProceduralRacks(
       exhaustTemp: Math.round((inletTemp + heatLoad) * 10) / 10,
       airflowRestriction: Math.round(random() * 30),
       positionX: col,
-      positionY: row + aisleOffset * 0.5,
+      positionY: row,
     });
   }
   

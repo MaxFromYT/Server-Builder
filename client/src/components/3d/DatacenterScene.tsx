@@ -109,6 +109,7 @@ interface RackGridProps {
   equipmentCatalog: Map<string, Equipment>;
   showHeatShimmer?: boolean;
   showNetworkMesh?: boolean;
+  heatmapMode?: boolean;
 }
 
 function RackGrid({
@@ -118,6 +119,7 @@ function RackGrid({
   equipmentCatalog,
   showHeatShimmer = true,
   showNetworkMesh = true,
+  heatmapMode = false,
 }: RackGridProps) {
   const rackSpacing = 2.0;
   const aisleSpacing = 4.0;
@@ -161,9 +163,13 @@ function RackGrid({
       
       {showNetworkMesh && (
         <DataCenterNetworkMesh
-          racks={rackPositions.map(({ position }) => ({ position }))}
-          maxConnections={Math.min(50, rackPositions.length * 2)}
-          maxStreams={15}
+          racks={rackPositions.map(({ position, rack }) => ({
+            position,
+            heat: rack.exhaustTemp,
+          }))}
+          maxConnections={Math.min(60, rackPositions.length * 2)}
+          maxStreams={Math.min(24, Math.floor(rackPositions.length / 2))}
+          heatmapInfluence={heatmapMode ? 1 : 0}
         />
       )}
     </group>
@@ -387,6 +393,7 @@ export function DatacenterScene({
               equipmentCatalog={equipmentMap}
               showHeatShimmer={showEffects && !useLowEffects}
               showNetworkMesh={!useLowEffects}
+              heatmapMode={showHeatmap}
             />
           )}
           

@@ -21,6 +21,7 @@ export function DataCenter3D() {
   const [showEffects, setShowEffects] = useState(true);
   const [showHUD, setShowHUD] = useState(true);
   const [rackCount, setRackCount] = useState(1);
+  const [sliderValue, setSliderValue] = useState(1);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [qualityMode, setQualityMode] = useState<"low" | "high">("low");
   const [showIntro, setShowIntro] = useState(true);
@@ -129,8 +130,11 @@ export function DataCenter3D() {
               <span className="text-cyan-300">{rackCount}</span>
             </div>
             <Slider
-              value={[rackCount]}
-              onValueChange={(v) => setRackCount(v[0])}
+              value={[sliderValue]}
+              onValueChange={(v) => {
+                setSliderValue(v[0]);
+                setRackCount(v[0]);
+              }}
               min={1}
               max={500}
               step={1}
