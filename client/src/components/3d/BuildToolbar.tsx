@@ -23,6 +23,13 @@ const modeButtons = [
   { id: "duplicate", label: "Duplicate", icon: Copy },
 ] as const;
 
+function isTypingTarget(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName?.toLowerCase();
+  return tag === "input" || tag === "textarea" || el.isContentEditable;
+}
+
 export function BuildToolbar() {
   const {
     mode,
@@ -43,33 +50,47 @@ export function BuildToolbar() {
     redo,
   } = useBuild();
 
-  // Toggle visibility
   const [visible, setVisible] = useState(true);
   const toggleToolbar = () => setVisible((v) => !v);
 
-  // Keyboard shortcut (press "T" to toggle)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (isTypingTarget(e.target)) return;
       if (e.key.toLowerCase() === "t") setVisible((v) => !v);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Stops pointer events from reaching the canvas (and OrbitControls)
+  const stopToCanvas = (e: React.PointerEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <>
       {/* Toggle button */}
       <button
+        type="button"
+        data-ui="true"
+        onPointerDownCapture={stopToCanvas}
+        onPointerMoveCapture={stopToCanvas}
         onClick={toggleToolbar}
-        className="fixed top-2 right-4 z-50 rounded-lg bg-cyan-500/20 px-2 py-1 text-xs font-mono text-cyan-100 hover:bg-cyan-500/40 backdrop-blur-sm border border-cyan-500/30"
+        className="fixed top-2 right-4 z-50 select-none rounded-lg border border-cyan-500/30 bg-cyan-500/20 px-2 py-1 text-xs font-mono text-cyan-100 backdrop-blur-sm hover:bg-cyan-500/40"
       >
         {visible ? "Hide Toolbar (T)" : "Show Toolbar (T)"}
       </button>
 
       {visible && (
         <>
-          {/* Top toolbar (centered, moved down below title) */}
-          <div className="fixed top-14 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur">
+          {/* Top toolbar */}
+          <div
+            data-ui="true"
+            onPointerDownCapture={stopToCanvas}
+            onPointerMoveCapture={stopToCanvas}
+            className="fixed top-14 left-1/2 z-50 flex -translate-x-1/2 select-none items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur"
+          >
             {modeButtons.map((button) => {
               const Icon = button.icon;
               return (
@@ -89,8 +110,11 @@ export function BuildToolbar() {
                 </Button>
               );
             })}
+
             <div className="mx-1 h-6 w-px bg-white/10" />
-            <div className="flex items-center gap-2 text-[10px] font-mono text-white/50">
+
+            {/* Pure display text, never clickable, never selectable */}
+            <div className="pointer-events-none flex select-none items-center gap-2 text-[10px] font-mono text-white/50">
               <span className="rounded-full bg-white/10 px-2 py-1 uppercase tracking-widest">
                 {selectedIds.length} selected
               </span>
@@ -98,8 +122,13 @@ export function BuildToolbar() {
             </div>
           </div>
 
-          {/* Bottom toolbar (centered, horizontal) */}
-          <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 flex-row gap-3 rounded-2xl border border-cyan-500/30 bg-black/70 p-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur">
+          {/* Bottom toolbar */}
+          <div
+            data-ui="true"
+            onPointerDownCapture={stopToCanvas}
+            onPointerMoveCapture={stopToCanvas}
+            className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 select-none flex-row gap-3 rounded-2xl border border-cyan-500/30 bg-black/70 p-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur"
+          >
             <ToolbarButton
               label="Multi"
               icon={Layers}
@@ -112,7 +141,9 @@ export function BuildToolbar() {
               active={snapEnabled}
               onClick={toggleSnap}
             />
+
             <div className="h-6 w-px bg-white/10" />
+
             <ToolbarButton
               label="Copy"
               icon={ClipboardCopy}
@@ -137,7 +168,9 @@ export function BuildToolbar() {
               onClick={deleteSelection}
               disabled={selectedIds.length === 0}
             />
+
             <div className="h-6 w-px bg-white/10" />
+
             <ToolbarButton label="Undo" icon={Undo2} onClick={undo} disabled={!canUndo} />
             <ToolbarButton label="Redo" icon={Redo2} onClick={redo} disabled={!canRedo} />
           </div>
@@ -162,6 +195,7 @@ function ToolbarButton({
 }) {
   return (
     <Button
+      type="button"
       size="icon"
       variant="ghost"
       onClick={onClick}
