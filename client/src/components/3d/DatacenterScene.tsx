@@ -1,11 +1,12 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, PerspectiveCamera, Stars } from "@react-three/drei";
+import { OrbitControls, Environment, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
 import { Suspense, useState, useRef, useMemo, useCallback } from "react";
 import { useGame } from "@/lib/game-context";
+import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
 import { DatacenterFloor } from "./DatacenterFloor";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
-import { RaisedFloor, CableTrays, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
+import { RaisedFloor, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
 import { DataCenterNetworkMesh, NetworkTrafficStream } from "./NetworkTraffic";
 import { HolographicHUD, FloatingMetric } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
@@ -22,6 +23,10 @@ interface DatacenterSceneProps {
   showHUD?: boolean;
   rackCount?: number;
   showHeatmap?: boolean;
+  performanceMode?: boolean;
+  qualityMode?: "low" | "high";
+  visibleRacks?: Rack[];
+  forceSimplified?: boolean;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -30,16 +35,24 @@ interface DatacenterSceneProps {
   };
 }
 
-function AdvancedLights() {
+function AdvancedLights({ performanceMode = false, theme = "dark" }: { performanceMode?: boolean; theme?: "dark" | "light" }) {
+  const isLight = theme === "light";
   return (
     <>
-      <ambientLight intensity={0.15} color="#4466aa" />
+      <ambientLight intensity={isLight ? 0.55 : 0.25} color={isLight ? "#dbe8ff" : "#5b79c7"} />
+      {!performanceMode && (
+        <>
+          <pointLight position={[0, 18, 0]} intensity={isLight ? 0.8 : 0.6} color={isLight ? "#d9f0ff" : "#8bbcff"} />
+          <pointLight position={[20, 12, 20]} intensity={isLight ? 0.6 : 0.4} color={isLight ? "#e8f4ff" : "#7fd4ff"} />
+          <pointLight position={[-20, 12, -20]} intensity={isLight ? 0.6 : 0.4} color={isLight ? "#e8f4ff" : "#7fd4ff"} />
+        </>
+      )}
       <directionalLight
         position={[60, 100, 40]}
-        intensity={1.0}
-        color="#ffffff"
-        castShadow
-        shadow-mapSize={[2048, 2048]}
+        intensity={performanceMode ? 0.8 : isLight ? 1.1 : 1.0}
+        color={isLight ? "#f4f7ff" : "#ffffff"}
+        castShadow={!performanceMode}
+        shadow-mapSize={performanceMode ? [1024, 1024] : [2048, 2048]}
         shadow-camera-far={200}
         shadow-camera-left={-80}
         shadow-camera-right={80}
@@ -47,20 +60,42 @@ function AdvancedLights() {
         shadow-camera-bottom={-80}
         shadow-bias={-0.0001}
       />
+      {!performanceMode && (
+        <>
+          <spotLight
+            position={[0, 35, 10]}
+            angle={0.4}
+            penumbra={0.6}
+            intensity={isLight ? 0.7 : 0.6}
+            color={isLight ? "#b4d6ff" : "#8bbcff"}
+            castShadow
+            shadow-mapSize={[1024, 1024]}
+          />
+          <spotLight
+            position={[0, 30, -12]}
+            angle={0.45}
+            penumbra={0.6}
+            intensity={isLight ? 0.6 : 0.5}
+            color={isLight ? "#a5f3fc" : "#7ee7ff"}
+            castShadow
+            shadow-mapSize={[1024, 1024]}
+          />
+        </>
+      )}
       <directionalLight
         position={[-40, 50, -30]}
-        intensity={0.3}
-        color="#6688ff"
+        intensity={isLight ? 0.45 : 0.3}
+        color={isLight ? "#d1e2ff" : "#6688ff"}
       />
       <directionalLight
         position={[0, 20, -50]}
-        intensity={0.2}
-        color="#ff8844"
+        intensity={isLight ? 0.25 : 0.2}
+        color={isLight ? "#ffd2b3" : "#ff8844"}
       />
       <hemisphereLight
-        color="#88aaff"
-        groundColor="#442200"
-        intensity={0.15}
+        color={isLight ? "#cfe2ff" : "#88aaff"}
+        groundColor={isLight ? "#e9eef7" : "#442200"}
+        intensity={isLight ? 0.3 : 0.15}
       />
     </>
   );
@@ -81,11 +116,23 @@ interface RackGridProps {
   onSelectRack: (rack: Rack | null) => void;
   equipmentCatalog: Map<string, Equipment>;
   showHeatShimmer?: boolean;
+  showNetworkMesh?: boolean;
+  heatmapMode?: boolean;
+  forceSimplified?: boolean;
 }
 
-function RackGrid({ racks, selectedRackId, onSelectRack, equipmentCatalog, showHeatShimmer = true }: RackGridProps) {
-  const rackSpacing = 2.0;
-  const aisleSpacing = 4.0;
+function RackGrid({
+  racks,
+  selectedRackId,
+  onSelectRack,
+  equipmentCatalog,
+  showHeatShimmer = true,
+  showNetworkMesh = true,
+  heatmapMode = false,
+  forceSimplified = false,
+}: RackGridProps) {
+  const rackSpacing = 2.8;
+  const aisleSpacing = 5.2;
 
   const maxCol = Math.max(...racks.map(r => r.positionX), 0);
   const maxRow = Math.max(...racks.map(r => r.positionY), 0);
@@ -113,6 +160,7 @@ function RackGrid({ racks, selectedRackId, onSelectRack, equipmentCatalog, showH
             isSelected={rack.id === selectedRackId}
             onSelect={() => onSelectRack(rack)}
             equipmentCatalog={equipmentCatalog}
+            forceSimplified={forceSimplified}
           />
           
           {showHeatShimmer && rack.exhaustTemp > 35 && (
@@ -124,9 +172,17 @@ function RackGrid({ racks, selectedRackId, onSelectRack, equipmentCatalog, showH
         </group>
       ))}
       
-      <DataCenterNetworkMesh
-        racks={rackPositions.map(({ position }) => ({ position }))}
-      />
+      {showNetworkMesh && (
+        <DataCenterNetworkMesh
+          racks={rackPositions.map(({ position, rack }) => ({
+            position,
+            heat: rack.exhaustTemp,
+          }))}
+          maxConnections={Math.min(60, rackPositions.length * 2)}
+          maxStreams={Math.min(24, Math.floor(rackPositions.length / 2))}
+          heatmapInfluence={heatmapMode ? 1 : 0}
+        />
+      )}
     </group>
   );
 }
@@ -147,7 +203,7 @@ function EnvironmentalDetails({ size }: { size: number }) {
     for (let x = -2; x <= 2; x++) {
       for (let z = -2; z <= 2; z++) {
         if (Math.random() > 0.7) {
-          positions.push([x * 6, 13, z * 6]);
+          positions.push([x * 6, 20, z * 6]);
         }
       }
     }
@@ -156,8 +212,6 @@ function EnvironmentalDetails({ size }: { size: number }) {
 
   return (
     <group>
-      <CableTrays length={size * 1.5} rows={3} />
-      
       {cracPositions.map((pos, i) => (
         <CRACUnit key={`crac-${i}`} position={pos} />
       ))}
@@ -221,11 +275,17 @@ export function DatacenterScene({
   showHUD = true,
   rackCount = 9,
   showHeatmap = false,
+  performanceMode = false,
+  qualityMode = "high",
+  visibleRacks,
+  forceSimplified = false,
   proceduralOptions
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog } = useGame();
+  const { theme } = useTheme();
   const controlsRef = useRef<any>(null);
   const [autoOrbit, setAutoOrbit] = useState(cameraMode === "auto");
+  const isLight = theme === "light";
 
   const equipmentMap = useMemo(() => {
     const map = new Map<string, Equipment>();
@@ -237,15 +297,19 @@ export function DatacenterScene({
 
   // Fix: Move proceduralOptions check inside useMemo where it's used
   const displayRacks = useMemo(() => {
+    if (visibleRacks) {
+      return visibleRacks;
+    }
     if (isUnlocked && rackCount > 9 && equipmentCatalog?.length > 0) {
       return generateProceduralRacks(rackCount, equipmentCatalog, proceduralOptions);
     }
     return racks || [];
-  }, [racks, isUnlocked, rackCount, equipmentCatalog, proceduralOptions]);
+  }, [equipmentCatalog, isUnlocked, rackCount, racks, proceduralOptions, visibleRacks]);
 
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
-  const floorSize = Math.max(maxCol * 2 + 15, maxRow * 4 + 15, 25);
+  const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
+  const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(() => [
     { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
@@ -264,17 +328,18 @@ export function DatacenterScene({
   return (
     <div className="w-full h-full relative" data-testid="datacenter-scene-3d">
       <Canvas
-        shadows
+        shadows={!performanceMode}
+        dpr={performanceMode ? 1 : [1, 2]}
         gl={{ 
-          antialias: true, 
+          antialias: !performanceMode, 
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.0,
           powerPreference: "high-performance"
         }}
-        style={{ background: "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)" }}
+        style={{ background: isLight ? "linear-gradient(180deg, #edf4ff 0%, #e5ebf7 40%, #d7dfea 100%)" : "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)" }}
         onPointerMissed={handlePointerMissed}
       >
-        <fog attach="fog" args={["#080a10", 20, 120]} />
+        <fog attach="fog" args={[isLight ? "#dfe7f2" : "#080a10", 20, 120]} />
         
         <PerspectiveCamera
           makeDefault
@@ -291,7 +356,7 @@ export function DatacenterScene({
             enableZoom={true}
             enableRotate={true}
             minDistance={3}
-            maxDistance={150}
+            maxDistance={80}
             minPolarAngle={0.1}
             maxPolarAngle={Math.PI / 2.1}
             target={[0, 3, 0]}
@@ -314,19 +379,21 @@ export function DatacenterScene({
         )}
 
         <Suspense fallback={<LoadingFallback />}>
-          <AdvancedLights />
+          <AdvancedLights performanceMode={useLowEffects} theme={theme} />
           
-          <Stars
-            radius={200}
-            depth={100}
-            count={1000}
-            factor={2}
-            saturation={0.5}
-            fade
-            speed={0.5}
-          />
+          {!useLowEffects && (
+            <Stars
+              radius={200}
+              depth={100}
+              count={1000}
+              factor={2}
+              saturation={0.5}
+              fade
+              speed={0.5}
+            />
+          )}
           
-          <RaisedFloor size={floorSize} showHeatmap={showHeatmap} />
+          <RaisedFloor size={floorSize} showHeatmap={showHeatmap} theme={theme} />
           
           {displayRacks.length > 0 && (
             <RackGrid
@@ -334,13 +401,16 @@ export function DatacenterScene({
               selectedRackId={selectedRackId}
               onSelectRack={onSelectRack}
               equipmentCatalog={equipmentMap}
-              showHeatShimmer={showEffects}
+              showHeatShimmer={showEffects && !useLowEffects}
+              showNetworkMesh={!useLowEffects}
+              heatmapMode={showHeatmap}
+              forceSimplified={forceSimplified}
             />
           )}
           
-          <EnvironmentalDetails size={floorSize} />
+          {!useLowEffects && <EnvironmentalDetails size={floorSize} />}
           
-          {showEffects && (
+          {showEffects && !useLowEffects && (
             <AtmosphericLayer size={floorSize} intensity={displayRacks.length > 50 ? 0.5 : 1} />
           )}
           
@@ -350,6 +420,7 @@ export function DatacenterScene({
               visible={true}
             />
           )}
+          <Preload all />
         </Suspense>
       </Canvas>
       
@@ -365,15 +436,6 @@ export function DatacenterScene({
         </div>
       )}
       
-      <div className="absolute bottom-4 left-4 flex flex-col gap-1 pointer-events-none opacity-50">
-        <div className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
-          <div className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse" />
-          SYSTEMS NOMINAL
-        </div>
-        <div className="text-[9px] text-white/30 font-mono uppercase tracking-tighter">
-          Visual Engine v4.2 // Active
-        </div>
-      </div>
     </div>
   );
 }

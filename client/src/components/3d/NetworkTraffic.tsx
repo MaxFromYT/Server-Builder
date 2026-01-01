@@ -19,7 +19,7 @@ export function NetworkTrafficStream({
   intensity?: number;
   color?: string;
 }) {
-  const count = Math.floor(30 * intensity);
+  const count = Math.floor(45 * intensity);
   const meshRef = useRef<THREE.Points>(null);
 
   const data = useMemo(() => {
@@ -33,7 +33,7 @@ export function NetworkTrafficStream({
         speed: 0.3 + Math.random() * 0.7,
         lane: (Math.random() - 0.5) * 0.15,
       });
-      sizes[i] = 0.02 + Math.random() * 0.02;
+    sizes[i] = 0.03 + Math.random() * 0.03;
     }
 
     return { positions, sizes, packets };
@@ -81,7 +81,7 @@ export function NetworkTrafficStream({
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.04}
+        size={0.06}
         color={color}
         transparent
         opacity={0.9}
@@ -142,34 +142,61 @@ export function PowerFlowVisualization({
   );
 }
 
-export function DataCenterNetworkMesh({ racks }: { racks: { position: [number, number, number] }[] }) {
+export function DataCenterNetworkMesh({
+  racks,
+  maxConnections = 50,
+  maxStreams = 15,
+  heatmapInfluence = 0,
+}: {
+  racks: { position: [number, number, number]; heat?: number }[];
+  maxConnections?: number;
+  maxStreams?: number;
+  heatmapInfluence?: number;
+}) {
   const connections = useMemo(() => {
-    const result: { start: [number, number, number]; end: [number, number, number]; intensity: number }[] = [];
-    
-    for (let i = 0; i < racks.length; i++) {
-      for (let j = i + 1; j < racks.length; j++) {
-        if (Math.random() < 0.4) {
-          result.push({
-            start: [racks[i].position[0], racks[i].position[1] + 1.5, racks[i].position[2]],
-            end: [racks[j].position[0], racks[j].position[1] + 1.5, racks[j].position[2]],
-            intensity: 0.3 + Math.random() * 0.7,
-          });
-        }
-      }
+    if (racks.length < 2) return [];
+    const result: { start: [number, number, number]; end: [number, number, number]; intensity: number; heat?: number }[] = [];
+    const targetCount = Math.min(maxConnections, racks.length * 2);
+    const sorted = [...racks].sort((a, b) => {
+      if (a.position[2] === b.position[2]) return a.position[0] - b.position[0];
+      return a.position[2] - b.position[2];
+    });
+
+    for (let i = 0; i < targetCount; i++) {
+      const startIndex = i % (sorted.length - 1);
+      const endIndex = (startIndex + 1) % sorted.length;
+      const startRack = sorted[startIndex];
+      const endRack = sorted[endIndex];
+      result.push({
+        start: [startRack.position[0], startRack.position[1] + 1.5, startRack.position[2]],
+        end: [endRack.position[0], endRack.position[1] + 1.5, endRack.position[2]],
+        intensity: 0.35 + (i % 5) * 0.12,
+        heat: ((startRack.heat || 0) + (endRack.heat || 0)) / 2,
+      });
     }
-    
+
     return result;
-  }, [racks]);
+  }, [maxConnections, racks]);
 
   return (
     <group>
-      {connections.slice(0, 15).map((conn, i) => (
+      {connections.slice(0, maxStreams).map((conn, i) => (
         <NetworkTrafficStream
           key={i}
           start={conn.start}
           end={conn.end}
           intensity={conn.intensity}
-          color={["#00ffaa", "#00aaff", "#aa88ff", "#ffaa00"][i % 4]}
+          color={
+            heatmapInfluence > 0 && typeof conn.heat === "number"
+              ? conn.heat > 40
+                ? "#ff4d2e"
+                : conn.heat > 35
+                ? "#ff9f1c"
+                : conn.heat > 30
+                ? "#facc15"
+                : "#22d3ee"
+              : ["#00ffaa", "#00aaff", "#aa88ff", "#ffaa00"][i % 4]
+          }
         />
       ))}
     </group>
