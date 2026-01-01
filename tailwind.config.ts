@@ -10,7 +10,20 @@ export default {
         md: ".375rem", /* 6px */
         sm: ".1875rem", /* 3px */
       },
+      fontFamily: {
+        sans: ["IBM Plex Sans", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+        display: ["Orbitron", "sans-serif"],
+      },
       colors: {
+        noc: {
+          green: "hsl(142, 76%, 36%)",
+          yellow: "hsl(45, 93%, 47%)",
+          red: "hsl(0, 84%, 42%)",
+          blue: "hsl(217, 91%, 60%)",
+          cyan: "hsl(186, 82%, 50%)",
+          purple: "hsl(271, 81%, 56%)",
+        },
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
