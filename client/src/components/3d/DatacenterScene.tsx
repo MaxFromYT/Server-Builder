@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, PerspectiveCamera, Stars } from "@react-three/drei";
+import { OrbitControls, Environment, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
 import { Suspense, useState, useRef, useMemo, useCallback } from "react";
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
@@ -34,14 +34,15 @@ interface DatacenterSceneProps {
   };
 }
 
-function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean }) {
+function AdvancedLights({ performanceMode = false, theme = "dark" }: { performanceMode?: boolean; theme?: "dark" | "light" }) {
+  const isLight = theme === "light";
   return (
     <>
       <ambientLight intensity={isLight ? 0.35 : 0.15} color={isLight ? "#cdd8ef" : "#4466aa"} />
       <directionalLight
         position={[60, 100, 40]}
-        intensity={performanceMode ? 0.8 : 1.0}
-        color="#ffffff"
+        intensity={performanceMode ? 0.8 : isLight ? 1.1 : 1.0}
+        color={isLight ? "#f4f7ff" : "#ffffff"}
         castShadow={!performanceMode}
         shadow-mapSize={performanceMode ? [1024, 1024] : [2048, 2048]}
         shadow-camera-far={200}
@@ -57,8 +58,8 @@ function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean
             position={[0, 35, 10]}
             angle={0.4}
             penumbra={0.6}
-            intensity={0.6}
-            color="#8bbcff"
+            intensity={isLight ? 0.7 : 0.6}
+            color={isLight ? "#b4d6ff" : "#8bbcff"}
             castShadow
             shadow-mapSize={[1024, 1024]}
           />
@@ -66,8 +67,8 @@ function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean
             position={[0, 30, -12]}
             angle={0.45}
             penumbra={0.6}
-            intensity={0.5}
-            color="#7ee7ff"
+            intensity={isLight ? 0.6 : 0.5}
+            color={isLight ? "#a5f3fc" : "#7ee7ff"}
             castShadow
             shadow-mapSize={[1024, 1024]}
           />
@@ -362,7 +363,7 @@ export function DatacenterScene({
         )}
 
         <Suspense fallback={<LoadingFallback />}>
-          <AdvancedLights performanceMode={useLowEffects} />
+          <AdvancedLights performanceMode={useLowEffects} theme={theme} />
           
           {!useLowEffects && (
             <Stars
@@ -401,6 +402,7 @@ export function DatacenterScene({
               visible={true}
             />
           )}
+          <Preload all />
         </Suspense>
       </Canvas>
       

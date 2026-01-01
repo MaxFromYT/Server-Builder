@@ -24,6 +24,7 @@ export function DataCenter3D() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [qualityMode, setQualityMode] = useState<"low" | "high">("low");
   const [showIntro, setShowIntro] = useState(true);
+  const [showOverlays, setShowOverlays] = useState(true);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -48,25 +49,14 @@ export function DataCenter3D() {
 
   useEffect(() => {
     if (!isStaticMode) return;
-    setQualityMode("low");
-    setShowEffects(false);
-    if (rackCount > 100) return;
-    const qualityTimeout = window.setTimeout(() => {
-      setQualityMode("high");
-    }, 5000);
-    const effectsTimeout = window.setTimeout(() => {
-      setShowEffects(true);
-    }, 6500);
-    return () => {
-      window.clearTimeout(qualityTimeout);
-      window.clearTimeout(effectsTimeout);
-    };
+    setQualityMode("high");
+    setShowEffects(true);
   }, [isStaticMode, rackCount]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setShowIntro(false);
-    }, 5000);
+    }, 2000);
     return () => window.clearTimeout(timeout);
   }, []);
 
@@ -103,14 +93,16 @@ export function DataCenter3D() {
       
       <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
       
-      <div className="fixed top-20 right-4 z-40">
-        <MiniMap 
-          racks={visibleRacks || []} 
-          selectedRackId={selectedRackId}
-          onSelectRack={handleSelectRack}
-          floorSize={25} 
-        />
-      </div>
+      {showOverlays && (
+        <div className="fixed top-20 right-4 z-40">
+          <MiniMap 
+            racks={visibleRacks || []} 
+            selectedRackId={selectedRackId}
+            onSelectRack={handleSelectRack}
+            floorSize={25} 
+          />
+        </div>
+      )}
       
       {selectedRack && showOverlays && (
         <RackDetailPanel
@@ -122,18 +114,18 @@ export function DataCenter3D() {
 
       <WelcomeScreen isVisible={showIntro} />
 
-      {isStaticMode && (
+      {isStaticMode && showOverlays && !selectedRack && (
         <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
           <div className="text-cyan-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            Static Editor
+            Operations Console
           </div>
           <p className="text-[11px] text-white/70 leading-relaxed">
-            Click a rack to open the editor. Add equipment by selecting empty slots and remove items with the trash icon.
+            Select a rack to open the editor. Add equipment by selecting empty slots and remove items with the trash icon.
           </p>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
-              <span>Visible racks</span>
+              <span>Active racks</span>
               <span className="text-cyan-300">{rackCount}</span>
             </div>
             <Slider
@@ -151,7 +143,7 @@ export function DataCenter3D() {
             </div>
           </div>
           <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
-            <span>Quality</span>
+            <span>Visual fidelity</span>
             <Button
               size="sm"
               variant="ghost"
@@ -167,7 +159,7 @@ export function DataCenter3D() {
               }`}
               data-testid="button-quality-mode"
             >
-              {qualityMode === "high" ? "High" : "Fast"}
+              {qualityMode === "high" ? "Studio" : "Fast"}
             </Button>
           </div>
           {rackCount > 100 && (
@@ -188,14 +180,16 @@ export function DataCenter3D() {
         </div>
       )}
 
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none" data-testid="game-title">
-        <h1 className="font-display text-2xl font-bold tracking-wider text-white drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-          HYPERSCALE
-        </h1>
-        <p className="text-center text-xs text-white/70 uppercase tracking-widest">
-          Data Center Architect
-        </p>
-      </div>
+      {showOverlays && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none" data-testid="game-title">
+          <h1 className="font-display text-2xl font-bold tracking-wider text-white drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+            HYPERSCALE
+          </h1>
+          <p className="text-center text-xs text-white/70 uppercase tracking-widest">
+            Data Center Architect
+          </p>
+        </div>
+      )}
 
       <div className="fixed bottom-4 right-4 z-40 flex flex-col gap-2 items-end">
         <Button
@@ -367,19 +361,21 @@ export function DataCenter3D() {
         )}
       </div>
 
-      <div className="fixed bottom-4 left-4 z-40 space-y-1 rounded-lg border border-cyan-500/20 bg-black/50 px-3 py-2 font-mono text-[10px] text-white/70 shadow-[0_0_18px_rgba(34,211,238,0.2)]">
-        <div className="flex items-center gap-2 text-cyan-200/80">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          Systems nominal · Visual engine online
+      {showOverlays && (
+        <div className="fixed bottom-4 left-4 z-40 space-y-1 rounded-lg border border-cyan-500/20 bg-black/50 px-3 py-2 font-mono text-[10px] text-white/70 shadow-[0_0_18px_rgba(34,211,238,0.2)]">
+          <div className="flex items-center gap-2 text-cyan-200/80">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            Systems nominal · Visual engine synchronized
+          </div>
+          <div className="text-white/50">Drag to rotate · Scroll to zoom · Click rack to inspect</div>
+          {isUnlocked && !isStaticMode && (
+            <div className="text-cyan-400/70">Admin suite: Use sliders to scale the simulation.</div>
+          )}
+          {isStaticMode && (
+            <div className="text-cyan-300/80">Operations: Select a rack to add/remove equipment.</div>
+          )}
         </div>
-        <div className="text-white/50">Drag to rotate · Scroll to zoom · Click rack to inspect</div>
-        {isUnlocked && !isStaticMode && (
-          <div className="text-cyan-400/70">Admin mode: Use sliders to scale the simulation.</div>
-        )}
-        {isStaticMode && (
-          <div className="text-cyan-300/80">Static editor: Select a rack to add/remove equipment.</div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

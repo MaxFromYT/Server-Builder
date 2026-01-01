@@ -201,14 +201,8 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
-  const appearDelay = useMemo(() => {
-    let hash = 0;
-    for (let i = 0; i < rack.id.length; i += 1) {
-      hash = (hash * 31 + rack.id.charCodeAt(i)) % 9973;
-    }
-    return (hash % 80) * 0.02;
-  }, [rack.id]);
-  const appearDuration = 1.4;
+  const appearDelay = 0;
+  const appearDuration = 0.9;
 
   const thermalStatus = useMemo(() => {
     if (rack.inletTemp > 30) return "critical";
