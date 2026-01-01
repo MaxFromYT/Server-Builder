@@ -23,6 +23,7 @@ interface DatacenterSceneProps {
   rackCount?: number;
   showHeatmap?: boolean;
   performanceMode?: boolean;
+  qualityMode?: "low" | "high";
   visibleRacks?: Rack[];
   proceduralOptions?: {
     seed?: number;
@@ -236,6 +237,7 @@ export function DatacenterScene({
   rackCount = 9,
   showHeatmap = false,
   performanceMode = false,
+  qualityMode = "high",
   visibleRacks,
   proceduralOptions
 }: DatacenterSceneProps) {
@@ -265,7 +267,7 @@ export function DatacenterScene({
   const maxCol = Math.max(...(displayRacks).map(r => r.positionX), 2);
   const maxRow = Math.max(...(displayRacks).map(r => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2 + 15, maxRow * 4 + 15, 25);
-  const useLowEffects = performanceMode || displayRacks.length > 200;
+  const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(() => [
     { position: [floorSize * 0.8, floorSize * 0.5, floorSize * 0.8] as [number, number, number], target: [0, 2, 0] as [number, number, number] },

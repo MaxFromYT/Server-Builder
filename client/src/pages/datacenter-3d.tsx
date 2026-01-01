@@ -21,6 +21,7 @@ export function DataCenter3D() {
   const [showHUD, setShowHUD] = useState(true);
   const [rackCount, setRackCount] = useState(42);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [qualityMode, setQualityMode] = useState<"low" | "high">("low");
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -35,7 +36,6 @@ export function DataCenter3D() {
   useEffect(() => {
     if (isStaticMode) {
       setIsUnlocked(true);
-      setShowEffects(false);
       return;
     }
     const savedUnlock = localStorage.getItem("hyperscale_unlocked");
@@ -43,6 +43,18 @@ export function DataCenter3D() {
       setIsUnlocked(true);
     }
   }, [isStaticMode]);
+
+  useEffect(() => {
+    if (!isStaticMode) return;
+    setQualityMode("low");
+    setShowEffects(false);
+    if (rackCount > 100) return;
+    const timeout = window.setTimeout(() => {
+      setQualityMode("high");
+      setShowEffects(true);
+    }, 1500);
+    return () => window.clearTimeout(timeout);
+  }, [isStaticMode, rackCount]);
 
   const handleUnlock = () => {
     if (isStaticMode) return;
@@ -70,7 +82,8 @@ export function DataCenter3D() {
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
-        performanceMode={isStaticMode}
+        performanceMode={isStaticMode && qualityMode === "low"}
+        qualityMode={qualityMode}
         visibleRacks={visibleRacks}
       />
       
@@ -121,9 +134,34 @@ export function DataCenter3D() {
               <span>500</span>
             </div>
           </div>
+          <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
+            <span>Quality</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                const next = qualityMode === "high" ? "low" : "high";
+                setQualityMode(next);
+                setShowEffects(next === "high");
+              }}
+              className={`text-[10px] px-2 py-1 ${
+                qualityMode === "high"
+                  ? "bg-cyan-500/20 text-cyan-200"
+                  : "text-white/50"
+              }`}
+              data-testid="button-quality-mode"
+            >
+              {qualityMode === "high" ? "High" : "Fast"}
+            </Button>
+          </div>
           {rackCount > 100 && (
             <div className="rounded-md border border-orange-400/30 bg-orange-500/10 p-2 text-[10px] text-orange-200">
               Rendering more than 100 racks can slow down loading on some devices.
+            </div>
+          )}
+          {rackCount > 100 && qualityMode === "high" && (
+            <div className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-[10px] text-red-200">
+              High quality + 100+ racks may cause long load times.
             </div>
           )}
           {selectedRack && (
