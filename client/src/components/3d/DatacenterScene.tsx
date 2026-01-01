@@ -4,6 +4,7 @@ import { Suspense, useState, useRef, useMemo, useCallback, useEffect, type RefOb
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
+import { EquipmentMesh } from "./EquipmentMesh";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
 import { RaisedFloor, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
 import { DataCenterNetworkMesh } from "./NetworkTraffic";
@@ -11,7 +12,7 @@ import { HolographicHUD, FloatingMetric } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
 import { generateProceduralRacks } from "./ProceduralRacks";
 import { PerformanceOverlay } from "./PerformanceOverlay";
-import type { Rack, Equipment } from "@shared/schema";
+import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 import * as THREE from "three";
 import { precompileSceneMaterials } from "@/lib/asset-manager";
 import { useToast } from "@/hooks/use-toast";
