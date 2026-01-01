@@ -1,12 +1,26 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Stars, Preload } from "@react-three/drei";
-import { Suspense, useState, useRef, useMemo, useCallback, useEffect, type RefObject } from "react";
+import {
+  Suspense,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+  type RefObject,
+} from "react";
 import { useGame } from "@/lib/game-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Rack3D } from "./Rack3D";
 import { EquipmentMesh } from "./EquipmentMesh";
 import { DustMotes, HeatShimmer, AirflowParticles, VolumetricLight } from "./AtmosphericEffects";
-import { RaisedFloor, CRACUnit, FireSuppressionSystem, EmergencyLight, StatusPanel } from "./EnvironmentElements";
+import {
+  RaisedFloor,
+  CRACUnit,
+  FireSuppressionSystem,
+  EmergencyLight,
+  StatusPanel,
+} from "./EnvironmentElements";
 import { DataCenterNetworkMesh } from "./NetworkTraffic";
 import { HolographicHUD } from "./HolographicHUD";
 import { CameraController, CinematicFlythrough } from "./CameraController";
@@ -58,6 +72,7 @@ function AdvancedLights({
           <pointLight position={[-20, 12, -20]} intensity={isLight ? 0.6 : 0.4} color={isLight ? "#e8f4ff" : "#7fd4ff"} />
         </>
       )}
+
       <directionalLight
         position={[60, 100, 40]}
         intensity={performanceMode ? 0.8 : isLight ? 1.1 : 1.0}
@@ -71,6 +86,7 @@ function AdvancedLights({
         shadow-camera-bottom={-80}
         shadow-bias={-0.0001}
       />
+
       {!performanceMode && (
         <>
           <spotLight
@@ -93,8 +109,10 @@ function AdvancedLights({
           />
         </>
       )}
+
       <directionalLight position={[-40, 50, -30]} intensity={isLight ? 0.45 : 0.3} color={isLight ? "#d1e2ff" : "#6688ff"} />
       <directionalLight position={[0, 20, -50]} intensity={isLight ? 0.25 : 0.2} color={isLight ? "#ffd2b3" : "#ff8844"} />
+
       <hemisphereLight
         color={isLight ? "#cfe2ff" : "#88aaff"}
         groundColor={isLight ? "#e9eef7" : "#442200"}
@@ -115,11 +133,9 @@ function LoadingFallback() {
 
 function ScenePrecompiler() {
   const { gl, scene, camera } = useThree();
-
   useEffect(() => {
     precompileSceneMaterials(gl, scene, camera);
   }, [gl, scene, camera]);
-
   return null;
 }
 
@@ -139,7 +155,6 @@ function CameraBounds({
     if (position.y > maxHeight) position.y = maxHeight;
     if (position.y < minHeight) position.y = minHeight;
   });
-
   return null;
 }
 
@@ -177,7 +192,11 @@ function RackGrid({
   const rackPositions = useMemo(() => {
     return racks.map((rack) => ({
       rack,
-      position: [rack.positionX * rackSpacing - centerX, 0, rack.positionY * aisleSpacing - centerZ] as [number, number, number],
+      position: [
+        rack.positionX * rackSpacing - centerX,
+        0,
+        rack.positionY * aisleSpacing - centerZ,
+      ] as [number, number, number],
     }));
   }, [racks, rackSpacing, aisleSpacing, centerX, centerZ]);
 
@@ -196,9 +215,9 @@ function RackGrid({
             lodIndex={index}
           />
 
+          {/* FIX: shimmer Z uses position[2], not position[1] */}
           {showHeatShimmer && rack.exhaustTemp > 35 && (
             <HeatShimmer
-              // FIX: third component should be Z, so use position[2]
               position={[position[0], 2.5, position[2] - 0.5]}
               intensity={(rack.exhaustTemp - 30) / 20}
             />
@@ -322,12 +341,18 @@ function AssetPreloadQueue({
       });
     }, 60);
     return () => window.clearInterval(interval);
-  }, [batchSize, equipment.length]);
+  }, [batchSize, equipment.length, equipment]);
 
   return (
     <group position={[0, -80, 0]}>
-      <Rack3D rack={preloadRack} position={[0, 0, 0]} isSelected={false} onSelect={() => {}} equipmentCatalog={equipmentCatalog} forceSimplified />
-
+      <Rack3D
+        rack={preloadRack}
+        position={[0, 0, 0]}
+        isSelected={false}
+        onSelect={() => {}}
+        equipmentCatalog={equipmentCatalog}
+        forceSimplified
+      />
       {equipment.slice(0, visibleCount).map((item, index) => {
         const installed: InstalledEquipment = {
           id: `preload-${item.id}`,
@@ -375,39 +400,20 @@ export function DatacenterScene({
   const { racks, equipmentCatalog, preloadQueue } = useGame();
   const { theme } = useTheme();
   const { toast } = useToast();
+
   const controlsRef = useRef<any>(null);
 
   const [dynamicQuality, setDynamicQuality] = useState<"low" | "high">(qualityMode);
-  const [detailBudget, setDetailBudget] = useState(0);
 
-  // UI lock: disables OrbitControls while user is interacting with UI
+  // NEW: UI lock disables OrbitControls while clicking UI
   const [uiLock, setUiLock] = useState(false);
 
+  const [detailBudget, setDetailBudget] = useState(0);
   const detailRampRef = useRef<number | null>(null);
+
   const ceilingHeight = 36;
   const minCameraHeight = 0.6;
-
   const isLight = theme === "light";
-
-  useEffect(() => {
-    const onPointerDown = (e: PointerEvent) => {
-      const el = e.target as HTMLElement | null;
-      const isUI = Boolean(el?.closest?.('[data-ui="true"]'));
-      if (isUI) setUiLock(true);
-    };
-
-    const clear = () => setUiLock(false);
-
-    window.addEventListener("pointerdown", onPointerDown, true);
-    window.addEventListener("pointerup", clear, true);
-    window.addEventListener("pointercancel", clear, true);
-
-    return () => {
-      window.removeEventListener("pointerdown", onPointerDown, true);
-      window.removeEventListener("pointerup", clear, true);
-      window.removeEventListener("pointercancel", clear, true);
-    };
-  }, []);
 
   const equipmentMap = useMemo(() => {
     const map = new Map<string, Equipment>();
@@ -429,8 +435,8 @@ export function DatacenterScene({
 
   const maxCol = Math.max(...displayRacks.map((r) => r.positionX), 2);
   const maxRow = Math.max(...displayRacks.map((r) => r.positionY), 2);
-
   const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
+
   const useLowEffects = performanceMode || dynamicQuality === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(
@@ -449,6 +455,29 @@ export function DatacenterScene({
   const handlePointerMissed = useCallback(() => {
     onSelectRack(null);
   }, [onSelectRack]);
+
+  // NEW: robust UI lock based on data-ui elements
+  useEffect(() => {
+    const onPointerDownCapture = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      const hitUI = !!target?.closest?.('[data-ui="true"]');
+      setUiLock(hitUI);
+    };
+
+    const onPointerUpCapture = () => {
+      setUiLock(false);
+    };
+
+    window.addEventListener("pointerdown", onPointerDownCapture, true);
+    window.addEventListener("pointerup", onPointerUpCapture, true);
+    window.addEventListener("pointercancel", onPointerUpCapture, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDownCapture, true);
+      window.removeEventListener("pointerup", onPointerUpCapture, true);
+      window.removeEventListener("pointercancel", onPointerUpCapture, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (detailRampRef.current) window.clearInterval(detailRampRef.current);
@@ -488,11 +517,34 @@ export function DatacenterScene({
     };
   }, [displayRacks.length, forceSimplified, lodResetToken, useLowEffects]);
 
+  const handleOrbitControlsChange = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    const maxHeight = ceilingHeight - 0.5;
+
+    if (controls.object.position.y > maxHeight) {
+      controls.object.position.y = maxHeight;
+      controls.update();
+    }
+
+    if (controls.object.position.y < minCameraHeight) {
+      controls.object.position.y = minCameraHeight;
+      controls.update();
+    }
+  }, [ceilingHeight, minCameraHeight]);
+
   return (
     <div className="w-full h-full relative" data-testid="datacenter-scene-3d">
       <Canvas
         shadows={!performanceMode}
         dpr={performanceMode ? 1 : [1, 2]}
+        raycaster={{
+          params: {
+            Line: { threshold: 0.03 },
+            Points: { threshold: 0.04 },
+          },
+        }}
         gl={{
           antialias: !performanceMode,
           toneMapping: THREE.ACESFilmicToneMapping,
@@ -504,6 +556,9 @@ export function DatacenterScene({
             ? "linear-gradient(180deg, #edf4ff 0%, #e5ebf7 40%, #d7dfea 100%)"
             : "linear-gradient(180deg, #050508 0%, #0a0c12 30%, #0d1117 70%, #101520 100%)",
         }}
+        onCreated={({ gl }) => {
+          gl.domElement.style.touchAction = "none";
+        }}
         onPointerMissed={handlePointerMissed}
       >
         <fog attach="fog" args={[isLight ? "#dfe7f2" : "#080a10", 20, 120]} />
@@ -514,9 +569,9 @@ export function DatacenterScene({
           <OrbitControls
             ref={controlsRef}
             enabled={!uiLock}
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
+            enablePan
+            enableZoom
+            enableRotate
             minDistance={3}
             maxDistance={80}
             minPolarAngle={0.1}
@@ -524,7 +579,7 @@ export function DatacenterScene({
             target={[0, 3, 0]}
             enableDamping
             dampingFactor={0.05}
-            // onChange removed, CameraBounds already clamps height smoothly
+            onChange={handleOrbitControlsChange}
             mouseButtons={{
               LEFT: THREE.MOUSE.ROTATE,
               MIDDLE: THREE.MOUSE.DOLLY,
@@ -583,7 +638,7 @@ export function DatacenterScene({
             <AtmosphericLayer size={floorSize} intensity={displayRacks.length > 50 ? 0.5 : 1} />
           )}
 
-          {showHUD && <HolographicHUD position={[0, 10, -floorSize * 0.7]} visible={true} />}
+          {showHUD && <HolographicHUD position={[0, 10, -floorSize * 0.7]} visible />}
 
           <PerformanceOverlay
             visible={showHUD}
@@ -612,8 +667,8 @@ export function DatacenterScene({
 
       {isUnlocked && (
         <div
-          data-ui="true"
           className="absolute top-4 left-4 bg-black/60 backdrop-blur-md rounded-md px-3 py-2 border border-cyan-500/30"
+          data-ui="true"
         >
           <div className="text-cyan-400 text-xs font-mono flex items-center gap-2">
             <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
