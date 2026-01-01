@@ -42,27 +42,21 @@ export function BuildToolbar() {
     redo,
   } = useBuild();
 
-  // Stops pointer events from reaching the canvas (OrbitControls / drag select)
-  const stopToCanvas = (e: React.PointerEvent) => {
-    e.stopPropagation();
-  };
+  const stop = (e: React.PointerEvent) => e.stopPropagation();
 
   return (
     <>
-      {/* Top toolbar (moved down so it never collides with title/caption) */}
       <div
         data-ui="true"
-        onPointerDownCapture={stopToCanvas}
-        onPointerMoveCapture={stopToCanvas}
-        className="fixed top-24 left-1/2 z-50 flex -translate-x-1/2 select-none items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur"
-        style={{ touchAction: "none" }}
+        onPointerDownCapture={stop}
+        onPointerMoveCapture={stop}
+        className="fixed top-32 left-1/2 z-50 flex -translate-x-1/2 select-none items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur"
       >
         {modeButtons.map((button) => {
           const Icon = button.icon;
           return (
             <Button
               key={button.id}
-              type="button"
               size="sm"
               variant="ghost"
               onClick={() => setMode(button.id)}
@@ -77,11 +71,8 @@ export function BuildToolbar() {
             </Button>
           );
         })}
-
         <div className="mx-1 h-6 w-px bg-white/10" />
-
-        {/* Display-only */}
-        <div className="pointer-events-none flex select-none items-center gap-2 text-[10px] font-mono text-white/50">
+        <div className="pointer-events-none flex items-center gap-2 text-[10px] font-mono text-white/50">
           <span className="rounded-full bg-white/10 px-2 py-1 uppercase tracking-widest">
             {selectedIds.length} selected
           </span>
@@ -89,13 +80,11 @@ export function BuildToolbar() {
         </div>
       </div>
 
-      {/* Bottom toolbar (moved up so it never overlaps the bottom action bar) */}
       <div
         data-ui="true"
-        onPointerDownCapture={stopToCanvas}
-        onPointerMoveCapture={stopToCanvas}
+        onPointerDownCapture={stop}
+        onPointerMoveCapture={stop}
         className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 select-none flex-row gap-3 rounded-2xl border border-cyan-500/30 bg-black/70 p-2 shadow-[0_0_20px_rgba(34,211,238,0.2)] backdrop-blur"
-        style={{ touchAction: "none" }}
       >
         <ToolbarButton
           label="Multi"
@@ -109,36 +98,32 @@ export function BuildToolbar() {
           active={snapEnabled}
           onClick={toggleSnap}
         />
-
         <div className="h-6 w-px bg-white/10" />
-
         <ToolbarButton
           label="Copy"
           icon={ClipboardCopy}
           onClick={copySelection}
-          disabled={selectedIds.length === 0}
+          disabled={!selectedIds.length}
         />
         <ToolbarButton
           label="Paste"
           icon={ClipboardPaste}
           onClick={pasteSelection}
-          disabled={clipboard.length === 0}
+          disabled={!clipboard.length}
         />
         <ToolbarButton
           label="Duplicate"
           icon={Copy}
           onClick={duplicateSelection}
-          disabled={selectedIds.length === 0}
+          disabled={!selectedIds.length}
         />
         <ToolbarButton
           label="Delete"
           icon={Trash2}
           onClick={deleteSelection}
-          disabled={selectedIds.length === 0}
+          disabled={!selectedIds.length}
         />
-
         <div className="h-6 w-px bg-white/10" />
-
         <ToolbarButton label="Undo" icon={Undo2} onClick={undo} disabled={!canUndo} />
         <ToolbarButton label="Redo" icon={Redo2} onClick={redo} disabled={!canRedo} />
       </div>
@@ -161,7 +146,6 @@ function ToolbarButton({
 }) {
   return (
     <Button
-      type="button"
       size="icon"
       variant="ghost"
       onClick={onClick}
