@@ -10,6 +10,7 @@ interface DatacenterFloorProps {
 export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorProps) {
   const floorRef = useRef<THREE.Mesh>(null);
   const { racks } = useGame();
+  const ceilingHeight = 22;
 
   const gridTexture = useMemo(() => {
     const canvas = document.createElement('canvas');
@@ -64,7 +65,7 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
       )}
 
       {Array.from({ length: 3 }).map((_, i) => (
-        <mesh key={`ceiling-light-${i}`} position={[(i - 1) * 8, 14.9, 0]}>
+        <mesh key={`ceiling-light-${i}`} position={[(i - 1) * 8, ceilingHeight - 0.1, 0]}>
           <boxGeometry args={[6, 0.1, 0.6]} />
           <meshStandardMaterial
             color="#c0d0ff"
@@ -74,9 +75,14 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
         </mesh>
       ))}
 
-      <mesh position={[0, 15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, ceilingHeight, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size * 2, size * 2]} />
-        <meshStandardMaterial color="#0d1015" side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#0b0f16" emissive="#070a10" emissiveIntensity={0.4} side={THREE.DoubleSide} />
+      </mesh>
+
+      <mesh position={[0, ceilingHeight - 4, 0]}>
+        <sphereGeometry args={[size * 1.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#0a0e17" metalness={0.2} roughness={0.9} side={THREE.BackSide} />
       </mesh>
     </group>
   );

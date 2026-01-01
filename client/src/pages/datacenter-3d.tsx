@@ -5,6 +5,7 @@ import { GameHUD } from "@/components/3d/GameHUD";
 import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
 import { MiniMap } from "@/components/3d/MiniMap";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { WelcomeScreen } from "@/components/ui/welcome-screen";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Camera, Play, Sparkles, Grid3X3, Eye, EyeOff, RotateCcw } from "lucide-react";
@@ -13,14 +14,16 @@ import type { Rack } from "@shared/schema";
 type CameraMode = "orbit" | "auto" | "cinematic";
 
 export function DataCenter3D() {
-  const { isLoading, racks } = useGame();
+  const { isLoading, racks, isStaticMode } = useGame();
   const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [showEffects, setShowEffects] = useState(true);
   const [showHUD, setShowHUD] = useState(true);
-  const [rackCount, setRackCount] = useState(9);
+  const [rackCount, setRackCount] = useState(1);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [qualityMode, setQualityMode] = useState<"low" | "high">("low");
+  const [showIntro, setShowIntro] = useState(true);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
     fillRateMultiplier: 1,
@@ -29,16 +32,46 @@ export function DataCenter3D() {
   });
   const [showControls, setShowControls] = useState(false);
 
-  const selectedRack = racks?.find(r => r.id === selectedRackId) || null;
+  const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
+  const selectedRack = visibleRacks?.find(r => r.id === selectedRackId) || null;
 
   useEffect(() => {
+    if (isStaticMode) {
+      setIsUnlocked(true);
+      return;
+    }
     const savedUnlock = localStorage.getItem("hyperscale_unlocked");
     if (savedUnlock === "true") {
       setIsUnlocked(true);
     }
+  }, [isStaticMode]);
+
+  useEffect(() => {
+    if (!isStaticMode) return;
+    setQualityMode("low");
+    setShowEffects(false);
+    if (rackCount > 100) return;
+    const qualityTimeout = window.setTimeout(() => {
+      setQualityMode("high");
+    }, 5000);
+    const effectsTimeout = window.setTimeout(() => {
+      setShowEffects(true);
+    }, 6500);
+    return () => {
+      window.clearTimeout(qualityTimeout);
+      window.clearTimeout(effectsTimeout);
+    };
+  }, [isStaticMode, rackCount]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setShowIntro(false);
+    }, 5000);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const handleUnlock = () => {
+    if (isStaticMode) return;
     setIsUnlocked(true);
     localStorage.setItem("hyperscale_unlocked", "true");
   };
@@ -63,13 +96,16 @@ export function DataCenter3D() {
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
+        performanceMode={isStaticMode && qualityMode === "low"}
+        qualityMode={qualityMode}
+        visibleRacks={visibleRacks}
       />
       
-      <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} />
+      <GameHUD isUnlocked={isUnlocked} onUnlock={handleUnlock} showUnlock={!isStaticMode} />
       
       <div className="fixed top-20 right-4 z-40">
         <MiniMap 
-          racks={racks || []} 
+          racks={visibleRacks || []} 
           selectedRackId={selectedRackId}
           onSelectRack={handleSelectRack}
           floorSize={25} 
@@ -82,6 +118,74 @@ export function DataCenter3D() {
           onClose={() => setSelectedRackId(null)}
           isUnlocked={isUnlocked}
         />
+      )}
+
+      <WelcomeScreen isVisible={showIntro} />
+
+      {isStaticMode && (
+        <div className="fixed top-20 left-4 z-40 w-[280px] bg-gradient-to-br from-cyan-500/10 via-black/70 to-purple-500/10 backdrop-blur-md rounded-lg border border-cyan-500/30 p-4 space-y-3 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
+          <div className="text-cyan-300 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            Static Editor
+          </div>
+          <p className="text-[11px] text-white/70 leading-relaxed">
+            Click a rack to open the editor. Add equipment by selecting empty slots and remove items with the trash icon.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
+              <span>Visible racks</span>
+              <span className="text-cyan-300">{rackCount}</span>
+            </div>
+            <Slider
+              value={[rackCount]}
+              onValueChange={(v) => setRackCount(v[0])}
+              min={1}
+              max={500}
+              step={1}
+              className="w-full"
+              data-testid="slider-static-rack-count"
+            />
+            <div className="flex justify-between text-[9px] text-white/40 font-mono">
+              <span>1</span>
+              <span>500</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-white/60 font-mono">
+            <span>Quality</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                const next = qualityMode === "high" ? "low" : "high";
+                setQualityMode(next);
+                setShowEffects(next === "high");
+              }}
+              className={`text-[10px] px-2 py-1 ${
+                qualityMode === "high"
+                  ? "bg-cyan-500/20 text-cyan-200"
+                  : "text-white/50"
+              }`}
+              data-testid="button-quality-mode"
+            >
+              {qualityMode === "high" ? "High" : "Fast"}
+            </Button>
+          </div>
+          {rackCount > 100 && (
+            <div className="rounded-md border border-orange-400/30 bg-orange-500/10 p-2 text-[10px] text-orange-200">
+              Rendering more than 100 racks can slow down loading on some devices.
+            </div>
+          )}
+          {rackCount > 100 && qualityMode === "high" && (
+            <div className="rounded-md border border-red-400/30 bg-red-500/10 p-2 text-[10px] text-red-200">
+              High quality + 100+ racks may cause long load times.
+            </div>
+          )}
+          {selectedRack && (
+            <div className="text-[11px] text-white/60 font-mono">
+              Editing: <span className="text-cyan-300">{selectedRack.name}</span>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none" data-testid="game-title">
@@ -168,7 +272,7 @@ export function DataCenter3D() {
               </div>
             </div>
 
-            {isUnlocked && (
+            {isUnlocked && !isStaticMode && (
               <div className="space-y-2 pt-2 border-t border-white/10">
                 <div className="flex justify-between items-center">
                   <div className="text-white/60 text-[10px] font-mono uppercase">Rack Count</div>
@@ -248,9 +352,18 @@ export function DataCenter3D() {
         )}
       </div>
 
-      <div className="fixed bottom-4 left-4 z-40 text-[10px] text-white/30 font-mono space-y-0.5">
-        <div>Drag to rotate | Scroll to zoom | Click rack to inspect</div>
-        {isUnlocked && <div className="text-cyan-500/50">Admin mode: Use slider to scale datacenter</div>}
+      <div className="fixed bottom-4 left-4 z-40 space-y-1 rounded-lg border border-cyan-500/20 bg-black/50 px-3 py-2 font-mono text-[10px] text-white/70 shadow-[0_0_18px_rgba(34,211,238,0.2)]">
+        <div className="flex items-center gap-2 text-cyan-200/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          Systems nominal · Visual engine online
+        </div>
+        <div className="text-white/50">Drag to rotate · Scroll to zoom · Click rack to inspect</div>
+        {isUnlocked && !isStaticMode && (
+          <div className="text-cyan-400/70">Admin mode: Use sliders to scale the simulation.</div>
+        )}
+        {isStaticMode && (
+          <div className="text-cyan-300/80">Static editor: Select a rack to add/remove equipment.</div>
+        )}
       </div>
     </div>
   );
