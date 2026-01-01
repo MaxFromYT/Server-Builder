@@ -160,8 +160,14 @@ export const addAutosaveSnapshot = (racks: Rack[]): AutosaveSnapshot[] => {
     racks: cloneRacks(sanitizeRacks(racks)),
   };
   const nextSnapshots = [next, ...snapshots].slice(0, MAX_AUTOSAVES);
+  const payload = JSON.stringify(nextSnapshots);
+  // localStorage is small (~5MB). Large rack counts will exceed it.
+  if (payload.length > 4_500_000) {
+    logWarning("Autosave payload too large, skipping persistence.", undefined, { bytes: payload.length });
+    return nextSnapshots;
+  }
   try {
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(nextSnapshots));
+    localStorage.setItem(AUTOSAVE_KEY, payload);
   } catch (error) {
     logError("Failed to persist autosave snapshot.", error);
   }
