@@ -1,0 +1,918 @@
+Hyperscale: The Data Center Architect
+
+Comprehensive Game Design Document (GDD)
+Genre: Hyper-realistic infrastructure simulation, systems builder, incident management
+Core References: PC Building Simulator (granular assembly), Dell Data Center Manager (operational dashboards), Factorio (scaling logic, throughput, emergent complexity)
+
+0. High Concept
+
+You are a data center architect and operator. You design racks, networks, storage, power, cooling, and software orchestration under real SLAs. Every decision has measurable consequences in thermals, latency, IOPS, packet loss, uptime, and cost. You start as a garage operator and scale into a Tier 4 hyperscale facility with full NOC visibility and crisis response.
+
+1. Design Pillars
+
+Physical reality matters
+Airflow, cable routing, weight, power phases, and PDUs are not cosmetics. They change performance, failure rates, and uptime.
+
+Throughput is the real currency
+Everything becomes a pipeline: power delivery, cooling capacity, network bisection bandwidth, storage IOPS, VM density, Kubernetes scheduling.
+
+Operational complexity is gameplay
+The “fun” is turning chaos into stable systems: observability, alert triage, root cause analysis, and iterative redesign.
+
+Glass-cockpit control at hyperscale
+Unreal Engine 5 visual fidelity on the floor, and a futuristic instrumentation UI that makes the invisible visible.
+
+2. Target Audience and Difficulty
+
+Audience: networking nerds, homelab builders, Factorio players, SRE types, and sim players who crave realism.
+
+Difficulty: “crazy complicated” by default, with optional assists:
+
+Guided builds (blueprints with warnings)
+
+Auto-cable mode (still penalizes airflow if sloppy)
+
+“Explain this alert” hints with realistic reasoning steps
+
+3. Visual Style and Presentation
+Unreal Engine 5 fidelity goals
+
+Ray-traced lighting on:
+
+Server status LEDs
+
+Switch port link lights
+
+Fiber transceiver glow
+
+Photoreal materials:
+
+Powder-coated racks
+
+Brushed aluminum chassis
+
+Plastic strain relief boots
+
+Copper vs fiber texture differences
+
+Cable physics:
+
+Weight, bend radius, collision, snagging
+
+Fiber microbends increase error rate over time
+
+Poor dressing blocks perforated doors and reduces airflow
+
+Soundscape:
+
+Fan curve ramping by thermal load
+
+UPS relay clicks, generator spin-up
+
+Subtle coil whine under high power draw
+
+NOC ambience: quiet room tone, alert chimes, radio chatter
+
+4. Core Game Modes
+
+Build Mode (Rack Builder)
+
+micro assembly, component compatibility, cabling, labeling
+
+Floor Planning Mode
+
+hot aisle / cold aisle layout, containment, CRAC placement, power runs
+
+Network and Storage Mode
+
+switch configuration, VLANs, LACP, routing, SAN/NAS provisioning
+
+NOC Mode
+
+dashboards, alarms, syslog, SNMP traps, topology, packet flow visualization
+
+Incident Response Mode
+
+time-pressured diagnosis, mitigations, rollbacks, failovers
+
+5. Primary Gameplay Loop
+The loop in one sentence
+
+Design → Provision → Observe → Optimize → Survive incidents → Expand under contracts.
+
+Example loop: “New Customer Pod”
+
+Contract requires: 20 VMs, 2 Kubernetes worker nodes, 100k read IOPS, 99.99% uptime.
+
+Player designs a rack: servers, ToR switches, storage endpoints.
+
+Player cables and configures: VLANs, LACP, SAN targets, RAID, hypervisors.
+
+Player validates in NOC: latency, IOPS, packet loss, thermal headroom.
+
+Crisis event: drive failure + elevated inlet temp from clogged cable bundles.
+
+Player responds: hot-swap drive, rebuild RAID, reroute cables, increase CRAC setpoint margin.
+
+Profit unlocks expansion: second rack, leaf switch, redundant UPS feed.
+
+6. Core Feature List with Extreme Technical Depth
+6.1 The Rack Builder Engine (Physics and Hardware)
+6.1.1 Racks and Chassis Types
+
+Rack SKUs
+
+Open Frame (2-post, 4-post)
+
+Pros: airflow, easy access, cheap
+
+Cons: worse dust, noise, no containment, physical security weak
+
+Enclosed 42U, 48U
+
+Front/rear perforation percentage affects airflow curve
+
+Door removal improves serviceability but impacts containment
+
+Liquid Cooled Racks
+
+Rear door heat exchangers or direct-to-chip loop
+
+Requires facility water loop capacity and leak detection sensors
+
+Mechanical constraints
+
+U-space, rail depth, cage nuts, tool-less rails, weight per U
+
+Center of mass and tip risk for heavy bottom-light top builds
+
+Service clearance rules:
+
+Rear clearance for cable management arms
+
+Front clearance for hot-swap access
+
+6.1.2 Granular Server Assembly
+
+Players do not “place a server”, they assemble a platform.
+
+Motherboards
+
+Single vs Dual socket boards
+
+Key mechanics:
+
+PCIe lane distribution, bifurcation (x16 to 2x8 to 4x4)
+
+NUMA topology: memory locality and cross-socket penalties
+
+Slot placement impacts airflow to adjacent NICs and HBAs
+
+Failure modes:
+
+Wrong riser configuration causes devices to downshift link width
+
+Mismatched BIOS microcode causes instability events
+
+CPU
+
+Architecture choices:
+
+x86: broad compatibility, higher single-thread, often higher power density
+
+ARM: perf per watt advantages, but compatibility and driver edges
+
+Stats:
+
+Core count, base/boost clocks
+
+TDP and turbo power limits (PL1, PL2 model)
+
+TJ Max and thermal throttling behavior per SKU
+
+Mechanics:
+
+Thermal paste quality affects thermal resistance
+
+Cooler selection: air tower vs 1U blower vs liquid cold plate
+
+BIOS power settings:
+
+Performance, balanced, power cap
+
+Power capping reduces heat but may violate SLA latency
+
+RAM
+
+ECC is mandatory for enterprise contracts, non-ECC causes silent corruption risk
+
+Placement mechanics:
+
+Channels: 4, 6, 8-channel depending on platform
+
+Rank and DIMM type impacts max frequency (DDR4/DDR5 downclock rules)
+
+Channel imbalance creates measurable bandwidth penalties
+
+Consequences:
+
+Under-provisioned memory increases swap, inflates latency and IO
+
+Storage
+
+Drive types and behavior
+
+SAS HDD 10k/15k RPM:
+
+Seek latency, rotational latency, queue depth behavior
+
+SATA HDD:
+
+cheaper, lower IOPS, higher failure probability at high vibration
+
+NVMe M.2:
+
+high throughput, thermal throttling, endurance constraints
+
+NVMe U.2/U.3:
+
+enterprise hot-swap NVMe, better thermals, higher endurance
+
+Hot-swap bays
+
+Physical insertion, latch seating, backplane signal integrity
+
+Cable dressing can stress backplane connectors
+
+RAID controller configuration is mandatory
+
+RAID levels:
+
+RAID 0: fast, zero redundancy, forbidden for critical SLA workloads
+
+RAID 1: mirror, good reads, half capacity
+
+RAID 5: parity, write penalty, rebuild risk at scale
+
+RAID 6: dual parity, safer rebuilds, more write cost
+
+RAID 10: mirror+stripe, best overall for performance and resilience
+
+Advanced knobs:
+
+Stripe size selection impacts OLTP vs sequential workloads
+
+Write back cache with BBU (battery backup) risk if missing
+
+Patrol read schedules reduce latent sector errors
+
+Networking NICs
+
+Copper vs fiber:
+
+1GbE RJ45, Cat6a
+
+10/25/100/400GbE on SFP+/SFP28/QSFP28/QSFP-DD
+
+DAC vs AOC vs optical transceivers
+
+Mechanics:
+
+Link negotiation, FEC requirements, MTU settings, jumbo frames
+
+PCIe lane limits constrain max NICs or force link downshift
+
+6.1.3 Cable Management Mode
+
+Dedicated “cable routing” view with real consequences.
+
+Cable types
+
+Cat6a copper: bulkier, airflow blocking, susceptible to EMI in poor runs
+
+OM4 multimode fiber: bend radius critical, microbends raise BER
+
+DAC: stiff, short-run, strain on transceiver ports if forced
+
+Power cables: gauge matters for current draw, heat in bundles
+
+Airflow restriction model
+
+Cable bundles reduce effective open area on:
+
+front intake
+
+rear exhaust
+
+side venting
+
+Consequences:
+
+higher inlet temp
+
+fan curves ramp, power draw rises
+
+thermal throttling at CPU or NVMe level
+
+premature component failure from sustained high temp
+
+Labeling and tracing
+
+Optional but rewarded:
+
+proper patch panel mapping
+
+color conventions by VLAN or fabric
+
+tracing tools reduce incident response time
+
+6.2 Enterprise Storage and Networking Systems
+6.2.1 Storage Arrays
+
+Players deploy SAN, NAS, and hybrid systems.
+
+SAN
+
+iSCSI target configuration:
+
+IQNs, CHAP authentication
+
+multipath IO (MPIO) policies: round robin, failover only
+
+target portal groups and path redundancy
+
+FC (optional advanced tier):
+
+zoning, WWNs, fabric login events
+
+LUN management:
+
+thin vs thick provisioning
+
+LUN masking and host groups
+
+snapshots and clone workflows
+
+Deduplication and compression:
+
+Dedup ratio modeled by workload type:
+
+VDI and VM images dedup well
+
+encrypted backups dedup poorly
+
+CPU and latency tax when dedup tables are stressed
+
+NAS
+
+NFS/SMB exports:
+
+permissions, ACLs
+
+locking behavior impacts performance
+
+Tiering:
+
+hot tier NVMe cache, warm tier HDD, cold tier tape or object storage
+
+6.2.2 Tape Libraries for Cold Storage Contracts
+
+Robotic tape library operation:
+
+slot inventory, barcode scanning, drive health
+
+mount times, queueing behavior
+
+Rotation policies:
+
+GFS (grandfather-father-son)
+
+retention schedules, offsite vaulting
+
+Failure modes:
+
+tape wear, drive head dirty, robot jam
+
+broken rotation compliance triggers contract penalties
+
+6.2.3 Network Topology: Build It from Scratch
+
+Top-of-Rack (ToR) switches
+
+Port budgeting:
+
+server-facing ports (downlinks)
+
+uplinks to leaf or spine
+
+Oversubscription calculation:
+
+48x25GbE downlinks to 6x100GbE uplinks, compute oversub ratio
+
+ToR features:
+
+MLAG for redundancy
+
+port-channel groups and LACP states
+
+Spine-Leaf architecture
+
+Leaf switches connect to all spines
+
+Mechanics:
+
+ECMP pathing, hashing behavior per flow
+
+BGP EVPN (advanced tier) vs classic VLAN trunking (early tier)
+
+Failure realism:
+
+asymmetric routing causing firewall state drops
+
+misconfigured MTU causing blackholing with jumbo frames
+
+transceiver mismatch causing flaps and packet loss
+
+Configuring VLANs, Subnets, LACP
+
+VLAN trunking, access ports, native VLAN mistakes
+
+Subnet plan:
+
+management, storage, tenant, out-of-band
+
+LACP:
+
+active/passive, LAG member state, hashing by src/dst IP or L4 ports
+
+Firewalls and Load Balancers
+
+Firewall rules:
+
+stateful rules, NAT, zone policies
+
+DDoS mitigation: rate limiting, geo-block, SYN cookies
+
+Load balancers:
+
+L4 vs L7 modes
+
+health checks, failover pools
+
+sticky sessions and their downsides during node churn
+
+6.3 The NOC Dashboard (UI and UX)
+6.3.1 Minority Report Style NOC
+
+A glass cockpit interface with layered overlays:
+
+Center: 3D facility model
+
+Left: service health and SLA panel
+
+Right: network fabric visualization and security posture
+
+Bottom: alert stream, syslog, SNMP traps, incident timeline scrubber
+
+6.3.2 Visualizations
+
+Real-time 3D heatmaps:
+
+per rack inlet temp, exhaust temp, delta-T
+
+heat plumes in hot aisles
+
+Power consumption graphs:
+
+rack draw, PDU channel draw, UPS load
+
+PUE calculation: total facility power / IT load
+
+Packet flow visualization:
+
+animated flow lines between ToR, leaf, spine
+
+thickness indicates throughput
+
+red sparks indicate drops, CRC errors, retransmits
+
+6.3.3 Metrics Model
+
+Displayed at multiple scopes: component, rack, row, room, site, region.
+
+Compute
+
+CPU utilization
+
+CPU wait times (including IO wait)
+
+steal time for oversubscribed hosts
+
+thermal headroom (distance to TJ Max)
+
+memory pressure, swap rate
+
+Storage
+
+IOPS
+
+latency distribution (p50, p95, p99)
+
+queue depth
+
+rebuild status and degraded RAID risk
+
+Network
+
+packet loss
+
+latency and jitter
+
+CRC errors, FEC corrections
+
+congestion signals:
+
+microbursts
+
+buffer drops
+
+ECN marks (advanced)
+
+6.3.4 Alerting and Diagnosis
+
+Alert stream types
+
+Syslog messages: interface flaps, spanning tree events, auth failures
+
+SNMP traps: PSU failure, fan failure, link down, temperature thresholds
+
+Smart telemetry: drive reallocated sectors, NVMe media wear
+
+Synthetic monitoring: service checks failing, user-facing latency spikes
+
+Player workflow
+
+Triage: classify by severity and blast radius
+
+Correlate: “what changed” timeline, dependency graphs
+
+Mitigate: failover, reroute, throttle, power cap
+
+Fix: replace component, correct config, re-cable, re-balance
+
+Postmortem: durable learning unlocks and blueprint improvements
+
+6.4 Simulation Logic and Mechanics
+6.4.1 Thermodynamics and Airflow
+
+Airflow model
+
+Facility is voxelized into a low-res CFD-like grid:
+
+each cell tracks temperature, pressure proxy, airflow direction
+
+Each rack has:
+
+intake capacity, exhaust output, impedance factors
+
+Containment:
+
+hot aisle and cold aisle separation changes mixing coefficient
+
+Realistic consequences:
+
+A blocked perforated door increases rack impedance
+
+CRAC failure reduces cold air supply, heat rises and recirculates
+
+Thermal trip behavior
+
+Each CPU has TJ Max
+
+Each server has fan curve and thermal inertia
+
+Throttling sequence:
+
+fan ramp
+
+turbo reduction
+
+frequency cap
+
+workload migration trigger (if cluster configured)
+
+thermal shutdown if exceeded
+
+6.4.2 Power Infrastructure
+
+3-phase power simulation
+
+Utility feed to switchgear to UPS to PDUs to PSUs
+
+Phase balancing:
+
+uneven phase loads create inefficiency and risk tripping
+
+PDUs:
+
+metered: visibility
+
+switched: remote control outlets, used for recoveries and power cycling
+
+UPS behavior
+
+Battery runtime depends on load and battery health
+
+Battery aging reduces runtime
+
+Transfer events:
+
+brownout triggers UPS discharge
+
+generator start sequence with warm-up delay
+
+automatic transfer switch (ATS) timing
+
+Diesel generator failover sequencing
+
+Start delay, ramp time, load acceptance
+
+Failure modes:
+
+fuel contamination
+
+starter failure
+
+overloaded generator causing frequency dip and equipment resets
+
+6.4.3 Software Stack
+
+Hypervisor installation
+
+Choose ESXi-style or Proxmox-style
+
+Driver compatibility:
+
+NIC drivers, storage HBA drivers
+
+Management networks:
+
+out-of-band management VLAN, host management subnet
+
+VM provisioning
+
+CPU pinning vs scheduler
+
+memory reservations
+
+storage placement:
+
+local RAID datastore vs shared SAN datastore
+
+performance consequences:
+
+oversubscription increases steal time and latency
+
+Kubernetes orchestration
+
+Cluster build:
+
+control plane nodes
+
+worker nodes
+
+Scheduling mechanics:
+
+resource requests and limits
+
+taints/tolerations
+
+node affinity
+
+Storage integration:
+
+CSI drivers, persistent volumes backed by SAN/NAS
+
+Failure behaviors:
+
+node drain and reschedule
+
+etcd instability if storage latency spikes
+
+6.4.4 The Crisis System
+
+Crisis categories
+
+Cyber:
+
+DDoS attacks that saturate uplinks and overload L7
+
+requires rate limiting, scrubbing, anycast reroute, firewall tuning
+
+Firmware:
+
+corrupted BIOS or switch firmware causes boot loops or link instability
+
+rollback mechanisms require correct out-of-band access
+
+Hardware:
+
+drive failures, PSU failures, fan failures, transceiver failures
+
+Power:
+
+brownouts, phase imbalance, UPS failures, generator misfire
+
+Incident mechanics
+
+Every incident has:
+
+symptom set (metrics and alerts)
+
+hidden root cause (one or more)
+
+time pressure based on SLA and cascading risk
+
+Cascades are real:
+
+cooling failure increases fan power, raises PUE, increases UPS load, reduces runtime
+
+packet loss triggers retransmits, inflates latency, overloads services, causes error storms
+
+6.5 Progression System
+6.5.1 Starting State
+
+Garage environment:
+
+a half-rack, consumer-ish UPS, noisy unmanaged switch
+
+limited cooling, high ambient temperature variability
+
+tiny contracts: hosting a game server, small backup job, dev Kubernetes cluster
+
+6.5.2 Midgame Scaling
+
+Small colo suite:
+
+first hot aisle containment
+
+proper ToR switches, basic leaf layer
+
+shared SAN with iSCSI multipath
+
+first NOC dashboard unlock and automation scripts
+
+6.5.3 Endgame Hyperscale
+
+Subterranean Tier 4 facility:
+
+redundant everything (2N power, N+1 cooling)
+
+multi-region replication contracts
+
+complex topology (spine-leaf, EVPN optional)
+
+huge NOC with predictive alerts, capacity forecasting, change management
+
+6.5.4 Contracts and SLAs
+
+Contract attributes
+
+Required uptime: 99.9, 99.99, 99.999
+
+Performance: p95 latency, IOPS, bandwidth, jitter thresholds
+
+Data durability: backup retention, geo redundancy
+
+Security posture: firewall rulesets, MFA, segmentation, audit logs
+
+Penalty model
+
+Real-time currency loss:
+
+downtime cost per minute scales by contract tier
+
+SLA breach triggers reputation hit, future contract access reduced
+
+Performance penalties:
+
+sustained p95 latency over threshold reduces payout even if “up”
+
+7. Gameplay Loop Examples
+Loop Example A: “Rack Bring-Up Under Deadline”
+
+Buy enclosed 42U rack, 2x 1U compute nodes, 1x ToR switch, metered PDU.
+
+Assemble servers:
+
+dual-socket x86, 8-channel DDR5 balanced
+
+RAID 10 with SAS for reliability
+
+2x25GbE NICs with LACP
+
+Cable management mode:
+
+route Cat6a for management, fiber for uplinks, keep intake clear
+
+Boot and provision hypervisor, create VM templates.
+
+Validate in NOC:
+
+check thermal headroom, CPU wait, packet loss
+
+Deliver contract, get paid, unlock better UPS and first CRAC.
+
+Loop Example B: “Storage Meltdown Save”
+
+Alert: p99 storage latency spikes, VM IO wait rises, Kubernetes pods restart.
+
+NOC correlation:
+
+RAID 5 rebuild in progress on a heavily loaded array
+
+dedup table thrashing due to backup job
+
+Mitigation:
+
+throttle backup workload
+
+move latency-sensitive VMs to local RAID datastore temporarily
+
+adjust RAID controller cache policy if BBU healthy
+
+Fix:
+
+redesign: RAID 10 for hot tier, keep dedup for cold tier
+
+Postmortem:
+
+create a storage blueprint and monitoring alert thresholds
+
+Loop Example C: “DDoS Night Shift”
+
+Alert storm: uplink saturation, packet loss rises, L7 health checks failing.
+
+Identify: traffic pattern suggests volumetric DDoS.
+
+Actions:
+
+enable rate limiting, tighten firewall rules, shift services behind scrubbing path
+
+adjust load balancer to drop suspicious user agents
+
+Observe:
+
+throughput normalizes, p95 latency recovers
+
+Long-term:
+
+add redundant uplinks, separate tenant VLANs, deploy anycast edge nodes
+
+8. Systems Architecture Notes (Game Tech, Not Real Ops)
+
+This is how the game stays performant while simulating insane detail.
+
+8.1 Simulation Layers
+
+Physical layer (per frame or fast tick)
+
+cable physics, visuals, player interaction
+
+Facility dynamics (slow tick)
+
+airflow grid updates, CRAC behavior, thermal inertia
+
+Compute and workload layer (slow tick)
+
+VM scheduling, IO models, Kubernetes state changes
+
+Network layer (slow tick with burst modeling)
+
+flow-based simulation:
+
+link capacities, oversubscription
+
+queueing approximation for latency and drops
+
+Event layer (discrete)
+
+incidents, failures, maintenance actions, firmware updates
+
+8.2 “Truth Model” Philosophy
+
+The game models consequences with believable math and constraints.
+
+It does not need perfect physics CFD.
+
+It must always be internally consistent, explainable, and debuggable in the NOC.
+
+9. What “Winning” Looks Like
+
+There is no single ending. The win condition is sustained mastery:
+
+You run a hyperscale facility that survives chaos.
+
+Your NOC is quiet because your systems are good, not because alerts are disabled.
+
+You can take five-nines contracts without flinching.
