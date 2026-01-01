@@ -15,7 +15,8 @@ import type {
   RAM,
   Storage,
   NIC,
-  RAIDController
+  RAIDController,
+  Equipment
 } from "@shared/schema";
 
 interface GameContextType {
@@ -30,6 +31,7 @@ interface GameContextType {
   networkNodes: NetworkNode[];
   networkLinks: NetworkLink[];
   facilityMetrics: FacilityMetrics;
+  equipmentCatalog: Equipment[];
   
   inventory: {
     cpus: CPU[];
@@ -118,6 +120,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const { data: racksData, refetch: refetchRacksQuery } = useQuery<Rack[]>({
     queryKey: ["/api/racks"],
     staleTime: 5000,
+  });
+
+  // Equipment catalog query
+  const { data: equipmentData } = useQuery<Equipment[]>({
+    queryKey: ["/api/equipment"],
+    staleTime: 60000,
   });
 
   const refetchRacks = useCallback(() => {
@@ -217,6 +225,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     networkNodes: data?.networkNodes ?? [],
     networkLinks: data?.networkLinks ?? [],
     facilityMetrics: data?.facilityMetrics ?? defaultMetrics,
+    equipmentCatalog: equipmentData ?? [],
     inventory: data?.inventory ?? defaultInventory,
     selectedRackId,
     setSelectedRackId,

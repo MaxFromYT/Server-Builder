@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useGame } from "@/lib/game-context";
-import { IsometricDataCenter } from "@/components/3d/IsometricDataCenter";
+import { DatacenterScene } from "@/components/3d/DatacenterScene";
 import { GameHUD } from "@/components/3d/GameHUD";
 import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -35,7 +35,7 @@ export function DataCenter3D() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-background" data-testid="datacenter-3d-page">
-      <IsometricDataCenter
+      <DatacenterScene
         onSelectRack={handleSelectRack}
         selectedRackId={selectedRackId}
         isUnlocked={isUnlocked}
@@ -51,11 +51,11 @@ export function DataCenter3D() {
         />
       )}
 
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40" data-testid="game-title">
-        <h1 className="font-display text-2xl font-bold tracking-wider text-foreground/90 drop-shadow-lg">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none" data-testid="game-title">
+        <h1 className="font-display text-2xl font-bold tracking-wider text-white drop-shadow-lg">
           HYPERSCALE
         </h1>
-        <p className="text-center text-xs text-muted-foreground uppercase tracking-widest">
+        <p className="text-center text-xs text-white/70 uppercase tracking-widest">
           Data Center Architect
         </p>
       </div>
