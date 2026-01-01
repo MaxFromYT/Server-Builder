@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { logError } from "@/lib/error-log";
 
 interface StreamingCanvasOptions {
   lowResolution: number;
@@ -16,25 +17,45 @@ const scheduleIdle = (callback: () => void) => {
   }
 };
 
+const createFallbackTexture = (repeat: number) => {
+  const data = new Uint8Array([255, 0, 255, 255]);
+  const texture = new THREE.DataTexture(data, 1, 1);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(repeat, repeat);
+  texture.needsUpdate = true;
+  return texture;
+};
+
 export function createStreamingCanvasTexture({
   lowResolution,
   highResolution,
   repeat,
   draw,
-}: StreamingCanvasOptions): THREE.CanvasTexture {
+}: StreamingCanvasOptions): THREE.Texture {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    throw new Error("2D canvas context unavailable for streaming texture.");
+    logError("Streaming texture unavailable. Falling back to placeholder texture.");
+    return createFallbackTexture(repeat);
   }
 
   const render = (size: number) => {
-    canvas.width = size;
-    canvas.height = size;
-    draw(ctx, size);
+    try {
+      canvas.width = size;
+      canvas.height = size;
+      draw(ctx, size);
+    } catch (error) {
+      logError("Streaming texture draw failed. Using placeholder texture.", error);
+      throw error;
+    }
   };
 
-  render(lowResolution);
+  try {
+    render(lowResolution);
+  } catch (error) {
+    return createFallbackTexture(repeat);
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
@@ -42,8 +63,12 @@ export function createStreamingCanvasTexture({
   texture.repeat.set(repeat, repeat);
 
   scheduleIdle(() => {
-    render(highResolution);
-    texture.needsUpdate = true;
+    try {
+      render(highResolution);
+      texture.needsUpdate = true;
+    } catch (error) {
+      logError("High-resolution texture upgrade failed. Keeping low-resolution texture.", error);
+    }
   });
 
   return texture;

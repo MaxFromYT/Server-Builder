@@ -4,12 +4,14 @@ import { DatacenterScene } from "@/components/3d/DatacenterScene";
 import { GameHUD } from "@/components/3d/GameHUD";
 import { RackDetailPanel } from "@/components/3d/RackDetailPanel";
 import { MiniMap } from "@/components/3d/MiniMap";
+import { BuildToolbar } from "@/components/3d/BuildToolbar";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { WelcomeScreen } from "@/components/ui/welcome-screen";
 import { Onboarding } from "@/components/ui/onboarding";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DebugOverlay } from "@/components/ui/debug-overlay";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/lib/theme-provider";
 import { buildSummaryText, downloadBuildSummary } from "@/lib/export";
@@ -17,14 +19,15 @@ import { loadAutosaveSnapshots, loadSaveSlots, rollbackAutosaveSnapshot, saveSlo
 import { Camera, Play, Sparkles, Eye, EyeOff, RotateCcw, Info, Save, Upload, Undo2, FileText, Clipboard } from "lucide-react";
 import type { Rack } from "@shared/schema";
 import type { AutosaveSnapshot, SaveSlot } from "@/lib/save-system";
+import { useBuild } from "@/lib/build-context";
 
 type CameraMode = "orbit" | "auto" | "cinematic";
 
 export function DataCenter3D() {
   const { isLoading, racks, isStaticMode, setRacksFromSave } = useGame();
+  const { selectedIds, selectRack, clearSelection, undo, redo } = useBuild();
   const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
   const { toast } = useToast();
-  const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [showEffects, setShowEffects] = useState(true);
@@ -38,6 +41,7 @@ export function DataCenter3D() {
   const [focusMode, setFocusMode] = useState(false);
   const [fastRamp, setFastRamp] = useState(false);
   const fastRampTimer = useRef<number | null>(null);
+  const rackUpdateTimer = useRef<number | null>(null);
   const [lodResetToken, setLodResetToken] = useState(0);
   const [proceduralOptions, setProceduralOptions] = useState({
     seed: 42,
@@ -102,10 +106,16 @@ export function DataCenter3D() {
   };
 
   const handleRackCountChange = (next: number) => {
-    setSliderValue(next);
-    setRackCount(next);
+    const clamped = Math.min(500, Math.max(1, Math.round(next)));
+    setSliderValue(clamped);
+    if (rackUpdateTimer.current) {
+      window.clearTimeout(rackUpdateTimer.current);
+    }
+    rackUpdateTimer.current = window.setTimeout(() => {
+      setRackCount(clamped);
+      setLodResetToken((prev) => prev + 1);
+    }, 120);
     setFastRamp(true);
-    setLodResetToken((prev) => prev + 1);
     if (fastRampTimer.current) {
       window.clearTimeout(fastRampTimer.current);
     }
@@ -118,6 +128,9 @@ export function DataCenter3D() {
     return () => {
       if (fastRampTimer.current) {
         window.clearTimeout(fastRampTimer.current);
+      }
+      if (rackUpdateTimer.current) {
+        window.clearTimeout(rackUpdateTimer.current);
       }
     };
   }, []);
@@ -148,7 +161,7 @@ export function DataCenter3D() {
   const handleLoadSlot = (slot: SaveSlot) => {
     if (!isStaticMode) return;
     setRacksFromSave(slot.racks);
-    setSelectedRackId(null);
+    clearSelection();
     toast({
       title: "Loaded snapshot",
       description: `${slot.label} restored.`,
@@ -158,7 +171,7 @@ export function DataCenter3D() {
   const handleLoadAutosave = (snapshot: AutosaveSnapshot) => {
     if (!isStaticMode) return;
     setRacksFromSave(snapshot.racks);
-    setSelectedRackId(null);
+    clearSelection();
     toast({
       title: "Autosave loaded",
       description: `Restored ${new Date(snapshot.savedAt).toLocaleTimeString()}.`,
@@ -176,13 +189,57 @@ export function DataCenter3D() {
       return;
     }
     setRacksFromSave(snapshot.racks);
-    setSelectedRackId(null);
+    clearSelection();
     setAutosaves(loadAutosaveSnapshots());
     toast({
       title: "Rolled back",
       description: `Returned to ${new Date(snapshot.savedAt).toLocaleTimeString()}.`,
     });
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) {
+        return;
+      }
+      if (event.key === "1") {
+        setCameraMode("orbit");
+      }
+      if (event.key === "2") {
+        setCameraMode("auto");
+      }
+      if (event.key === "3") {
+        setCameraMode("cinematic");
+      }
+      if (event.key.toLowerCase() === "h") {
+        setShowHUD((prev) => !prev);
+      }
+      if (event.key.toLowerCase() === "e") {
+        setShowEffects((prev) => !prev);
+      }
+      if (event.key.toLowerCase() === "f") {
+        setFocusMode((prev) => !prev);
+      }
+      if (event.key.toLowerCase() === "o") {
+        setShowOverlays((prev) => !prev);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [redo, undo]);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -443,7 +500,7 @@ export function DataCenter3D() {
                 </div>
                 <Slider
                   value={[rackCount]}
-                  onValueChange={(v) => setRackCount(v[0])}
+                  onValueChange={(v) => handleRackCountChange(v[0])}
                   min={9}
                   max={500}
                   step={1}
@@ -503,11 +560,11 @@ export function DataCenter3D() {
                 </div>
 
                 <div className="flex gap-1 mt-2">
-                  <QuickRackBtn count={9} current={rackCount} onClick={setRackCount} />
-                  <QuickRackBtn count={50} current={rackCount} onClick={setRackCount} />
-                  <QuickRackBtn count={100} current={rackCount} onClick={setRackCount} />
-                  <QuickRackBtn count={250} current={rackCount} onClick={setRackCount} />
-                  <QuickRackBtn count={500} current={rackCount} onClick={setRackCount} />
+                  <QuickRackBtn count={9} current={rackCount} onClick={handleRackCountChange} />
+                  <QuickRackBtn count={50} current={rackCount} onClick={handleRackCountChange} />
+                  <QuickRackBtn count={100} current={rackCount} onClick={handleRackCountChange} />
+                  <QuickRackBtn count={250} current={rackCount} onClick={handleRackCountChange} />
+                  <QuickRackBtn count={500} current={rackCount} onClick={handleRackCountChange} />
                 </div>
               </div>
             )}
@@ -656,6 +713,14 @@ export function DataCenter3D() {
                   Save slots are only available for local sandbox builds.
                 </p>
               )}
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between text-white/60 text-[10px] font-mono uppercase">
+                <span>Diagnostics</span>
+                <InlineHelp tip="Export debug logs to help diagnose issues." />
+              </div>
+              <DebugOverlay />
             </div>
           </div>
         )}

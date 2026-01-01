@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useGame } from "@/lib/game-context";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SettingsPanel } from "@/components/ui/settings-panel";
+import { useToast } from "@/hooks/use-toast";
 
 interface GameHUDProps {
   isUnlocked: boolean;
@@ -31,6 +32,7 @@ interface GameHUDProps {
 
 export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProps) {
   const { gameState, facilityMetrics, alerts, racks, generateMaxedDatacenter, isGeneratingMaxed } = useGame();
+  const { toast } = useToast();
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState(false);
@@ -229,7 +231,15 @@ export function GameHUD({ isUnlocked, onUnlock, showUnlock = true }: GameHUDProp
               <Button
                 className="w-full bg-noc-purple hover:bg-noc-purple/80"
                 onClick={async () => {
-                  await generateMaxedDatacenter();
+                  const ok = await generateMaxedDatacenter();
+                  if (!ok) {
+                    toast({
+                      title: "Generation failed",
+                      description: "The service is unavailable. Please retry shortly.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
                   setShowCodeDialog(false);
                 }}
                 disabled={isGeneratingMaxed}
