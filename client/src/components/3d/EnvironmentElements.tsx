@@ -6,9 +6,10 @@ import { DatacenterFloor } from "./DatacenterFloor";
 interface RaisedFloorProps {
   size: number;
   showHeatmap?: boolean;
+  theme?: "dark" | "light";
 }
 
-export function RaisedFloor({ size = 30, showHeatmap = false }: RaisedFloorProps) {
+export function RaisedFloor({ size = 30, showHeatmap = false, theme = "dark" }: RaisedFloorProps) {
   const tileSize = 0.6;
   const tilesPerSide = Math.ceil(size / tileSize);
   
@@ -23,9 +24,7 @@ export function RaisedFloor({ size = 30, showHeatmap = false }: RaisedFloorProps
     return result;
   }, [tilesPerSide, tileSize]);
 
-  return (
-    <DatacenterFloor size={size} showHeatmap={showHeatmap} />
-  );
+  return <DatacenterFloor size={size} showHeatmap={showHeatmap} theme={theme} />;
 }
 
 export function CableTrays({ length = 20, rows = 3 }: { length?: number; rows?: number }) {
@@ -94,40 +93,51 @@ export function CRACUnit({ position }: { position: [number, number, number] }) {
 
   return (
     <group position={position}>
-      <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.2, 3, 0.8]} />
-        <meshStandardMaterial color="#e8e8e8" roughness={0.5} metalness={0.3} />
+      <mesh position={[0, 1.6, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.4, 3.2, 0.9]} />
+        <meshStandardMaterial color="#e6ecf5" roughness={0.35} metalness={0.45} />
       </mesh>
       
-      <mesh position={[0.61, 1.5, 0]}>
-        <boxGeometry args={[0.02, 2.8, 0.7]} />
-        <meshStandardMaterial color="#2a4a6a" roughness={0.3} metalness={0.6} />
+      <mesh position={[0.72, 1.6, 0]}>
+        <boxGeometry args={[0.04, 2.8, 0.75]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.2} metalness={0.7} />
       </mesh>
       
-      <mesh position={[-0.61, 2.2, 0]}>
-        <boxGeometry args={[0.02, 0.6, 0.5]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+      <mesh position={[-0.72, 2.3, 0]}>
+        <boxGeometry args={[0.04, 0.8, 0.6]} />
+        <meshStandardMaterial color="#0b1220" roughness={0.7} />
       </mesh>
       
-      <group position={[-0.61, 2.2, 0]}>
+      <group position={[-0.72, 2.3, 0]}>
         <mesh ref={fanRef}>
-          <cylinderGeometry args={[0.15, 0.15, 0.03, 6]} />
-          <meshStandardMaterial color="#333333" roughness={0.5} />
+          <cylinderGeometry args={[0.18, 0.18, 0.03, 8]} />
+          <meshStandardMaterial color="#1f2937" roughness={0.4} />
         </mesh>
       </group>
-      
-      <mesh position={[0, 0.15, 0.41]}>
-        <planeGeometry args={[0.2, 0.1]} />
+
+      <mesh position={[0, 1.6, 0.46]}>
+        <planeGeometry args={[1.0, 2.4]} />
+        <meshStandardMaterial color="#0b1326" metalness={0.2} roughness={0.6} />
+      </mesh>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <mesh key={`vent-${i}`} position={[-0.35 + i * 0.14, 1.5, 0.47]}>
+          <boxGeometry args={[0.08, 2.2, 0.02]} />
+          <meshStandardMaterial color="#1f2937" metalness={0.2} roughness={0.6} />
+        </mesh>
+      ))}
+
+      <mesh position={[0, 0.25, 0.46]}>
+        <boxGeometry args={[0.4, 0.06, 0.02]} />
         <meshStandardMaterial
-          color="#00ff00"
-          emissive="#00ff00"
+          color="#38bdf8"
+          emissive="#38bdf8"
           emissiveIntensity={2}
         />
       </mesh>
-      
-      <mesh position={[0, 3.1, 0]}>
-        <boxGeometry args={[0.8, 0.15, 0.6]} />
-        <meshStandardMaterial color="#cccccc" roughness={0.4} metalness={0.5} />
+
+      <mesh position={[0, 3.25, 0]}>
+        <boxGeometry args={[1.0, 0.18, 0.7]} />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.3} metalness={0.6} />
       </mesh>
     </group>
   );

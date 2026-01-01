@@ -5,11 +5,14 @@ import { useGame } from "@/lib/game-context";
 interface DatacenterFloorProps {
   size: number;
   showHeatmap?: boolean;
+  theme?: "dark" | "light";
 }
 
-export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorProps) {
+export function DatacenterFloor({ size, showHeatmap = false, theme = "dark" }: DatacenterFloorProps) {
   const floorRef = useRef<THREE.Mesh>(null);
   const { racks } = useGame();
+  const ceilingHeight = 22;
+  const isLight = theme === "light";
 
   const gridTexture = useMemo(() => {
     const canvas = document.createElement('canvas');
@@ -17,13 +20,22 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
     canvas.height = 128;
     const ctx = canvas.getContext('2d')!;
     
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = isLight ? '#cbd5f5' : '#1e293b';
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, 128, 128);
     
-    ctx.strokeStyle = '#334155';
+    ctx.strokeStyle = isLight ? '#94a3d8' : '#334155';
     ctx.lineWidth = 1;
     ctx.strokeRect(32, 32, 64, 64);
+
+    ctx.strokeStyle = isLight ? 'rgba(14, 116, 144, 0.35)' : 'rgba(56, 189, 248, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, 64);
+    ctx.lineTo(128, 64);
+    ctx.moveTo(64, 0);
+    ctx.lineTo(64, 128);
+    ctx.stroke();
     
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
@@ -43,9 +55,11 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
         <planeGeometry args={[size * 2, size * 2]} />
         <meshStandardMaterial
           map={gridTexture}
-          color="#0f172a"
-          roughness={0.8}
-          metalness={0.2}
+          color={isLight ? "#dee7f5" : "#0b1326"}
+          roughness={isLight ? 0.4 : 0.55}
+          metalness={isLight ? 0.2 : 0.35}
+          emissive={isLight ? "#eef4ff" : "#050a14"}
+          emissiveIntensity={isLight ? 0.1 : 0.25}
         />
       </mesh>
 
@@ -56,15 +70,35 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <planeGeometry args={[size * 3, size * 3]} />
-        <meshBasicMaterial color="#0a0c10" />
+        <meshBasicMaterial color={isLight ? "#e8eef7" : "#05070b"} />
       </mesh>
+
+      <group>
+        {[
+          { position: [0, 0.02, size], args: [size * 2.05, 0.08, 0.25] },
+          { position: [0, 0.02, -size], args: [size * 2.05, 0.08, 0.25] },
+          { position: [size, 0.02, 0], args: [0.25, 0.08, size * 2.05] },
+          { position: [-size, 0.02, 0], args: [0.25, 0.08, size * 2.05] },
+        ].map((edge, i) => (
+          <mesh key={`edge-${i}`} position={edge.position as [number, number, number]} castShadow receiveShadow>
+            <boxGeometry args={edge.args as [number, number, number]} />
+            <meshStandardMaterial
+              color={isLight ? "#d5dde9" : "#0f172a"}
+              metalness={isLight ? 0.4 : 0.6}
+              roughness={isLight ? 0.35 : 0.3}
+              emissive={isLight ? "#b8c3d6" : "#0b244a"}
+              emissiveIntensity={isLight ? 0.15 : 0.3}
+            />
+          </mesh>
+        ))}
+      </group>
 
       {showHeatmap && racks && (
         <HeatmapOverlay size={size} racks={racks} />
       )}
 
       {Array.from({ length: 3 }).map((_, i) => (
-        <mesh key={`ceiling-light-${i}`} position={[(i - 1) * 8, 14.9, 0]}>
+        <mesh key={`ceiling-light-${i}`} position={[(i - 1) * 8, ceilingHeight - 0.1, 0]}>
           <boxGeometry args={[6, 0.1, 0.6]} />
           <meshStandardMaterial
             color="#c0d0ff"
@@ -74,10 +108,49 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
         </mesh>
       ))}
 
-      <mesh position={[0, 15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, ceilingHeight, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[size * 2, size * 2]} />
-        <meshStandardMaterial color="#0d1015" side={THREE.DoubleSide} />
+        <meshStandardMaterial
+          color={isLight ? "#f1f5fb" : "#0b0f16"}
+          emissive={isLight ? "#e2e8f0" : "#070a10"}
+          emissiveIntensity={isLight ? 0.2 : 0.4}
+          side={THREE.DoubleSide}
+        />
       </mesh>
+
+      <mesh position={[0, ceilingHeight - 4, 0]}>
+        <sphereGeometry args={[size * 1.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial
+          color={isLight ? "#e5eef9" : "#0a0e17"}
+          metalness={isLight ? 0.1 : 0.2}
+          roughness={isLight ? 0.6 : 0.9}
+          side={THREE.BackSide}
+        />
+      </mesh>
+
+      {Array.from({ length: 4 }).map((_, i) => (
+        <mesh key={`ceiling-panel-${i}`} position={[(i - 1.5) * 6, ceilingHeight - 1.2, 0]}>
+          <boxGeometry args={[4.5, 0.1, 2]} />
+          <meshStandardMaterial
+            color={isLight ? "#dfe7f2" : "#111827"}
+            emissive={isLight ? "#d4e4f5" : "#0d2b55"}
+            emissiveIntensity={isLight ? 0.2 : 0.5}
+            metalness={0.4}
+            roughness={0.35}
+          />
+        </mesh>
+      ))}
+
+      {Array.from({ length: 6 }).map((_, i) => (
+        <mesh key={`ceiling-strip-${i}`} position={[-size * 0.6 + i * (size * 0.24), ceilingHeight - 0.6, -size * 0.4]}>
+          <boxGeometry args={[3.5, 0.05, 0.18]} />
+          <meshStandardMaterial
+            color={isLight ? "#c7d7ea" : "#0b1220"}
+            emissive={isLight ? "#9ec7f0" : "#38bdf8"}
+            emissiveIntensity={isLight ? 0.8 : 1.4}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }

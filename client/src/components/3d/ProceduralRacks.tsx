@@ -52,9 +52,16 @@ export function generateProceduralRacks(
     fillRateMultiplier?: number;
     errorRate?: number;
     tempBase?: number;
+    dense?: boolean;
   } = {}
 ): Rack[] {
-  const { seed = 42, fillRateMultiplier = 1, errorRate = 1, tempBase = 20 } = options;
+  const {
+    seed = 42,
+    fillRateMultiplier = 1,
+    errorRate = 1,
+    tempBase = 20,
+    dense = false,
+  } = options;
   const random = seededRandom(seed);
   const racks: Rack[] = [];
   
@@ -62,12 +69,13 @@ export function generateProceduralRacks(
   const gridRows = Math.ceil(count / gridCols);
 
   for (let i = 0; i < count; i++) {
+    const rackRandom = seededRandom(seed + i * 131);
     const col = i % gridCols;
     const row = Math.floor(i / gridCols);
     const aisleOffset = Math.floor(col / 2) * 2;
     
-    const template = RACK_TEMPLATES[Math.floor(random() * RACK_TEMPLATES.length)];
-    const fillRate = Math.min(0.95, template.fillRate * fillRateMultiplier);
+    const template = RACK_TEMPLATES[Math.floor(rackRandom() * RACK_TEMPLATES.length)];
+    const fillRate = Math.min(1, template.fillRate * fillRateMultiplier * (0.9 + rackRandom() * 0.2));
     const slots = Array.from({ length: 42 }, (_, j) => ({
       uPosition: j + 1,
       equipmentInstanceId: null,
@@ -86,22 +94,22 @@ export function generateProceduralRacks(
       
       if (eligibleEquipment.length === 0) break;
       
-      const eq = eligibleEquipment[Math.floor(random() * eligibleEquipment.length)];
+      const eq = eligibleEquipment[Math.floor(rackRandom() * eligibleEquipment.length)];
       
       installedEquipment.push({
         id: `inst-${eq.id}-${i}-${currentU}-${Math.random().toString(36).substr(2, 4)}`,
         equipmentId: eq.id,
         uStart: currentU,
         uEnd: currentU + eq.uHeight - 1,
-        status: random() > (0.95 / errorRate) ? "warning" : random() > (0.98 / errorRate) ? "critical" : "online",
-        cpuLoad: random() * 80 + 10,
-        memoryUsage: random() * 70 + 15,
-        networkActivity: random() * 100,
+        status: rackRandom() > (0.95 / errorRate) ? "warning" : rackRandom() > (0.98 / errorRate) ? "critical" : "online",
+        cpuLoad: rackRandom() * 80 + 10,
+        memoryUsage: rackRandom() * 70 + 15,
+        networkActivity: rackRandom() * 100,
       });
       
       currentU += eq.uHeight;
       
-      if (random() > 0.7) currentU += 1;
+      if (!dense && rackRandom() > 0.7) currentU += 1;
     }
     
     const basePower = installedEquipment.reduce((sum, inst) => {
@@ -109,8 +117,8 @@ export function generateProceduralRacks(
       return sum + (eq?.powerDraw || 0);
     }, 0);
     
-    const variance = 0.85 + random() * 0.3;
-    const inletTemp = tempBase + random() * 5;
+    const variance = 0.85 + rackRandom() * 0.3;
+    const inletTemp = tempBase + rackRandom() * 5;
     const heatLoad = basePower * 0.0034 * variance;
     
     racks.push({
