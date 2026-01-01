@@ -545,6 +545,11 @@ export function DatacenterScene({
             enableDamping
             dampingFactor={0.05}
             onChange={handleOrbitControlsChange}
+            mouseButtons={{
+              LEFT: THREE.MOUSE.PAN,
+              MIDDLE: THREE.MOUSE.DOLLY,
+              RIGHT: THREE.MOUSE.ROTATE,
+            }}
           />
         )}
 
