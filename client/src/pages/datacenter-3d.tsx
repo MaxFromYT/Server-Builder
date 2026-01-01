@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/lib/theme-provider";
 import { buildSummaryText, downloadBuildSummary } from "@/lib/export";
 import { loadAutosaveSnapshots, loadSaveSlots, rollbackAutosaveSnapshot, saveSlot } from "@/lib/save-system";
-import { Camera, Play, Sparkles, Eye, EyeOff, RotateCcw, Info, Save, Upload, Undo2, FileText, Clipboard } from "lucide-react";
+import { Camera, Play, Sparkles, Eye, EyeOff, RotateCcw, Info, Save, Upload, Undo2, FileText, Clipboard, ShieldCheck, Rocket, Redo2 } from "lucide-react";
 import type { Rack } from "@shared/schema";
 import type { AutosaveSnapshot, SaveSlot } from "@/lib/save-system";
 import { useBuild } from "@/lib/build-context";
@@ -25,7 +25,7 @@ type CameraMode = "orbit" | "auto" | "cinematic";
 
 export function DataCenter3D() {
   const { isLoading, racks, isStaticMode, setRacksFromSave } = useGame();
-  const { selectedIds, selectRack, clearSelection, undo, redo } = useBuild();
+  const { selectedIds, selectRack, clearSelection, undo, redo, canUndo, canRedo } = useBuild();
   const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
   const { toast } = useToast();
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -66,6 +66,26 @@ export function DataCenter3D() {
   const visibleRacks = isStaticMode ? racks.slice(0, rackCount) : racks;
   const selectedRack = visibleRacks?.find(r => r.id === selectedRackId) || null;
   const effectiveEffects = showEffects && !fastRamp;
+  const validateBuild = () => {
+    const powerViolations = racks.filter((rack) => rack.currentPowerDraw > rack.powerCapacity);
+    const slotViolations = racks.filter((rack) => {
+      const usedSlots = rack.installedEquipment?.reduce((acc, eq) => acc + (eq.uEnd - eq.uStart + 1), 0) || 0;
+      return usedSlots > rack.totalUs;
+    });
+    if (powerViolations.length === 0 && slotViolations.length === 0) {
+      toast({
+        title: "Validation passed",
+        description: "All racks are within power and capacity limits.",
+      });
+      return true;
+    }
+    toast({
+      title: "Validation found issues",
+      description: `${powerViolations.length} power alerts · ${slotViolations.length} capacity alerts.`,
+      variant: "destructive",
+    });
+    return false;
+  };
 
   useEffect(() => {
     if (isStaticMode) {
@@ -194,6 +214,26 @@ export function DataCenter3D() {
     toast({
       title: "Rolled back",
       description: `Returned to ${new Date(snapshot.savedAt).toLocaleTimeString()}.`,
+    });
+  };
+
+  const handleQuickSave = () => {
+    if (!isStaticMode) {
+      toast({
+        title: "Save disabled",
+        description: "Save slots are only available in local sandbox mode.",
+      });
+      return;
+    }
+    handleSaveSlot("slot-1");
+  };
+
+  const handleDeploy = () => {
+    const ok = validateBuild();
+    if (!ok) return;
+    toast({
+      title: "Deployment queued",
+      description: "Build handed off to operations for rollout.",
     });
   };
 
@@ -741,6 +781,27 @@ export function DataCenter3D() {
           )}
         </div>
       )}
+
+      {isUnlocked && !focusMode && (
+        <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-cyan-500/30 bg-black/70 px-3 py-2 shadow-[0_0_20px_rgba(34,211,238,0.25)] backdrop-blur">
+          <FooterButton label="Undo" onClick={undo} disabled={!canUndo}>
+            <Undo2 className="h-4 w-4" />
+          </FooterButton>
+          <FooterButton label="Redo" onClick={redo} disabled={!canRedo}>
+            <Redo2 className="h-4 w-4" />
+          </FooterButton>
+          <div className="mx-1 h-6 w-px bg-white/10" />
+          <FooterButton label="Validate build" onClick={validateBuild}>
+            <ShieldCheck className="h-4 w-4" />
+          </FooterButton>
+          <FooterButton label="Save to slot 1" onClick={handleQuickSave} disabled={!isStaticMode}>
+            <Save className="h-4 w-4" />
+          </FooterButton>
+          <FooterButton label="Deploy to operations" onClick={handleDeploy}>
+            <Rocket className="h-4 w-4" />
+          </FooterButton>
+        </div>
+      )}
     </div>
   );
 }
@@ -755,6 +816,38 @@ function InlineHelp({ tip }: { tip: string }) {
       </TooltipTrigger>
       <TooltipContent side="left" className="max-w-xs text-[10px]">
         {tip}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function FooterButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onClick}
+          disabled={disabled}
+          className="h-9 w-9 text-white/70 hover:text-white"
+          aria-label={label}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-[10px]">
+        {label}
       </TooltipContent>
     </Tooltip>
   );
