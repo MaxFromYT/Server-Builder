@@ -197,6 +197,14 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
+  const appearDelay = useMemo(() => {
+    let hash = 0;
+    for (let i = 0; i < rack.id.length; i += 1) {
+      hash = (hash * 31 + rack.id.charCodeAt(i)) % 9973;
+    }
+    return (hash % 80) * 0.02;
+  }, [rack.id]);
+  const appearDuration = 1.4;
 
   const thermalStatus = useMemo(() => {
     if (rack.inletTemp > 30) return "critical";
@@ -209,12 +217,18 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
 
   useFrame((state) => {
     if (groupRef.current) {
-      const targetY = hovered || isSelected ? 0.05 : 0;
+      const elapsed = state.clock.getElapsedTime();
+      const appearT = THREE.MathUtils.clamp((elapsed - appearDelay) / appearDuration, 0, 1);
+      const eased = appearT * appearT * (3 - 2 * appearT);
+      const appearLift = THREE.MathUtils.lerp(-0.35, 0, eased);
+      const targetY = appearLift + (hovered || isSelected ? 0.05 : 0);
       groupRef.current.position.y = THREE.MathUtils.lerp(
         groupRef.current.position.y,
         targetY,
         0.15
       );
+      const scale = THREE.MathUtils.lerp(0.86, 1, eased);
+      groupRef.current.scale.setScalar(scale);
 
       const distance = camera.position.distanceTo(
         new THREE.Vector3(position[0], position[1] + RACK_HEIGHT / 2, position[2])
@@ -287,10 +301,10 @@ export function Rack3D({ rack, position, isSelected, onSelect, equipmentCatalog 
               opacity={0.15}
             />
           </mesh>
-          <Html position={[0, RACK_HEIGHT + 0.5, 0]} center distanceFactor={10}>
-            <Card className="p-3 min-w-[180px] bg-black/80 backdrop-blur-md border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+          <Html position={[0.8, RACK_HEIGHT + 0.45, 0]} distanceFactor={10}>
+            <Card className="p-3 min-w-[200px] bg-black/80 backdrop-blur-md border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.25)]">
               <div className="flex justify-between items-start mb-2">
-                <div className="font-mono text-xs text-cyan-400 font-bold tracking-tight">RACK {rack.name}</div>
+                <div className="font-mono text-xs text-cyan-200 font-bold tracking-tight">RACK {rack.name}</div>
                 <Badge variant="outline" className={`text-[9px] uppercase h-4 px-1 ${
                   thermalStatus === 'critical' ? 'border-red-500 text-red-400' :
                   thermalStatus === 'warning' ? 'border-amber-500 text-amber-400' :

@@ -50,6 +50,28 @@ function AdvancedLights({ performanceMode = false }: { performanceMode?: boolean
         shadow-camera-bottom={-80}
         shadow-bias={-0.0001}
       />
+      {!performanceMode && (
+        <>
+          <spotLight
+            position={[0, 35, 10]}
+            angle={0.4}
+            penumbra={0.6}
+            intensity={0.6}
+            color="#8bbcff"
+            castShadow
+            shadow-mapSize={[1024, 1024]}
+          />
+          <spotLight
+            position={[0, 30, -12]}
+            angle={0.45}
+            penumbra={0.6}
+            intensity={0.5}
+            color="#7ee7ff"
+            castShadow
+            shadow-mapSize={[1024, 1024]}
+          />
+        </>
+      )}
       <directionalLight
         position={[-40, 50, -30]}
         intensity={0.3}

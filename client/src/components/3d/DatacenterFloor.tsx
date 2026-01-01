@@ -25,6 +25,15 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
     ctx.strokeStyle = '#334155';
     ctx.lineWidth = 1;
     ctx.strokeRect(32, 32, 64, 64);
+
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, 64);
+    ctx.lineTo(128, 64);
+    ctx.moveTo(64, 0);
+    ctx.lineTo(64, 128);
+    ctx.stroke();
     
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
@@ -44,9 +53,11 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
         <planeGeometry args={[size * 2, size * 2]} />
         <meshStandardMaterial
           map={gridTexture}
-          color="#0f172a"
-          roughness={0.8}
-          metalness={0.2}
+          color="#0b1326"
+          roughness={0.55}
+          metalness={0.35}
+          emissive="#050a14"
+          emissiveIntensity={0.25}
         />
       </mesh>
 
@@ -57,8 +68,28 @@ export function DatacenterFloor({ size, showHeatmap = false }: DatacenterFloorPr
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <planeGeometry args={[size * 3, size * 3]} />
-        <meshBasicMaterial color="#0a0c10" />
+        <meshBasicMaterial color="#05070b" />
       </mesh>
+
+      <group>
+        {[
+          { position: [0, 0.02, size], args: [size * 2.05, 0.08, 0.25] },
+          { position: [0, 0.02, -size], args: [size * 2.05, 0.08, 0.25] },
+          { position: [size, 0.02, 0], args: [0.25, 0.08, size * 2.05] },
+          { position: [-size, 0.02, 0], args: [0.25, 0.08, size * 2.05] },
+        ].map((edge, i) => (
+          <mesh key={`edge-${i}`} position={edge.position as [number, number, number]} castShadow receiveShadow>
+            <boxGeometry args={edge.args as [number, number, number]} />
+            <meshStandardMaterial
+              color="#0f172a"
+              metalness={0.6}
+              roughness={0.3}
+              emissive="#0b244a"
+              emissiveIntensity={0.3}
+            />
+          </mesh>
+        ))}
+      </group>
 
       {showHeatmap && racks && (
         <HeatmapOverlay size={size} racks={racks} />

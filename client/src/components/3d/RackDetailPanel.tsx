@@ -137,15 +137,15 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
 
   return (
     <>
-      <div className="fixed right-0 top-0 h-full w-[420px] bg-background/95 backdrop-blur-md border-l border-border z-50 flex flex-col" data-testid="rack-detail-panel">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className="fixed right-0 top-0 h-full w-[420px] bg-gradient-to-b from-slate-950/95 via-black/95 to-slate-950/95 backdrop-blur-md border-l border-cyan-500/20 shadow-[-20px_0_40px_rgba(0,0,0,0.35)] z-50 flex flex-col" data-testid="rack-detail-panel">
+        <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-noc-blue/20">
               <Server className="w-5 h-5 text-noc-blue" />
             </div>
             <div>
-              <h2 className="font-display font-bold text-lg">{rack.name}</h2>
-              <p className="text-sm text-muted-foreground">{rack.type.replace(/_/g, " ")}</p>
+              <h2 className="font-display font-bold text-lg">Rack {rack.name}</h2>
+              <p className="text-sm text-muted-foreground">Model {rack.type.replace(/_/g, " ")}</p>
             </div>
           </div>
           <Button size="icon" variant="ghost" onClick={onClose} data-testid="button-close-panel">
@@ -156,20 +156,20 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <Card className="p-3 bg-card/50">
+              <Card className="p-3 bg-card/50 border border-white/5 shadow-[0_0_20px_rgba(15,23,42,0.4)]">
                 <div className="flex items-center gap-2 mb-1">
                   <Thermometer className="w-4 h-4 text-noc-blue" />
-                  <span className="text-xs text-muted-foreground">Inlet</span>
+                  <span className="text-xs text-muted-foreground">Inlet Air</span>
                 </div>
                 <p className={`font-mono text-lg ${getStatusColor(rack.inletTemp, { good: 25, warning: 28 })}`}>
                   {rack.inletTemp.toFixed(1)}°C
                 </p>
               </Card>
               
-              <Card className="p-3 bg-card/50">
+              <Card className="p-3 bg-card/50 border border-white/5 shadow-[0_0_20px_rgba(15,23,42,0.4)]">
                 <div className="flex items-center gap-2 mb-1">
                   <Thermometer className="w-4 h-4 text-noc-red" />
-                  <span className="text-xs text-muted-foreground">Exhaust</span>
+                  <span className="text-xs text-muted-foreground">Exhaust Air</span>
                 </div>
                 <p className={`font-mono text-lg ${getStatusColor(rack.exhaustTemp, { good: 35, warning: 40 })}`}>
                   {rack.exhaustTemp.toFixed(1)}°C
@@ -177,10 +177,10 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
               </Card>
             </div>
 
-            <Card className="p-3 bg-card/50">
+            <Card className="p-3 bg-card/50 border border-white/5 shadow-[0_0_20px_rgba(15,23,42,0.4)]">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className={`w-4 h-4 ${getStatusColor(powerPercent, { good: 70, warning: 85 })}`} />
-                <span className="text-xs text-muted-foreground">Power</span>
+                <span className="text-xs text-muted-foreground">Power Draw</span>
                 <span className="ml-auto font-mono text-sm">
                   {rack.currentPowerDraw.toLocaleString()}W / {rack.powerCapacity.toLocaleString()}W
                 </span>
@@ -188,10 +188,10 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
               <Progress value={powerPercent} className="h-2" />
             </Card>
 
-            <Card className="p-3 bg-card/50">
+            <Card className="p-3 bg-card/50 border border-white/5 shadow-[0_0_20px_rgba(15,23,42,0.4)]">
               <div className="flex items-center gap-2 mb-2">
                 <HardDrive className="w-4 h-4 text-noc-cyan" />
-                <span className="text-xs text-muted-foreground">Capacity</span>
+                <span className="text-xs text-muted-foreground">Rack Capacity</span>
                 <span className="ml-auto font-mono text-sm">
                   {usedSlots}U / {rack.totalUs}U
                 </span>
@@ -203,7 +203,7 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
 
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center justify-between">
-                <span>Rack Contents (42U)</span>
+                <span>Rack Layout · 42U</span>
                 {isUnlocked && (
                   <Badge variant="outline" className="text-xs text-noc-purple border-noc-purple">
                     Click empty slot to add
