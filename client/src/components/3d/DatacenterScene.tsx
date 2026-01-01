@@ -39,6 +39,7 @@ interface DatacenterSceneProps {
   showEffects?: boolean;
   cameraMode?: "orbit" | "auto" | "cinematic";
   showHUD?: boolean;
+  showPerfOverlay?: boolean;
   rackCount?: number;
   showHeatmap?: boolean;
   performanceMode?: boolean;
@@ -46,6 +47,7 @@ interface DatacenterSceneProps {
   visibleRacks?: Rack[];
   forceSimplified?: boolean;
   lodResetToken?: number;
+  onPerfWarningChange?: (warning: string | null) => void;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -388,6 +390,7 @@ export function DatacenterScene({
   showEffects = true,
   cameraMode = "orbit",
   showHUD = true,
+  showPerfOverlay = false,
   rackCount = 9,
   showHeatmap = false,
   performanceMode = false,
@@ -395,6 +398,7 @@ export function DatacenterScene({
   visibleRacks,
   forceSimplified = false,
   lodResetToken = 0,
+  onPerfWarningChange,
   proceduralOptions,
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog, preloadQueue } = useGame();
@@ -641,7 +645,9 @@ export function DatacenterScene({
           {showHUD && <HolographicHUD position={[0, 10, -floorSize * 0.7]} visible />}
 
           <PerformanceOverlay
-            visible={showHUD}
+            visible={showPerfOverlay}
+            qualityMode={dynamicQuality}
+            onWarningChange={onPerfWarningChange}
             onQualityChange={(quality, reason) => {
               setDynamicQuality(quality);
               if (quality === "low") {
