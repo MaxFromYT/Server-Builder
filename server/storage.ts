@@ -168,49 +168,33 @@ const initialIncidents: Incident[] = [
   },
 ];
 
+function createRack(id: string, name: string, power: number, inlet: number, exhaust: number, airflow: number, x: number, y: number): Rack {
+  return {
+    id,
+    name,
+    type: "enclosed_42U",
+    totalUs: 42,
+    slots: Array.from({ length: 42 }, (_, i) => ({ uPosition: i + 1, serverId: null })),
+    powerCapacity: 20000,
+    currentPowerDraw: power,
+    inletTemp: inlet,
+    exhaustTemp: exhaust,
+    airflowRestriction: airflow,
+    positionX: x,
+    positionY: y,
+  };
+}
+
 const initialRacks: Rack[] = [
-  {
-    id: "rack-1",
-    name: "RACK-01",
-    type: "enclosed_42U",
-    totalUs: 42,
-    slots: Array.from({ length: 42 }, (_, i) => ({ uPosition: i + 1, serverId: null })),
-    powerCapacity: 20000,
-    currentPowerDraw: 14500,
-    inletTemp: 22.3,
-    exhaustTemp: 35.1,
-    airflowRestriction: 12,
-    positionX: 0,
-    positionY: 0,
-  },
-  {
-    id: "rack-2",
-    name: "RACK-02",
-    type: "enclosed_42U",
-    totalUs: 42,
-    slots: Array.from({ length: 42 }, (_, i) => ({ uPosition: i + 1, serverId: null })),
-    powerCapacity: 20000,
-    currentPowerDraw: 16200,
-    inletTemp: 23.1,
-    exhaustTemp: 36.8,
-    airflowRestriction: 18,
-    positionX: 1,
-    positionY: 0,
-  },
-  {
-    id: "rack-3",
-    name: "RACK-03",
-    type: "enclosed_42U",
-    totalUs: 42,
-    slots: Array.from({ length: 42 }, (_, i) => ({ uPosition: i + 1, serverId: null })),
-    powerCapacity: 20000,
-    currentPowerDraw: 17800,
-    inletTemp: 28.5,
-    exhaustTemp: 42.1,
-    airflowRestriction: 35,
-    positionX: 2,
-    positionY: 0,
-  },
+  createRack("rack-1", "RACK-01", 14500, 22.3, 35.1, 12, 0, 0),
+  createRack("rack-2", "RACK-02", 16200, 23.1, 36.8, 18, 1, 0),
+  createRack("rack-3", "RACK-03", 17800, 28.5, 42.1, 35, 2, 0),
+  createRack("rack-4", "RACK-04", 15100, 22.8, 34.2, 10, 0, 1),
+  createRack("rack-5", "RACK-05", 18500, 24.2, 38.5, 22, 1, 1),
+  createRack("rack-6", "RACK-06", 12800, 21.5, 32.1, 8, 2, 1),
+  createRack("rack-7", "RACK-07", 19200, 25.1, 40.2, 28, 0, 2),
+  createRack("rack-8", "RACK-08", 16800, 23.5, 37.8, 15, 1, 2),
+  createRack("rack-9", "RACK-09", 14200, 22.1, 33.9, 11, 2, 2),
 ];
 
 const initialServers: ServerConfig[] = [
