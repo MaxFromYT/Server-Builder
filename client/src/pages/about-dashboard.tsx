@@ -25,12 +25,10 @@ export function AboutDashboard() {
           <div className="flex flex-col items-center gap-4">
             <div className="h-48 w-48 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
               <img
-                src="/IMG_9293.jpg"
+                src="/assets/max-doubin.svg"
                 alt="Max Doubin"
                 className="h-full w-full object-cover"
               />
-
-
             </div>
             <div className="text-center">
               <div className="text-lg font-semibold text-white">Max Doubin</div>

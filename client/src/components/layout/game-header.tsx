@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, DollarSign, Star, Building2 } from "lucide-react";
 
 const tierLabels = {
-  garage: "Garage",
+  garage: null,
   tier1: "Tier I",
   tier2: "Tier II",
   tier3: "Tier III",
@@ -33,11 +33,13 @@ export function GameHeader() {
           </div>
         </div>
         <div className="h-6 w-px bg-border hidden md:block" />
-        <div className="hidden md:flex items-center gap-2">
-          <Badge variant="outline" className="font-mono">
-            {tierLabels[gameState.tier]}
-          </Badge>
-        </div>
+        {tierLabels[gameState.tier] && (
+          <div className="hidden md:flex items-center gap-2">
+            <Badge variant="outline" className="font-mono">
+              {tierLabels[gameState.tier]}
+            </Badge>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 flex justify-center">

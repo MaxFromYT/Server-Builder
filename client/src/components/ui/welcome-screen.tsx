@@ -94,14 +94,23 @@ export function WelcomeScreen({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.35),_transparent_45%),radial-gradient(circle_at_70%_20%,_rgba(168,85,247,0.3),_transparent_45%),radial-gradient(circle_at_20%_80%,_rgba(20,184,166,0.35),_transparent_40%)] opacity-90" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
       <div className="pointer-events-none absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.18),_transparent_60%)]" />
-      <div className="pointer-events-none absolute -inset-24 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(34,211,238,0.15),rgba(59,130,246,0.05),rgba(168,85,247,0.2),rgba(34,211,238,0.15))] blur-2xl opacity-60" />
-      <div className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.06) 1px, transparent 1px)", backgroundSize: "120px 120px" }} />
+      <div className="pointer-events-none absolute -inset-24 animate-[spin_40s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(34,211,238,0.2),rgba(59,130,246,0.08),rgba(168,85,247,0.28),rgba(34,211,238,0.2))] blur-2xl opacity-70" />
+      <div className="pointer-events-none absolute inset-0 animate-[spin_60s_linear_infinite] bg-[conic-gradient(from_180deg_at_50%_50%,rgba(14,165,233,0.2),rgba(236,72,153,0.12),rgba(59,130,246,0.22),rgba(14,165,233,0.2))] opacity-30" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.06) 1px, transparent 1px)",
+          backgroundSize: "120px 120px",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 animate-[pulse_10s_ease-in-out_infinite] bg-[radial-gradient(circle_at_30%_70%,_rgba(236,72,153,0.25),_transparent_45%)]" />
 
       <div className="absolute inset-0 z-0">
         <Canvas
           dpr={1}
           gl={{ antialias: false, powerPreference: "high-performance" }}
-          frameloop="demand"
+          frameloop="always"
           className="h-full w-full pointer-events-auto"
         >
           <IntroScene />
@@ -153,6 +162,14 @@ export function WelcomeScreen({
               <Play className="mr-2 h-4 w-4" />
               Start
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              asChild
+              className="text-cyan-100 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20"
+            >
+              <a href="/about">About</a>
+            </Button>
           </div>
         </div>
 
@@ -195,11 +212,15 @@ export function WelcomeScreen({
 }
 
 function IntroScene() {
-  const fogColor = new THREE.Color("#05070f");
+  const fogColor = new THREE.Color("#070b18");
   const equipmentMap = useMemo(
     () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
     []
   );
+  const orbitRef = React.useRef<THREE.Group>(null);
+  const lightARef = React.useRef<THREE.PointLight>(null);
+  const lightBRef = React.useRef<THREE.PointLight>(null);
+  const lightCRef = React.useRef<THREE.PointLight>(null);
 
   const rackGrid = useMemo(() => {
     const positions: [number, number, number, number][] = [];
@@ -219,24 +240,67 @@ function IntroScene() {
     [rackGrid]
   );
 
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (orbitRef.current) {
+      orbitRef.current.rotation.y = Math.sin(t * 0.08) * 0.15;
+      orbitRef.current.position.x = Math.sin(t * 0.12) * 0.6;
+      orbitRef.current.position.z = Math.cos(t * 0.1) * 0.4;
+    }
+    if (lightARef.current) {
+      lightARef.current.intensity = 1.6 + Math.sin(t * 1.2) * 0.4;
+      lightARef.current.position.x = Math.sin(t * 0.6) * 10;
+    }
+    if (lightBRef.current) {
+      lightBRef.current.intensity = 1.2 + Math.cos(t * 1.4) * 0.3;
+      lightBRef.current.position.z = Math.cos(t * 0.5) * 12;
+    }
+    if (lightCRef.current) {
+      lightCRef.current.intensity = 1.0 + Math.sin(t * 1.1) * 0.25;
+      lightCRef.current.position.x = Math.cos(t * 0.4) * -12;
+    }
+  });
+
   return (
     <>
-      <fog attach="fog" args={[fogColor, 8, 40]} />
-      <color attach="background" args={["#02030a"]} />
+      <fog attach="fog" args={[fogColor, 6, 34]} />
+      <color attach="background" args={["#040813"]} />
       <PerspectiveCamera makeDefault position={[0, 8, 18]} fov={40} />
 
-      <ambientLight intensity={0.6} color="#4dd6ff" />
-      <directionalLight position={[10, 15, 10]} intensity={1.6} color="#b9e9ff" />
-      <directionalLight position={[-10, 10, -8]} intensity={0.9} color="#9b5cff" />
-      <pointLight position={[0, 8, 0]} intensity={1.5} color="#22d3ee" />
-      <pointLight position={[0, 4, 12]} intensity={1.2} color="#38bdf8" />
-      <pointLight position={[-12, 6, -8]} intensity={1.0} color="#c084fc" />
+      <ambientLight intensity={0.9} color="#7dd3fc" />
+      <directionalLight position={[10, 15, 10]} intensity={1.9} color="#b9e9ff" />
+      <directionalLight position={[-10, 10, -8]} intensity={1.1} color="#c084fc" />
+      <pointLight ref={lightARef} position={[0, 8, 0]} intensity={1.5} color="#22d3ee" />
+      <pointLight ref={lightBRef} position={[0, 4, 12]} intensity={1.5} color="#38bdf8" />
+      <pointLight ref={lightCRef} position={[-12, 6, -8]} intensity={1.2} color="#c084fc" />
+      <pointLight position={[12, 3, -6]} intensity={1.3} color="#f472b6" />
+      <pointLight position={[-6, 5, 10]} intensity={1.0} color="#34d399" />
+      <pointLight position={[6, 2, 14]} intensity={0.9} color="#f97316" />
 
-      <group>
+      <group ref={orbitRef}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[120, 120]} />
-          <meshStandardMaterial color="#070b18" metalness={0.5} roughness={0.3} />
+          <meshStandardMaterial
+            color="#0b1220"
+            metalness={0.4}
+            roughness={0.25}
+            emissive="#0f172a"
+            emissiveIntensity={0.35}
+          />
         </mesh>
+
+        <group position={[0, 0.08, 0]}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <mesh key={`strip-${index}`} position={[index * 6 - 15, 0, -10 + (index % 2) * 8]}>
+              <boxGeometry args={[4, 0.05, 12]} />
+              <meshStandardMaterial
+                color={index % 2 === 0 ? "#22d3ee" : "#a855f7"}
+                emissive={index % 2 === 0 ? "#22d3ee" : "#a855f7"}
+                emissiveIntensity={1.1}
+              />
+            </mesh>
+          ))}
+        </group>
 
         <group scale={0.9}>
           {introRacks.map((rack, index) => (
@@ -259,7 +323,9 @@ function IntroScene() {
         <IntroSweep offset={6} color="#a855f7" />
       </group>
 
-      <DreiSparkles count={30} speed={0.1} size={1.1} color="#22d3ee" scale={[30, 16, 30]} />
+      <DreiSparkles count={80} speed={0.18} size={1.4} color="#22d3ee" scale={[30, 16, 30]} />
+      <DreiSparkles count={32} speed={0.12} size={2.4} color="#f472b6" scale={[26, 12, 26]} />
+      <DreiSparkles count={18} speed={0.08} size={2.8} color="#34d399" scale={[24, 10, 24]} />
     </>
   );
 }
@@ -287,7 +353,7 @@ function LiveFeed({
         <Canvas
           dpr={1}
           gl={{ antialias: false, powerPreference: "high-performance" }}
-          frameloop="demand"
+          frameloop="always"
           className="pointer-events-none"
         >
           <MiniRackScene variant={variant} />
@@ -310,6 +376,8 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
     () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
     []
   );
+  const rigRef = React.useRef<THREE.Group>(null);
+  const glowRef = React.useRef<THREE.PointLight>(null);
   const racks = useMemo(
     () =>
       Array.from({ length: 6 }).map((_, index) => {
@@ -319,21 +387,75 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
       }),
     [variant]
   );
+  const lightPalette = useMemo(() => {
+    if (variant === "a") {
+      return {
+        ambient: "#38bdf8",
+        key: "#67e8f9",
+        accent: "#22d3ee",
+        fill: "#a855f7",
+      };
+    }
+    if (variant === "b") {
+      return {
+        ambient: "#f472b6",
+        key: "#fb7185",
+        accent: "#fbbf24",
+        fill: "#f97316",
+      };
+    }
+    return {
+      ambient: "#34d399",
+      key: "#60a5fa",
+      accent: "#22d3ee",
+      fill: "#a78bfa",
+    };
+  }, [variant]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (rigRef.current) {
+      rigRef.current.rotation.y = Math.sin(t * 0.35) * 0.08;
+      rigRef.current.rotation.x = Math.cos(t * 0.3) * 0.04;
+    }
+    if (glowRef.current) {
+      glowRef.current.intensity = 1.1 + Math.sin(t * 1.6) * 0.3;
+    }
+  });
 
   return (
     <>
       <PerspectiveCamera makeDefault position={camPos} fov={45} near={0.1} far={50} />
 
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[6, 10, 6]} intensity={1.2} />
-      <pointLight position={[-4, 6, -2]} intensity={1.2} color="#5eead4" />
+      <ambientLight intensity={1.0} color={lightPalette.ambient} />
+      <directionalLight position={[6, 10, 6]} intensity={1.6} color={lightPalette.key} />
+      <pointLight ref={glowRef} position={[-4, 6, -2]} intensity={1.4} color={lightPalette.accent} />
+      <pointLight position={[4, 3, 4]} intensity={1.0} color={lightPalette.fill} />
+      <pointLight position={[0, 5, 8]} intensity={0.8} color={lightPalette.key} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#0b1220" />
+        <meshStandardMaterial
+          color="#101827"
+          emissive={lightPalette.ambient}
+          emissiveIntensity={0.18}
+        />
       </mesh>
 
-      <group scale={0.6}>
+      <group position={[0, 0.05, 0]}>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <mesh key={`mini-strip-${variant}-${index}`} position={[index * 3 - 3, 0, -2 + index * 2]}>
+            <boxGeometry args={[2.8, 0.04, 6]} />
+            <meshStandardMaterial
+              color={lightPalette.accent}
+              emissive={lightPalette.accent}
+              emissiveIntensity={1.0}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      <group ref={rigRef} scale={0.6}>
         {racks.map((rack, index) => (
           <Rack3D
             key={`${variant}-${rack.id}`}
@@ -354,7 +476,8 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
         enablePan={false}
         enableZoom={false}
         enableRotate={true}
-        autoRotate={false}
+        autoRotate
+        autoRotateSpeed={variant === "b" ? -0.35 : variant === "c" ? 0.5 : 0.25}
         target={target}
       />
     </>
