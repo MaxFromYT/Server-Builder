@@ -280,6 +280,7 @@ function GlyphTraffic({
         blending={THREE.AdditiveBlending}
         vertexShader={glyphVertex}
         fragmentShader={glyphFragment}
+        toneMapped={false}
       />
     </mesh>
   );
@@ -383,6 +384,163 @@ function AmbientGlyphs({
         fragmentShader={glyphFragment}
       />
     </mesh>
+  );
+}
+
+function NearGlyphs({
+  count,
+  seed,
+  paused,
+  motionFactor,
+}: {
+  count: number;
+  seed: number;
+  paused: boolean;
+  motionFactor: number;
+}) {
+  const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
+  const offsets = useMemo(() => new Float32Array(count * 3), [count]);
+  const scales = useMemo(() => new Float32Array(count * 2), [count]);
+  const rotations = useMemo(() => new Float32Array(count), [count]);
+  const glyphs = useMemo(() => new Float32Array(count), [count]);
+  const lanes = useMemo(() => new Float32Array(count), [count]);
+  const pulses = useMemo(() => new Float32Array(count), [count]);
+  const noise = useMemo(() => createNoise3D(seed + 91), [seed]);
+
+  useMemo(() => {
+    for (let i = 0; i < count; i += 1) {
+      offsets[i * 3] = (Math.random() - 0.5) * 28;
+      offsets[i * 3 + 1] = 2 + Math.random() * 6;
+      offsets[i * 3 + 2] = -Math.random() * 40;
+      scales[i * 2] = 0.9 + Math.random() * 1.4;
+      scales[i * 2 + 1] = 0.4 + Math.random() * 0.7;
+      rotations[i] = Math.random() * Math.PI;
+      glyphs[i] = Math.floor(Math.random() * 5);
+      lanes[i] = Math.random();
+      pulses[i] = Math.random();
+    }
+  }, [count, glyphs, lanes, offsets, pulses, rotations, scales]);
+
+  useFrame(({ clock }, delta) => {
+    if (paused || !geometryRef.current) return;
+    const t = clock.getElapsedTime() * motionFactor;
+    for (let i = 0; i < count; i += 1) {
+      const idx = i * 3;
+      const drift = noise(offsets[idx] * 0.08, offsets[idx + 1] * 0.06, t * 0.2);
+      offsets[idx] += drift * delta * 1.6 * motionFactor;
+      offsets[idx + 2] += delta * 2.6 * motionFactor;
+      if (offsets[idx + 2] > 6) offsets[idx + 2] = -50;
+      pulses[i] = 0.6 + 0.4 * Math.sin(t * 4 + i * 0.6);
+    }
+    geometryRef.current.attributes.aOffset.needsUpdate = true;
+    geometryRef.current.attributes.aPulse.needsUpdate = true;
+  });
+
+  return (
+    <mesh>
+      <instancedBufferGeometry ref={geometryRef}>
+        <planeGeometry args={[1, 1]} />
+        <instancedBufferAttribute
+          attach="attributes-aOffset"
+          array={offsets}
+          count={count}
+          itemSize={3}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aScale"
+          array={scales}
+          count={count}
+          itemSize={2}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aRotation"
+          array={rotations}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aGlyph"
+          array={glyphs}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aLane"
+          array={lanes}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aPulse"
+          array={pulses}
+          count={count}
+          itemSize={1}
+        />
+      </instancedBufferGeometry>
+      <shaderMaterial
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        vertexShader={glyphVertex}
+        fragmentShader={glyphFragment}
+      />
+    </mesh>
+  );
+}
+
+function EthernetStrands({
+  count,
+  paused,
+  motionFactor,
+}: {
+  count: number;
+  paused: boolean;
+  motionFactor: number;
+}) {
+  const geometryRef = useRef<THREE.BufferGeometry>(null);
+  const positions = useMemo(() => new Float32Array(count * 6), [count]);
+
+  useMemo(() => {
+    for (let i = 0; i < count; i += 1) {
+      const base = i * 6;
+      const x = (Math.random() - 0.5) * 50;
+      const y = 1 + Math.random() * 6;
+      const z = -Math.random() * 60;
+      positions[base] = x;
+      positions[base + 1] = y;
+      positions[base + 2] = z;
+      positions[base + 3] = x + (Math.random() - 0.5) * 8;
+      positions[base + 4] = y + (Math.random() - 0.5) * 2;
+      positions[base + 5] = z + 6 + Math.random() * 6;
+    }
+  }, [count, positions]);
+
+  useFrame((_, delta) => {
+    if (paused || !geometryRef.current) return;
+    for (let i = 0; i < count; i += 1) {
+      const base = i * 6;
+      positions[base + 2] += delta * 3 * motionFactor;
+      positions[base + 5] += delta * 3 * motionFactor;
+      if (positions[base + 2] > 8) {
+        positions[base + 2] = -70;
+        positions[base + 5] = positions[base + 2] + 6 + Math.random() * 6;
+      }
+    }
+    geometryRef.current.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <lineSegments>
+      <bufferGeometry ref={geometryRef}>
+        <bufferAttribute
+          attach="attributes-position"
+          array={positions}
+          count={count * 2}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <lineBasicMaterial color="#5eead4" transparent opacity={0.6} />
+    </lineSegments>
   );
 }
 
@@ -643,6 +801,10 @@ function HeroScene({
   paused,
   reducedMotion,
   onPerfTick,
+  ambientCount,
+  nearCount,
+  ethernetCount,
+  motionFactor,
 }: {
   palette: (typeof paletteMap)[keyof typeof paletteMap];
   particleCount: number;
@@ -650,6 +812,10 @@ function HeroScene({
   paused: boolean;
   reducedMotion: boolean;
   onPerfTick: (delta: number) => void;
+  ambientCount: number;
+  nearCount: number;
+  ethernetCount: number;
+  motionFactor: number;
 }) {
   const { camera } = useThree();
   const pointer = useRef(new THREE.Vector2());
@@ -708,7 +874,7 @@ function HeroScene({
         <LedField
           count={particleCount > 20000 ? 240 : 140}
           seed={seed}
-          motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
+          motionFactor={motionFactor}
         />
         <RoutedLanes seed={seed} />
         <LightVolumes palette={palette} />
@@ -719,13 +885,24 @@ function HeroScene({
         seed={seed}
         paused={paused}
         scrollState={scrollRef.current}
-        motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
+        motionFactor={motionFactor}
       />
       <AmbientGlyphs
-        count={particleCount > 20000 ? 8000 : 4000}
+        count={ambientCount}
         seed={seed}
         paused={paused}
-        motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
+        motionFactor={motionFactor}
+      />
+      <NearGlyphs
+        count={nearCount}
+        seed={seed}
+        paused={paused}
+        motionFactor={motionFactor}
+      />
+      <EthernetStrands
+        count={ethernetCount}
+        paused={paused}
+        motionFactor={motionFactor}
       />
 
       <PostEffects />
@@ -743,6 +920,23 @@ export function HeroAnimation({
   const { dpr, update, particleCount } = useAdaptiveQuality(heroConfig.baseParticleCount);
   const palette = paletteMap[variant];
   const paused = !visible;
+  const motionFactor = Math.max(
+    reducedMotion ? heroConfig.reducedMotionFactor : 1,
+    0.35
+  );
+  const ensuredTraffic = Math.max(heroConfig.minParticleCount, particleCount);
+  const ensuredAmbient = Math.max(
+    heroConfig.minAmbientCount,
+    Math.floor(ensuredTraffic * 0.35)
+  );
+  const ensuredNear = Math.max(
+    heroConfig.minNearCount,
+    Math.floor(ensuredTraffic * 0.12)
+  );
+  const ensuredEthernet = Math.max(
+    heroConfig.minEthernetCount,
+    Math.floor(ensuredTraffic / 120)
+  );
 
   return (
     <div className={className}>
@@ -754,11 +948,15 @@ export function HeroAnimation({
       >
         <HeroScene
           palette={palette}
-          particleCount={particleCount}
+          particleCount={ensuredTraffic}
           seed={seed}
           paused={paused}
           reducedMotion={reducedMotion}
           onPerfTick={update}
+          ambientCount={ensuredAmbient}
+          nearCount={ensuredNear}
+          ethernetCount={ensuredEthernet}
+          motionFactor={motionFactor}
         />
       </Canvas>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/20 to-black/70" />
