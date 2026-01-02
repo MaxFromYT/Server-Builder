@@ -30,8 +30,9 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
   const [showPicker, setShowPicker] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<number>(1);
 
-  const { equipmentCatalog, isStaticMode, removeEquipmentFromRack } = useGame();
+  const { equipmentCatalog, isStaticMode, removeEquipmentFromRack, addEquipmentToRack } = useGame();
   const { toast } = useToast();
+  const [draggedEquipment, setDraggedEquipment] = useState<string | null>(null);
 
   const removeEquipmentMutation = useMutation({
     mutationFn: async (equipmentInstanceId: string) => {
@@ -69,6 +70,33 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
       setSelectedSlot(uPosition);
       setShowPicker(true);
     }
+  };
+
+  const handleDropEquipment = (equipmentId: string, uPosition: number) => {
+    const equipment = equipmentCatalog.find((item) => item.id === equipmentId);
+    if (!equipment) return;
+    if (isStaticMode) {
+      const ok = addEquipmentToRack(rack.id, equipmentId, uPosition);
+      if (!ok) {
+        toast({
+          title: "Install failed",
+          description: "That slot is occupied or out of range.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    apiRequest("POST", `/api/racks/${rack.id}/equipment`, { equipmentId, uStart: uPosition })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/racks"] });
+      })
+      .catch(() => {
+        toast({
+          title: "Unable to add equipment",
+          description: "The service is unavailable. Please retry in a moment.",
+          variant: "destructive",
+        });
+      });
   };
 
   const renderRackSlots = () => {
@@ -120,7 +148,11 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
       } else if (!isSlotOccupied(u)) {
         slots.push(
           <div key={u} className="relative">
-            <EmptySlot uPosition={u} onClick={() => handleSlotClick(u)} />
+            <EmptySlot
+              uPosition={u}
+              onClick={() => handleSlotClick(u)}
+              onDropEquipment={(equipmentId) => handleDropEquipment(equipmentId, u)}
+            />
             <div className="absolute left-0 top-0 -translate-x-full pr-1 text-[10px] font-mono text-muted-foreground">
               {u}
             </div>
@@ -270,6 +302,53 @@ export function RackDetailPanel({ rack, onClose, isUnlocked }: RackDetailPanelPr
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {isUnlocked && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Sandbox Catalog (Drag to rack)
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {equipmentCatalog.slice(0, 20).map((equipment) => {
+                      const mockInstalled = {
+                        id: `preview-${equipment.id}`,
+                        equipmentId: equipment.id,
+                        uStart: 1,
+                        uEnd: equipment.uHeight,
+                        status: "online" as const,
+                        cpuLoad: 0,
+                        memoryUsage: 0,
+                        networkActivity: 0,
+                      };
+                      return (
+                        <div
+                          key={equipment.id}
+                          draggable
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData("equipment-id", equipment.id);
+                            setDraggedEquipment(equipment.id);
+                          }}
+                          onDragEnd={() => setDraggedEquipment(null)}
+                          className={`rounded-md border border-white/10 bg-black/40 p-2 transition ${
+                            draggedEquipment === equipment.id ? "opacity-60" : "hover:border-cyan-400/60"
+                          }`}
+                        >
+                          <Equipment3D equipment={equipment} installed={mockInstalled} uHeight={equipment.uHeight} />
+                          <div className="mt-1 text-[10px] font-mono text-white/70">
+                            {equipment.name}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 text-[10px] text-white/50">
+                    Showing 20 of {equipmentCatalog.length} items. Drag onto any empty slot.
                   </div>
                 </div>
               </>
