@@ -85,7 +85,7 @@ const createSeededRandom = (seed: number) => {
 };
 
 const buildDatacenterRack = (index: number, seed: number): Rack => {
-  const slots = Array.from({ length: 42 }).map((_, slotIndex) => ({
+  const slots: Rack["slots"] = Array.from({ length: 42 }).map((_, slotIndex) => ({
     uPosition: slotIndex + 1,
     equipmentInstanceId: null,
   }));
@@ -153,17 +153,18 @@ const usePageVisibility = () => {
   return visible;
 };
 
-const SEGMENT_LENGTH = 18;
-const SEGMENT_COUNT = 8;
-const RACKS_PER_SEGMENT = 4;
-const RACK_SPACING = 4.5;
+const SEGMENT_LENGTH = 16;
+const SEGMENT_COUNT = 6;
+const RACKS_PER_SEGMENT = 3;
+const RACK_SPACING = 4.1;
 const AISLE_HALF_WIDTH = 2.4;
+const DETAIL_BUDGET = 10;
 
 function BlinkingIndicator({
   position,
   color,
   phase,
-  intensity = 2.2,
+  intensity = 2.0,
 }: {
   position: [number, number, number];
   color: THREE.Color;
@@ -181,7 +182,7 @@ function BlinkingIndicator({
   });
 
   return (
-    <mesh ref={meshRef} position={position} castShadow>
+    <mesh ref={meshRef} position={position} castShadow={false}>
       <boxGeometry args={[0.08, 0.025, 0.02]} />
       <meshStandardMaterial
         color={color}
@@ -210,20 +211,23 @@ function DatacenterSegment({
       rack: Rack;
       position: [number, number, number];
       rotation: [number, number, number];
+      lodIndex: number;
     }> = [];
     for (let i = 0; i < RACKS_PER_SEGMENT; i += 1) {
-      const z = -i * RACK_SPACING - 1.2;
+      const z = -i * RACK_SPACING - 0.8;
       const leftIndex = segmentIndex * RACKS_PER_SEGMENT * 2 + i * 2;
       const rightIndex = leftIndex + 1;
       layout.push({
         rack: buildDatacenterRack(leftIndex, seed),
         position: [-AISLE_HALF_WIDTH, 0, z],
         rotation: [0, Math.PI / 2, 0],
+        lodIndex: leftIndex,
       });
       layout.push({
         rack: buildDatacenterRack(rightIndex, seed + 5),
         position: [AISLE_HALF_WIDTH, 0, z],
         rotation: [0, -Math.PI / 2, 0],
+        lodIndex: rightIndex,
       });
     }
     return layout;
@@ -253,18 +257,18 @@ function DatacenterSegment({
   return (
     <group>
       <mesh position={[0, -0.02, -SEGMENT_LENGTH / 2]} receiveShadow>
-        <boxGeometry args={[10.5, 0.04, SEGMENT_LENGTH]} />
+        <boxGeometry args={[10.2, 0.04, SEGMENT_LENGTH]} />
         <meshStandardMaterial
           color={palette.floor}
-          metalness={0.4}
-          roughness={0.35}
+          metalness={0.35}
+          roughness={0.45}
           emissive={palette.ambient}
           emissiveIntensity={0.08}
         />
       </mesh>
 
-      <mesh position={[0, 3.1, -SEGMENT_LENGTH / 2]} receiveShadow>
-        <boxGeometry args={[10.5, 0.06, SEGMENT_LENGTH]} />
+      <mesh position={[0, 3.05, -SEGMENT_LENGTH / 2]} receiveShadow>
+        <boxGeometry args={[10.2, 0.06, SEGMENT_LENGTH]} />
         <meshStandardMaterial
           color="#151c26"
           metalness={0.5}
@@ -283,28 +287,28 @@ function DatacenterSegment({
         <meshStandardMaterial color="#10151d" metalness={0.3} roughness={0.7} />
       </mesh>
 
-      <mesh position={[0, 2.75, -SEGMENT_LENGTH / 2]}>
+      <mesh position={[0, 2.72, -SEGMENT_LENGTH / 2]}>
         <boxGeometry args={[6, 0.05, SEGMENT_LENGTH - 2]} />
         <meshStandardMaterial
           color={palette.cool}
           emissive={palette.cool}
-          emissiveIntensity={0.45}
-          roughness={0.1}
+          emissiveIntensity={0.4}
+          roughness={0.12}
         />
       </mesh>
 
       <pointLight
         position={[0, 2.8, -SEGMENT_LENGTH / 2]}
-        intensity={1.2}
+        intensity={1.0}
         color={palette.cool}
-        distance={12}
+        distance={11}
         decay={2}
       />
       <pointLight
         position={[0, 1.1, -SEGMENT_LENGTH / 2 + 4]}
-        intensity={0.8}
+        intensity={0.7}
         color={palette.accent}
-        distance={8}
+        distance={7}
         decay={2}
       />
 
@@ -321,6 +325,8 @@ function DatacenterSegment({
             onSelect={() => {}}
             equipmentCatalog={equipmentMap}
             showHud={false}
+            detailBudget={DETAIL_BUDGET}
+            lodIndex={rack.lodIndex}
           />
         </group>
       ))}
@@ -345,22 +351,22 @@ function CameraRig({ motionFactor }: { motionFactor: number }) {
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
     driftTime.current += delta;
-    if (driftTime.current > 2.5) {
+    if (driftTime.current > 2.4) {
       driftTime.current = 0;
       driftTarget.current.set(
-        Math.sin(t * 0.35) * 0.45,
-        1.4 + Math.cos(t * 0.22) * 0.2,
-        7.8
+        Math.sin(t * 0.35) * 0.4,
+        1.42 + Math.cos(t * 0.22) * 0.18,
+        7.4
       );
     }
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, driftTarget.current.x, 0.04);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, driftTarget.current.y, 0.04);
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, driftTarget.current.z, 0.04);
 
-    const lookAhead = -6 - Math.sin(t * 0.15) * 1.2;
+    const lookAhead = -5.4 - Math.sin(t * 0.15) * 1.1;
     camera.lookAt(
-      THREE.MathUtils.lerp(0, Math.sin(t * 0.2) * 0.3, motionFactor),
-      1.4 + Math.sin(t * 0.3) * 0.15,
+      THREE.MathUtils.lerp(0, Math.sin(t * 0.2) * 0.28, motionFactor),
+      1.35 + Math.sin(t * 0.3) * 0.14,
       lookAhead
     );
   });
@@ -388,7 +394,7 @@ function DatacenterScene({
 
   useFrame((_, delta) => {
     if (paused) return;
-    const move = delta * 2.2 * motionFactor;
+    const move = delta * 2.0 * motionFactor;
     segmentRefs.current.forEach((segment) => {
       segment.position.z += move;
       if (segment.position.z > SEGMENT_LENGTH) {
@@ -400,21 +406,23 @@ function DatacenterScene({
   return (
     <>
       <color attach="background" args={[palette.base]} />
-      <fog attach="fog" args={[palette.base, 6, 45]} />
-      <PerspectiveCamera makeDefault fov={42} position={[0, 1.6, 8]} />
+      <fog attach="fog" args={[palette.base, 6, 42]} />
+      <PerspectiveCamera makeDefault fov={42} position={[0, 1.6, 7.4]} />
 
       <ambientLight intensity={0.45} color={palette.ambient} />
       <directionalLight
-        position={[-6, 8, 6]}
-        intensity={0.8}
+        position={[-6, 7.5, 5]}
+        intensity={0.7}
         color={palette.cool}
         castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+        shadow-bias={-0.00015}
       />
       <directionalLight
         position={[6, 6, -4]}
-        intensity={0.4}
+        intensity={0.35}
         color={palette.warm}
-        castShadow
       />
 
       <group position={[0, 0, -SEGMENT_LENGTH]}>
@@ -455,7 +463,7 @@ export function HeroAnimation({
     <div className={className}>
       <Canvas
         shadows
-        dpr={[1, 1.6]}
+        dpr={[1, 1.4]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         frameloop={paused ? "never" : "always"}
         className="h-full w-full"
