@@ -98,20 +98,31 @@ const usePageVisibility = () => {
 const useAdaptiveQuality = (baseCount: number) => {
   const [quality, setQuality] = useState<HeroQuality>("high");
   const [dpr, setDpr] = useState(heroConfig.qualityTiers.high.dpr);
-  const targetRef = useRef({ avg: 16, tier: "high" as HeroQuality });
+  const targetRef = useRef({
+    avg: 16,
+    tier: "high" as HeroQuality,
+    samples: 0,
+    lastSwitch: 0,
+  });
 
   const update = useCallback((delta: number) => {
     const ms = delta * 1000;
-    const nextAvg = targetRef.current.avg * 0.9 + ms * 0.1;
+    const nextAvg = targetRef.current.avg * 0.92 + ms * 0.08;
     targetRef.current.avg = nextAvg;
+    targetRef.current.samples += 1;
+    const now = performance.now();
+    if (now - targetRef.current.lastSwitch < 4000) return;
+    if (targetRef.current.samples < 120) return;
     let nextTier = targetRef.current.tier;
-    if (nextAvg > 28) nextTier = "low";
-    else if (nextAvg > 20) nextTier = "medium";
-    else nextTier = "high";
+    if (nextAvg > 30) nextTier = "low";
+    else if (nextAvg > 22) nextTier = "medium";
+    else if (nextAvg < 18) nextTier = "high";
     if (nextTier !== targetRef.current.tier) {
       targetRef.current.tier = nextTier;
       setQuality(nextTier);
       setDpr(heroConfig.qualityTiers[nextTier].dpr);
+      targetRef.current.lastSwitch = now;
+      targetRef.current.samples = 0;
     }
   }, []);
 
@@ -433,6 +444,11 @@ function RoutedLanes({ seed }: { seed: number }) {
 function PostEffects() {
   const { gl, scene, camera, size } = useThree();
   const composerRef = useRef<EffectComposer | null>(null);
+  const renderPassRef = useRef<RenderPass | null>(null);
+  const bloomRef = useRef<UnrealBloomPass | null>(null);
+  const vignetteRef = useRef<ShaderPass | null>(null);
+  const rgbRef = useRef<ShaderPass | null>(null);
+  const fxaaRef = useRef<ShaderPass | null>(null);
 
   useEffect(() => {
     const composer = new EffectComposer(gl);
@@ -449,7 +465,6 @@ function PostEffects() {
     const rgbShift = new ShaderPass(RGBShiftShader);
     rgbShift.uniforms.amount.value = 0.0015;
     const fxaa = new ShaderPass(FXAAShader);
-    fxaa.material.uniforms.resolution.value.set(1 / size.width, 1 / size.height);
 
     composer.addPass(renderPass);
     composer.addPass(bloom);
@@ -457,18 +472,31 @@ function PostEffects() {
     composer.addPass(rgbShift);
     composer.addPass(fxaa);
     composerRef.current = composer;
+    renderPassRef.current = renderPass;
+    bloomRef.current = bloom;
+    vignetteRef.current = vignette;
+    rgbRef.current = rgbShift;
+    fxaaRef.current = fxaa;
 
     return () => {
       composer.dispose();
       composerRef.current = null;
+      renderPassRef.current = null;
+      bloomRef.current = null;
+      vignetteRef.current = null;
+      rgbRef.current = null;
+      fxaaRef.current = null;
     };
-  }, [camera, gl, scene, size.height, size.width]);
+  }, [camera, gl, scene]);
 
   useEffect(() => {
-    if (composerRef.current) {
-      composerRef.current.setSize(size.width, size.height);
-    }
-  }, [size]);
+    if (!composerRef.current || !fxaaRef.current) return;
+    composerRef.current.setSize(size.width, size.height);
+    fxaaRef.current.material.uniforms.resolution.value.set(
+      1 / size.width,
+      1 / size.height
+    );
+  }, [size.height, size.width]);
 
   useFrame(() => {
     if (!composerRef.current) return;
