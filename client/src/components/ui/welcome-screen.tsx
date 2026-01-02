@@ -95,6 +95,7 @@ export function WelcomeScreen({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
       <div className="pointer-events-none absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.18),_transparent_60%)]" />
       <div className="pointer-events-none absolute -inset-24 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(34,211,238,0.15),rgba(59,130,246,0.05),rgba(168,85,247,0.2),rgba(34,211,238,0.15))] blur-2xl opacity-60" />
+      <div className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.06) 1px, transparent 1px)", backgroundSize: "120px 120px" }} />
 
       <div className="absolute inset-0 z-0">
         <Canvas

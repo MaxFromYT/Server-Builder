@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { useGame } from "@/lib/game-context";
 import { Button } from "@/components/ui/button";
 import type { GameMode } from "@shared/schema";
-import { Wrench, LayoutGrid, Network, Activity, AlertTriangle } from "lucide-react";
+import { Wrench, LayoutGrid, Network, Activity, AlertTriangle, User } from "lucide-react";
 
 const modes: { id: GameMode; label: string; icon: typeof Wrench }[] = [
   { id: "build", label: "BUILD", icon: Wrench },
@@ -19,6 +19,10 @@ const modeRoutes: Record<GameMode, string> = {
   noc: "/noc",
   incident: "/incidents",
 };
+
+const extraTabs = [
+  { label: "ABOUT", icon: User, path: "/about" },
+] as const;
 
 export function ModeSwitcher() {
   const { gameState, setGameMode } = useGame();
@@ -46,6 +50,25 @@ export function ModeSwitcher() {
           >
             <Icon className="w-4 h-4 mr-1.5" />
             {mode.label}
+          </Button>
+        );
+      })}
+      {extraTabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = location === tab.path;
+        return (
+          <Button
+            key={tab.path}
+            variant={isActive ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setLocation(tab.path)}
+            className={`font-mono text-xs tracking-wide ${
+              isActive ? "" : "text-muted-foreground"
+            }`}
+            data-testid={`button-mode-${tab.label.toLowerCase()}`}
+          >
+            <Icon className="w-4 h-4 mr-1.5" />
+            {tab.label}
           </Button>
         );
       })}
