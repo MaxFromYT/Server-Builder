@@ -27,6 +27,7 @@ interface Rack3DProps {
   forceSimplified?: boolean;
   detailBudget?: number;
   lodIndex?: number;
+  detailRadius?: number;
   buildMode?: BuildMode;
   onDragStart?: (point: THREE.Vector3) => void;
   isDragging?: boolean;
@@ -283,6 +284,7 @@ export function Rack3D({
   forceSimplified = false,
   detailBudget,
   lodIndex = 0,
+  detailRadius = 18,
   buildMode,
   onDragStart,
   isDragging = false,
@@ -329,7 +331,7 @@ export function Rack3D({
       const distance = camera.position.distanceTo(
         new THREE.Vector3(position[0], position[1] + RACK_HEIGHT / 2, position[2])
       );
-      const shouldBeDetailed = distance < 18 || isSelected || hovered;
+      const shouldBeDetailed = distance < detailRadius || isSelected || hovered;
       if (shouldBeDetailed !== isDetailedView) {
         setIsDetailedView(shouldBeDetailed);
       }
