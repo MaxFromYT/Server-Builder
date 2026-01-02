@@ -153,12 +153,12 @@ const usePageVisibility = () => {
   return visible;
 };
 
-const SEGMENT_LENGTH = 20;
-const SEGMENT_COUNT = 7;
+const SEGMENT_LENGTH = 22;
+const SEGMENT_COUNT = 30;
 const RACKS_PER_SEGMENT = 6;
-const RACK_SPACING = 3.2;
+const RACK_SPACING = 3.0;
 const AISLE_HALF_WIDTH = 2.4;
-const DETAIL_BUDGET = 8;
+const DETAIL_BUDGET = 6;
 
 function BlinkingIndicator({
   position,
@@ -356,14 +356,14 @@ function CameraRig({ motionFactor }: { motionFactor: number }) {
       driftTarget.current.set(
         Math.sin(t * 0.35) * 0.4,
         1.42 + Math.cos(t * 0.22) * 0.18,
-        7.4
+        2.8
       );
     }
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, driftTarget.current.x, 0.04);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, driftTarget.current.y, 0.04);
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, driftTarget.current.z, 0.04);
 
-    const lookAhead = -5.4 - Math.sin(t * 0.15) * 1.1;
+    const lookAhead = -4.2 - Math.sin(t * 0.15) * 1.0;
     camera.lookAt(
       THREE.MathUtils.lerp(0, Math.sin(t * 0.2) * 0.28, motionFactor),
       1.35 + Math.sin(t * 0.3) * 0.14,
@@ -394,7 +394,7 @@ function DatacenterScene({
 
   useFrame((_, delta) => {
     if (paused) return;
-    const move = delta * 2.0 * motionFactor;
+    const move = delta * 1.55 * motionFactor;
     segmentRefs.current.forEach((segment) => {
       segment.position.z += move;
       if (segment.position.z > SEGMENT_LENGTH) {
@@ -406,8 +406,8 @@ function DatacenterScene({
   return (
     <>
       <color attach="background" args={[palette.base]} />
-      <fog attach="fog" args={[palette.base, 6, 42]} />
-      <PerspectiveCamera makeDefault fov={42} position={[0, 1.6, 7.4]} />
+      <fog attach="fog" args={[palette.base, 10, 70]} />
+      <PerspectiveCamera makeDefault fov={42} position={[0, 1.55, 2.8]} />
 
       <ambientLight intensity={0.45} color={palette.ambient} />
       <directionalLight
@@ -425,7 +425,7 @@ function DatacenterScene({
         color={palette.warm}
       />
 
-      <group position={[0, 0, -SEGMENT_LENGTH]}>
+      <group position={[0, 0, 0]}>
         {Array.from({ length: SEGMENT_COUNT }).map((_, index) => (
           <group
             key={`segment-${index}`}
