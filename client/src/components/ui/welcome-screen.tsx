@@ -97,8 +97,8 @@ export function WelcomeScreen({
 
       <div className="absolute inset-0 z-0">
         <Canvas
-          dpr={[1, 2]}
-          gl={{ antialias: true }}
+          dpr={1}
+          gl={{ antialias: false, powerPreference: "high-performance" }}
           className="h-full w-full pointer-events-auto"
         >
           <IntroScene />
@@ -257,7 +257,7 @@ function IntroScene() {
               key={rack.id}
               rack={rack}
               position={[rack.positionX, 0, rack.positionY]}
-              isSelected={index % 7 === 0}
+              isSelected={false}
               onSelect={() => {}}
               equipmentCatalog={equipmentMap}
               forceSimplified={false}
@@ -352,10 +352,10 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
             key={`${variant}-${rack.id}`}
             rack={rack}
             position={[rack.positionX, 0, rack.positionY]}
-            isSelected={index % 6 === 0}
+            isSelected={false}
             onSelect={() => {}}
             equipmentCatalog={equipmentMap}
-            forceSimplified={false}
+            forceSimplified
             lodIndex={index}
             detailBudget={racks.length}
           />
