@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { PerspectiveCamera } from "@react-three/drei";
+import { Line, PerspectiveCamera } from "@react-three/drei";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { heroConfig, type HeroQuality } from "./hero-config";
 import { createNoise3D } from "./hero-noise";
-import { trafficFragment, trafficVertex } from "./hero-shaders";
+import { glyphFragment, glyphVertex, ledFragment, ledVertex } from "./hero-shaders";
 
 type HeroAnimationProps = {
   className?: string;
@@ -122,91 +122,137 @@ const useAdaptiveQuality = (baseCount: number) => {
   return { quality, dpr, update, particleCount };
 };
 
-function TrafficField({
+const buildLanes = (seed: number) => {
+  const rng = createNoise3D(seed);
+  const lanes: THREE.CatmullRomCurve3[] = [];
+  for (let i = 0; i < 6; i += 1) {
+    const points: THREE.Vector3[] = [];
+    for (let j = 0; j < 9; j += 1) {
+      const x = (i - 2.5) * 2.3 + rng(i * 0.1, j * 0.2, 0.2) * 1.4;
+      const y = 1.2 + Math.abs(rng(i * 0.2, j * 0.3, 0.4)) * 1.6;
+      const z = -j * 6.2 + rng(i * 0.3, j * 0.2, 0.6) * 2.4;
+      points.push(new THREE.Vector3(x, y, z));
+    }
+    const curve = new THREE.CatmullRomCurve3(points);
+    curve.curveType = "catmullrom";
+    curve.tension = 0.4;
+    lanes.push(curve);
+  }
+  return lanes;
+};
+
+function GlyphTraffic({
   count,
-  palette,
   seed,
   paused,
+  scrollState,
 }: {
   count: number;
-  palette: (typeof paletteMap)[keyof typeof paletteMap];
   seed: number;
   paused: boolean;
+  scrollState: number;
 }) {
-  const geometryRef = useRef<THREE.BufferGeometry>(null);
-  const positions = useMemo(() => new Float32Array(count * 3), [count]);
-  const scales = useMemo(() => new Float32Array(count), [count]);
-  const speeds = useMemo(() => new Float32Array(count), [count]);
+  const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
+  const offsets = useMemo(() => new Float32Array(count * 3), [count]);
+  const scales = useMemo(() => new Float32Array(count * 2), [count]);
+  const rotations = useMemo(() => new Float32Array(count), [count]);
+  const glyphs = useMemo(() => new Float32Array(count), [count]);
   const lanes = useMemo(() => new Float32Array(count), [count]);
-  const noise = useMemo(() => createNoise3D(seed), [seed]);
+  const pulses = useMemo(() => new Float32Array(count), [count]);
+  const progress = useMemo(() => new Float32Array(count), [count]);
+  const speeds = useMemo(() => new Float32Array(count), [count]);
+  const laneCurves = useMemo(() => buildLanes(seed + 13), [seed]);
 
   useMemo(() => {
     for (let i = 0; i < count; i += 1) {
-      const lane = i % 6;
-      const laneOffset = (lane - 2.5) * 2.2;
-      const height = 0.4 + (i % 5) * 0.15;
-      positions[i * 3] = laneOffset + (Math.random() - 0.5) * 1.2;
-      positions[i * 3 + 1] = height + (Math.random() - 0.5) * 0.2;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      scales[i] = 0.7 + Math.random() * 1.6;
-      speeds[i] = 0.6 + Math.random() * 1.6;
-      lanes[i] = lane / 6;
+      const lane = i % laneCurves.length;
+      const t = Math.random();
+      const point = laneCurves[lane].getPointAt(t);
+      offsets[i * 3] = point.x;
+      offsets[i * 3 + 1] = point.y;
+      offsets[i * 3 + 2] = point.z;
+      scales[i * 2] = 0.35 + Math.random() * 0.6;
+      scales[i * 2 + 1] = 0.16 + Math.random() * 0.35;
+      rotations[i] = Math.random() * Math.PI;
+      glyphs[i] = Math.floor(Math.random() * 5);
+      lanes[i] = lane / laneCurves.length;
+      pulses[i] = Math.random();
+      progress[i] = t;
+      speeds[i] = 0.08 + Math.random() * 0.2;
     }
-  }, [count, lanes, positions, scales, speeds]);
+  }, [count, glyphs, laneCurves, lanes, offsets, progress, pulses, rotations, scales, speeds]);
 
   useFrame(({ clock }, delta) => {
     if (paused || !geometryRef.current) return;
     const time = clock.getElapsedTime();
+    const ramp = 0.4 + scrollState * 1.3;
     for (let i = 0; i < count; i += 1) {
-      const idx = i * 3;
-      const x = positions[idx];
-      const y = positions[idx + 1];
-      const z = positions[idx + 2];
-      const flow = noise(x * 0.06, y * 0.2, time * 0.25);
-      const drift = noise(x * 0.12, y * 0.16, time * 0.1);
-      positions[idx + 2] = z + delta * (2.2 + speeds[i] * 2 + flow);
-      positions[idx] = x + drift * delta * 0.6;
-      if (positions[idx + 2] > 50) positions[idx + 2] = -60;
+      progress[i] += delta * speeds[i] * ramp;
+      if (progress[i] > 1) progress[i] -= 1;
+      const laneIndex = Math.min(
+        laneCurves.length - 1,
+        Math.floor(lanes[i] * laneCurves.length)
+      );
+      const curve = laneCurves[laneIndex];
+      const point = curve.getPointAt(progress[i]);
+      offsets[i * 3] = point.x;
+      offsets[i * 3 + 1] = point.y + Math.sin(time * 2 + i) * 0.04;
+      offsets[i * 3 + 2] = point.z;
+      pulses[i] = 0.6 + 0.4 * Math.sin(time * 5 + i * 0.3);
     }
-    geometryRef.current.attributes.position.needsUpdate = true;
+    geometryRef.current.attributes.aOffset.needsUpdate = true;
+    geometryRef.current.attributes.aPulse.needsUpdate = true;
   });
 
   return (
-    <points>
-      <bufferGeometry ref={geometryRef}>
-        <bufferAttribute
-          attach="attributes-position"
-          array={positions}
+    <mesh>
+      <instancedBufferGeometry ref={geometryRef}>
+        <planeGeometry args={[1, 1]} />
+        <instancedBufferAttribute
+          attach="attributes-aOffset"
+          array={offsets}
           count={count}
           itemSize={3}
         />
-        <bufferAttribute
+        <instancedBufferAttribute
           attach="attributes-aScale"
           array={scales}
           count={count}
-          itemSize={1}
+          itemSize={2}
         />
-        <bufferAttribute
-          attach="attributes-aSpeed"
-          array={speeds}
+        <instancedBufferAttribute
+          attach="attributes-aRotation"
+          array={rotations}
           count={count}
           itemSize={1}
         />
-        <bufferAttribute
+        <instancedBufferAttribute
+          attach="attributes-aGlyph"
+          array={glyphs}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
           attach="attributes-aLane"
           array={lanes}
           count={count}
           itemSize={1}
         />
-      </bufferGeometry>
+        <instancedBufferAttribute
+          attach="attributes-aPulse"
+          array={pulses}
+          count={count}
+          itemSize={1}
+        />
+      </instancedBufferGeometry>
       <shaderMaterial
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        vertexShader={trafficVertex}
-        fragmentShader={trafficFragment}
+        vertexShader={glyphVertex}
+        fragmentShader={glyphFragment}
       />
-    </points>
+    </mesh>
   );
 }
 
@@ -259,6 +305,69 @@ function RackField({
   );
 }
 
+function LedField({ count, seed }: { count: number; seed: number }) {
+  const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
+  const offsets = useMemo(() => new Float32Array(count * 3), [count]);
+  const scales = useMemo(() => new Float32Array(count * 2), [count]);
+  const phases = useMemo(() => new Float32Array(count), [count]);
+  const noise = useMemo(() => createNoise3D(seed + 31), [seed]);
+
+  useMemo(() => {
+    for (let i = 0; i < count; i += 1) {
+      const col = i % 20;
+      const row = Math.floor(i / 20) % 10;
+      offsets[i * 3] = (col - 10) * 1.6;
+      offsets[i * 3 + 1] = 1.2 + (row % 3) * 0.4;
+      offsets[i * 3 + 2] = -row * 3.2 + noise(col * 0.2, row * 0.3, 0.4);
+      scales[i * 2] = 0.6;
+      scales[i * 2 + 1] = 0.08;
+      phases[i] = Math.random() * Math.PI * 2;
+    }
+  }, [count, noise, offsets, phases, scales]);
+
+  useFrame(({ clock }) => {
+    if (!geometryRef.current) return;
+    const t = clock.getElapsedTime();
+    for (let i = 0; i < count; i += 1) {
+      phases[i] = t + i * 0.3;
+    }
+    geometryRef.current.attributes.aPhase.needsUpdate = true;
+  });
+
+  return (
+    <mesh>
+      <instancedBufferGeometry ref={geometryRef}>
+        <planeGeometry args={[1, 1]} />
+        <instancedBufferAttribute
+          attach="attributes-aOffset"
+          array={offsets}
+          count={count}
+          itemSize={3}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aScale"
+          array={scales}
+          count={count}
+          itemSize={2}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aPhase"
+          array={phases}
+          count={count}
+          itemSize={1}
+        />
+      </instancedBufferGeometry>
+      <shaderMaterial
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        vertexShader={ledVertex}
+        fragmentShader={ledFragment}
+      />
+    </mesh>
+  );
+}
+
 function GridFloor({ palette }: { palette: (typeof paletteMap)[keyof typeof paletteMap] }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -18]}>
@@ -303,6 +412,72 @@ function LightVolumes({ palette }: { palette: (typeof paletteMap)[keyof typeof p
   );
 }
 
+function RoutedLanes({ seed }: { seed: number }) {
+  const curves = useMemo(() => buildLanes(seed + 17), [seed]);
+  return (
+    <group>
+      {curves.map((curve, index) => (
+        <Line
+          key={index}
+          points={curve.getPoints(40)}
+          color={index % 2 === 0 ? "#22d3ee" : "#a855f7"}
+          lineWidth={1}
+          transparent
+          opacity={0.35}
+        />
+      ))}
+    </group>
+  );
+}
+
+function PostEffects() {
+  const { gl, scene, camera, size } = useThree();
+  const composerRef = useRef<EffectComposer | null>(null);
+
+  useEffect(() => {
+    const composer = new EffectComposer(gl);
+    const renderPass = new RenderPass(scene, camera);
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(size.width, size.height),
+      heroConfig.bloomIntensity,
+      0.5,
+      0.15
+    );
+    const vignette = new ShaderPass(VignetteShader);
+    vignette.uniforms.offset.value = 0.4;
+    vignette.uniforms.darkness.value = 1.1;
+    const rgbShift = new ShaderPass(RGBShiftShader);
+    rgbShift.uniforms.amount.value = 0.0015;
+    const fxaa = new ShaderPass(FXAAShader);
+    fxaa.material.uniforms.resolution.value.set(1 / size.width, 1 / size.height);
+
+    composer.addPass(renderPass);
+    composer.addPass(bloom);
+    composer.addPass(vignette);
+    composer.addPass(rgbShift);
+    composer.addPass(fxaa);
+    composerRef.current = composer;
+
+    return () => {
+      composer.dispose();
+      composerRef.current = null;
+    };
+  }, [camera, gl, scene, size.height, size.width]);
+
+  useEffect(() => {
+    if (composerRef.current) {
+      composerRef.current.setSize(size.width, size.height);
+    }
+  }, [size]);
+
+  useFrame(() => {
+    if (!composerRef.current) return;
+    composerRef.current.render();
+  }, 1);
+
+  return null;
+}
+
 function HeroScene({
   palette,
   particleCount,
@@ -318,7 +493,7 @@ function HeroScene({
   reducedMotion: boolean;
   onPerfTick: (delta: number) => void;
 }) {
-  const { camera, viewport } = useThree();
+  const { camera } = useThree();
   const pointer = useRef(new THREE.Vector2());
   const scrollRef = useRef(0);
   const noise = useMemo(() => createNoise3D(seed + 4), [seed]);
@@ -372,67 +547,21 @@ function HeroScene({
       <group position={[0, 0, -12]}>
         <GridFloor palette={palette} />
         <RackField count={particleCount > 20000 ? 260 : 140} palette={palette} seed={seed} />
+        <LedField count={particleCount > 20000 ? 240 : 140} seed={seed} />
+        <RoutedLanes seed={seed} />
         <LightVolumes palette={palette} />
       </group>
 
-      <TrafficField
+      <GlyphTraffic
         count={particleCount}
-        palette={palette}
         seed={seed}
         paused={paused || reducedMotion}
+        scrollState={scrollRef.current}
       />
 
       <PostEffects />
     </>
   );
-}
-
-function PostEffects() {
-  const { gl, scene, camera, size } = useThree();
-  const composerRef = useRef<EffectComposer | null>(null);
-
-  useEffect(() => {
-    const composer = new EffectComposer(gl);
-    const renderPass = new RenderPass(scene, camera);
-    const bloom = new UnrealBloomPass(
-      new THREE.Vector2(size.width, size.height),
-      heroConfig.bloomIntensity,
-      0.5,
-      0.15
-    );
-    const vignette = new ShaderPass(VignetteShader);
-    vignette.uniforms.offset.value = 0.4;
-    vignette.uniforms.darkness.value = 1.1;
-    const rgbShift = new ShaderPass(RGBShiftShader);
-    rgbShift.uniforms.amount.value = 0.0015;
-    const fxaa = new ShaderPass(FXAAShader);
-    fxaa.material.uniforms.resolution.value.set(1 / size.width, 1 / size.height);
-
-    composer.addPass(renderPass);
-    composer.addPass(bloom);
-    composer.addPass(vignette);
-    composer.addPass(rgbShift);
-    composer.addPass(fxaa);
-    composerRef.current = composer;
-
-    return () => {
-      composer.dispose();
-      composerRef.current = null;
-    };
-  }, [camera, gl, scene, size.height, size.width]);
-
-  useEffect(() => {
-    if (composerRef.current) {
-      composerRef.current.setSize(size.width, size.height);
-    }
-  }, [size]);
-
-  useFrame(() => {
-    if (!composerRef.current) return;
-    composerRef.current.render();
-  }, 1);
-
-  return null;
 }
 
 export function HeroAnimation({

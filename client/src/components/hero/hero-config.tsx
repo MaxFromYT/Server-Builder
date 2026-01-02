@@ -2,7 +2,7 @@
 
 export const heroConfig = {
   seed: 42,
-  baseParticleCount: 42000,
+  baseParticleCount: 24000,
   qualityTiers: {
     low: { dpr: 0.8, particleScale: 0.4, rackCount: 120, lightCount: 4 },
     medium: { dpr: 1.1, particleScale: 0.7, rackCount: 220, lightCount: 6 },
