@@ -156,31 +156,49 @@ export function DataCenterNetworkMesh({
   const connections = useMemo(() => {
     if (racks.length < 2) return [];
     const result: { start: [number, number, number]; end: [number, number, number]; intensity: number; heat?: number }[] = [];
-    const targetCount = Math.min(maxConnections, racks.length * 2);
     const sorted = [...racks].sort((a, b) => {
       if (a.position[2] === b.position[2]) return a.position[0] - b.position[0];
       return a.position[2] - b.position[2];
     });
 
-    for (let i = 0; i < targetCount; i++) {
-      const startIndex = i % (sorted.length - 1);
-      const endIndex = (startIndex + 1) % sorted.length;
-      const startRack = sorted[startIndex];
-      const endRack = sorted[endIndex];
+    const baseLinks = sorted.flatMap((rack, index) => {
+      const next = sorted[(index + 1) % sorted.length];
+      const skip = sorted[(index + 3) % sorted.length];
+      return [
+        { start: rack, end: next, intensity: 0.45 },
+        { start: rack, end: skip, intensity: 0.35 },
+      ];
+    });
+
+    const targetCount = Math.min(maxConnections, sorted.length * 6);
+    const randomLinks = Array.from({ length: Math.max(0, targetCount - baseLinks.length) }).map(() => {
+      const start = sorted[Math.floor(Math.random() * sorted.length)];
+      let end = sorted[Math.floor(Math.random() * sorted.length)];
+      if (end === start) {
+        end = sorted[(sorted.indexOf(start) + 2) % sorted.length];
+      }
+      return {
+        start,
+        end,
+        intensity: 0.3 + Math.random() * 0.4,
+      };
+    });
+
+    [...baseLinks, ...randomLinks].forEach((link, i) => {
       result.push({
-        start: [startRack.position[0], startRack.position[1] + 1.5, startRack.position[2]],
-        end: [endRack.position[0], endRack.position[1] + 1.5, endRack.position[2]],
-        intensity: 0.35 + (i % 5) * 0.12,
-        heat: ((startRack.heat || 0) + (endRack.heat || 0)) / 2,
+        start: [link.start.position[0], link.start.position[1] + 1.5, link.start.position[2]],
+        end: [link.end.position[0], link.end.position[1] + 1.5, link.end.position[2]],
+        intensity: link.intensity + (i % 4) * 0.05,
+        heat: ((link.start.heat || 0) + (link.end.heat || 0)) / 2,
       });
-    }
+    });
 
     return result;
   }, [maxConnections, racks]);
 
   return (
     <group>
-      {connections.slice(0, maxStreams).map((conn, i) => (
+      {connections.slice(0, Math.min(maxStreams, connections.length)).map((conn, i) => (
         <NetworkTrafficStream
           key={i}
           start={conn.start}
