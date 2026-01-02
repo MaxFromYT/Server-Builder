@@ -48,7 +48,7 @@ export function PerformanceOverlay({
     if (!warnRef.current.isLow && warnRef.current.lowStreak >= 3) {
       warnRef.current.isLow = true;
       const msg =
-        "Low FPS detected — performance is stable but below ideal. No auto-downgrade applied.";
+        "Low FPS detected — consider switching to low quality.";
       if (warnRef.current.lastMsg !== msg) {
         warnRef.current.lastMsg = msg;
         onWarningChange?.(msg);
