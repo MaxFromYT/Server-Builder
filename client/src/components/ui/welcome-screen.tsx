@@ -30,7 +30,7 @@ const buildIntroRack = (
   positionX: number,
   positionY: number
 ): Rack => {
-  const slots = Array.from({ length: 42 }).map((_, slotIndex) => ({
+  const slots: Rack["slots"] = Array.from({ length: 42 }).map((_, slotIndex) => ({
     uPosition: slotIndex + 1,
     equipmentInstanceId: null,
   }));

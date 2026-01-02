@@ -2,17 +2,8 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { VignetteShader } from "three/examples/jsm/shaders/VignetteShader";
-import { RGBShiftShader } from "three/examples/jsm/shaders/RGBShiftShader";
-import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { heroConfig, type HeroQuality } from "./hero-config";
-import { createNoise3D } from "./hero-noise";
 import { Rack3D } from "@/components/3d/Rack3D";
 import { staticEquipmentCatalog } from "@/lib/static-equipment";
 import type { Rack } from "@shared/schema";
@@ -25,53 +16,60 @@ type HeroAnimationProps = {
 
 const paletteMap = {
   intro: {
-    base: new THREE.Color("#02060f"),
-    cool: new THREE.Color("#4cc3ff"),
-    teal: new THREE.Color("#38f2d6"),
-    warm: new THREE.Color("#ff7aa8"),
-    accent: new THREE.Color("#8b5cf6"),
+    base: new THREE.Color("#02050b"),
+    ambient: new THREE.Color("#2b4157"),
+    cool: new THREE.Color("#5ad1ff"),
+    warm: new THREE.Color("#f59e8b"),
+    accent: new THREE.Color("#6d7cff"),
+    floor: new THREE.Color("#0b0f14"),
   },
   floor: {
-    base: new THREE.Color("#02040a"),
-    cool: new THREE.Color("#3bb7ff"),
-    teal: new THREE.Color("#22d3ee"),
-    warm: new THREE.Color("#f97316"),
-    accent: new THREE.Color("#60a5fa"),
+    base: new THREE.Color("#020509"),
+    ambient: new THREE.Color("#24364b"),
+    cool: new THREE.Color("#4cc3ff"),
+    warm: new THREE.Color("#fb923c"),
+    accent: new THREE.Color("#38bdf8"),
+    floor: new THREE.Color("#0c1016"),
   },
   build: {
-    base: new THREE.Color("#05040a"),
+    base: new THREE.Color("#050509"),
+    ambient: new THREE.Color("#2c3443"),
     cool: new THREE.Color("#7dd3fc"),
-    teal: new THREE.Color("#5eead4"),
     warm: new THREE.Color("#fb7185"),
     accent: new THREE.Color("#a855f7"),
+    floor: new THREE.Color("#12131b"),
   },
   network: {
-    base: new THREE.Color("#020509"),
+    base: new THREE.Color("#02060d"),
+    ambient: new THREE.Color("#2b3d4f"),
     cool: new THREE.Color("#38bdf8"),
-    teal: new THREE.Color("#22d3ee"),
     warm: new THREE.Color("#f59e0b"),
-    accent: new THREE.Color("#0ea5e9"),
+    accent: new THREE.Color("#60a5fa"),
+    floor: new THREE.Color("#0c1219"),
   },
   noc: {
-    base: new THREE.Color("#030611"),
+    base: new THREE.Color("#01060f"),
+    ambient: new THREE.Color("#203348"),
     cool: new THREE.Color("#22c55e"),
-    teal: new THREE.Color("#38bdf8"),
     warm: new THREE.Color("#fb7185"),
     accent: new THREE.Color("#8b5cf6"),
+    floor: new THREE.Color("#0b1118"),
   },
   incidents: {
-    base: new THREE.Color("#0b0306"),
+    base: new THREE.Color("#090207"),
+    ambient: new THREE.Color("#352029"),
     cool: new THREE.Color("#fb7185"),
-    teal: new THREE.Color("#f97316"),
-    warm: new THREE.Color("#ef4444"),
-    accent: new THREE.Color("#f43f5e"),
+    warm: new THREE.Color("#f97316"),
+    accent: new THREE.Color("#ef4444"),
+    floor: new THREE.Color("#14080f"),
   },
   about: {
     base: new THREE.Color("#020812"),
+    ambient: new THREE.Color("#263a52"),
     cool: new THREE.Color("#38bdf8"),
-    teal: new THREE.Color("#22d3ee"),
     warm: new THREE.Color("#60a5fa"),
     accent: new THREE.Color("#a855f7"),
+    floor: new THREE.Color("#0d121b"),
   },
 };
 
@@ -86,18 +84,18 @@ const createSeededRandom = (seed: number) => {
   };
 };
 
-const buildShowcaseRack = (index: number, positionX: number, positionY: number): Rack => {
-  const slots = Array.from({ length: 42 }).map((_, slotIndex) => ({
+const buildDatacenterRack = (index: number, seed: number): Rack => {
+  const slots: Rack["slots"] = Array.from({ length: 42 }).map((_, slotIndex) => ({
     uPosition: slotIndex + 1,
     equipmentInstanceId: null,
   }));
-  const rng = createSeededRandom(300 + index);
+  const rng = createSeededRandom(seed + index * 11);
   const installedEquipment: Rack["installedEquipment"] = [];
   let u = 1;
   while (u <= 42) {
     const equipment = staticEquipmentCatalog[Math.floor(rng() * staticEquipmentCatalog.length)];
     const uEnd = Math.min(42, u + equipment.uHeight - 1);
-    const instanceId = `showcase-${index}-${u}-${equipment.id}`;
+    const instanceId = `cinematic-${seed}-${index}-${u}-${equipment.id}`;
     for (let slot = u; slot <= uEnd; slot += 1) {
       slots[slot - 1].equipmentInstanceId = instanceId;
     }
@@ -107,27 +105,29 @@ const buildShowcaseRack = (index: number, positionX: number, positionY: number):
       uStart: u,
       uEnd,
       status: "online",
-      cpuLoad: 40 + rng() * 40,
-      memoryUsage: 30 + rng() * 50,
-      networkActivity: 20 + rng() * 60,
+      cpuLoad: 25 + rng() * 70,
+      memoryUsage: 20 + rng() * 70,
+      networkActivity: 30 + rng() * 60,
     });
-    u = uEnd + 1 + (rng() > 0.75 ? 1 : 0);
+    u = uEnd + 1 + (rng() > 0.6 ? 1 : 0);
   }
 
+  const inletTemp = 22 + rng() * 10;
+
   return {
-    id: `showcase-rack-${index}`,
-    name: `Showcase ${index + 1}`,
+    id: `cinematic-rack-${seed}-${index}`,
+    name: `Hall ${index + 1}`,
     type: "enclosed_42U",
     totalUs: 42,
     slots,
     installedEquipment,
     powerCapacity: 12000,
-    currentPowerDraw: 3200,
-    inletTemp: 22,
-    exhaustTemp: 28,
-    airflowRestriction: 0.1,
-    positionX,
-    positionY,
+    currentPowerDraw: 3000 + rng() * 3500,
+    inletTemp,
+    exhaustTemp: inletTemp + 6,
+    airflowRestriction: rng() * 0.2,
+    positionX: 0,
+    positionY: 0,
   };
 };
 
@@ -135,10 +135,10 @@ const usePrefersReducedMotion = () => {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = () => setReduced(media.matches);
-    handler();
-    media.addEventListener("change", handler);
-    return () => media.removeEventListener("change", handler);
+    const update = () => setReduced(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
   }, []);
   return reduced;
 };
@@ -146,446 +146,367 @@ const usePrefersReducedMotion = () => {
 const usePageVisibility = () => {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
-    const handler = () => setVisible(!document.hidden);
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
+    const update = () => setVisible(!document.hidden);
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
   }, []);
   return visible;
 };
 
-const useAdaptiveQuality = (baseCount: number) => {
-  const [quality, setQuality] = useState<HeroQuality>("high");
-  const [dpr, setDpr] = useState(heroConfig.qualityTiers.high.dpr);
-  const targetRef = useRef({
-    avg: 16,
-    tier: "high" as HeroQuality,
-    samples: 0,
-    lastSwitch: 0,
-    pending: null as HeroQuality | null,
-    pendingSamples: 0,
+const SEGMENT_LENGTH = 22;
+const SEGMENT_COUNT = 30;
+const RACKS_PER_SEGMENT = 6;
+const RACK_SPACING = 3.0;
+const AISLE_HALF_WIDTH = 2.4;
+const DETAIL_BUDGET = 120;
+const DETAIL_RADIUS = 80;
+
+function BlinkingIndicator({
+  position,
+  color,
+  phase,
+  intensity = 3.4,
+}: {
+  position: [number, number, number];
+  color: THREE.Color;
+  phase: number;
+  intensity?: number;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!meshRef.current) return;
+    const t = clock.getElapsedTime();
+    const pulse = 0.55 + Math.sin(t * 2.1 + phase) * 0.45;
+    const material = meshRef.current.material as THREE.MeshStandardMaterial;
+    material.emissiveIntensity = intensity * pulse;
   });
 
-  const update = useCallback((delta: number) => {
-    const ms = delta * 1000;
-    const nextAvg = targetRef.current.avg * 0.92 + ms * 0.08;
-    targetRef.current.avg = nextAvg;
-    targetRef.current.samples += 1;
-    const now = performance.now();
-    if (now - targetRef.current.lastSwitch < 12000) return;
-    if (targetRef.current.samples < 240) return;
-
-    let nextTier = targetRef.current.tier;
-    if (nextAvg > 32) nextTier = "low";
-    else if (nextAvg > 24) nextTier = "medium";
-    else if (nextAvg < 17) nextTier = "high";
-
-    if (nextTier !== targetRef.current.tier) {
-      if (targetRef.current.pending !== nextTier) {
-        targetRef.current.pending = nextTier;
-        targetRef.current.pendingSamples = 0;
-        return;
-      }
-      targetRef.current.pendingSamples += 1;
-      if (targetRef.current.pendingSamples < 120) return;
-      targetRef.current.tier = nextTier;
-      setQuality(nextTier);
-      setDpr(heroConfig.qualityTiers[nextTier].dpr);
-      targetRef.current.lastSwitch = now;
-      targetRef.current.samples = 0;
-      targetRef.current.pending = null;
-      targetRef.current.pendingSamples = 0;
-    } else {
-      targetRef.current.pending = null;
-      targetRef.current.pendingSamples = 0;
-    }
-  }, []);
-
-  const particleCount = Math.floor(
-    baseCount * heroConfig.qualityTiers[quality].particleScale
-  );
-
-  return { quality, dpr, update, particleCount };
-};
-
-function GridFloor({ palette }: { palette: (typeof paletteMap)[keyof typeof paletteMap] }) {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -20]}>
-      <planeGeometry args={[140, 140, 50, 50]} />
+    <mesh ref={meshRef} position={position} castShadow={false}>
+      <boxGeometry args={[0.08, 0.025, 0.02]} />
       <meshStandardMaterial
-        color={palette.base}
-        emissive={palette.teal}
-        emissiveIntensity={0.18}
-        metalness={0.35}
-        roughness={0.35}
-        wireframe
+        color={color}
+        emissive={color}
+        emissiveIntensity={intensity}
+        roughness={0.2}
+        metalness={0.1}
+        toneMapped={false}
       />
     </mesh>
   );
 }
 
-function NetworkBubbles({
-  count,
-  seed,
-  paused,
-  motionFactor,
+function RackLedStrips({
+  transforms,
+  color,
 }: {
-  count: number;
-  seed: number;
-  paused: boolean;
-  motionFactor: number;
+  transforms: Array<{ position: THREE.Vector3; rotation: THREE.Euler }>;
+  color: THREE.Color;
 }) {
-  const instancedRef = useRef<THREE.InstancedMesh>(null);
-  const noise = useMemo(() => createNoise3D(seed + 77), [seed]);
-  const speeds = useMemo(() => new Float32Array(count), [count]);
-  const offsets = useMemo(() => new Float32Array(count * 3), [count]);
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const instanceCount = transforms.length;
 
   useEffect(() => {
-    if (!instancedRef.current) return;
+    if (!meshRef.current || instanceCount === 0) return;
     const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
-    for (let i = 0; i < count; i += 1) {
-      const x = (Math.random() - 0.5) * 30;
-      const y = 1 + Math.random() * 8;
-      const z = -Math.random() * 80;
-      offsets[i * 3] = x;
-      offsets[i * 3 + 1] = y;
-      offsets[i * 3 + 2] = z;
-      speeds[i] = 0.3 + Math.random() * 0.8;
-      dummy.position.set(x, y, z);
-      const scale = 0.15 + Math.random() * 0.45;
-      dummy.scale.set(scale, scale, scale);
+    transforms.forEach((transform, index) => {
+      dummy.position.copy(transform.position);
+      dummy.rotation.copy(transform.rotation);
       dummy.updateMatrix();
-      instancedRef.current.setMatrixAt(i, dummy.matrix);
-      color.setHSL(0.55 + Math.random() * 0.1, 0.7, 0.6);
-      instancedRef.current.setColorAt(i, color);
-    }
-    instancedRef.current.instanceMatrix.needsUpdate = true;
-    if (instancedRef.current.instanceColor) {
-      instancedRef.current.instanceColor.needsUpdate = true;
-    }
-  }, [count, offsets, speeds]);
+      meshRef.current?.setMatrixAt(index, dummy.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [transforms]);
 
-  useFrame(({ clock }, delta) => {
-    if (paused || !instancedRef.current) return;
-    const t = clock.getElapsedTime() * motionFactor;
-    const dummy = new THREE.Object3D();
-    for (let i = 0; i < count; i += 1) {
-      const idx = i * 3;
-      offsets[idx + 2] += delta * speeds[i] * motionFactor;
-      offsets[idx] += noise(offsets[idx] * 0.08, offsets[idx + 1] * 0.08, t * 0.12) * 0.08;
-      if (offsets[idx + 2] > 6) offsets[idx + 2] = -90;
-      dummy.position.set(offsets[idx], offsets[idx + 1], offsets[idx + 2]);
-      const scale = 0.18 + Math.abs(Math.sin(t + i)) * 0.25;
-      dummy.scale.set(scale, scale, scale);
-      dummy.updateMatrix();
-      instancedRef.current.setMatrixAt(i, dummy.matrix);
-    }
-    instancedRef.current.instanceMatrix.needsUpdate = true;
-  });
-
-  return (
-    <instancedMesh ref={instancedRef} args={[undefined, undefined, count]}>
-      <sphereGeometry args={[1, 10, 10]} />
+  return instanceCount === 0 ? null : (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, instanceCount]}>
+      <boxGeometry args={[0.08, 0.04, 0.5]} />
       <meshStandardMaterial
-        transparent
-        opacity={0.5}
-        emissive="#38bdf8"
-        emissiveIntensity={0.6}
+        color={color}
+        emissive={color}
+        emissiveIntensity={3.0}
+        roughness={0.35}
+        metalness={0.2}
+        toneMapped={false}
       />
     </instancedMesh>
   );
 }
 
-function LedField({
-  count,
+function DatacenterSegment({
+  segmentIndex,
+  palette,
   seed,
-  motionFactor,
+  equipmentMap,
 }: {
-  count: number;
+  segmentIndex: number;
+  palette: (typeof paletteMap)[keyof typeof paletteMap];
   seed: number;
-  motionFactor: number;
+  equipmentMap: Map<string, (typeof staticEquipmentCatalog)[number]>;
 }) {
-  const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
-  const offsets = useMemo(() => new Float32Array(count * 3), [count]);
-  const scales = useMemo(() => new Float32Array(count * 2), [count]);
-  const phases = useMemo(() => new Float32Array(count), [count]);
-  const noise = useMemo(() => createNoise3D(seed + 31), [seed]);
-
-  useMemo(() => {
-    for (let i = 0; i < count; i += 1) {
-      const col = i % 20;
-      const row = Math.floor(i / 20) % 10;
-      offsets[i * 3] = (col - 10) * 1.6;
-      offsets[i * 3 + 1] = 1.2 + (row % 3) * 0.4;
-      offsets[i * 3 + 2] = -row * 3.2 + noise(col * 0.2, row * 0.3, 0.4);
-      scales[i * 2] = 0.6;
-      scales[i * 2 + 1] = 0.08;
-      phases[i] = Math.random() * Math.PI * 2;
+  const racks = useMemo(() => {
+    const layout: Array<{
+      rack: Rack;
+      position: [number, number, number];
+      rotation: [number, number, number];
+      lodIndex: number;
+    }> = [];
+    for (let i = 0; i < RACKS_PER_SEGMENT; i += 1) {
+      const z = -i * RACK_SPACING - 0.8;
+      const leftIndex = segmentIndex * RACKS_PER_SEGMENT * 2 + i * 2;
+      const rightIndex = leftIndex + 1;
+      layout.push({
+        rack: buildDatacenterRack(leftIndex, seed),
+        position: [-AISLE_HALF_WIDTH, 0, z],
+        rotation: [0, Math.PI / 2, 0],
+        lodIndex: leftIndex,
+      });
+      layout.push({
+        rack: buildDatacenterRack(rightIndex, seed + 5),
+        position: [AISLE_HALF_WIDTH, 0, z],
+        rotation: [0, -Math.PI / 2, 0],
+        lodIndex: rightIndex,
+      });
     }
-  }, [count, noise, offsets, phases, scales]);
+    return layout;
+  }, [segmentIndex, seed]);
 
-  useFrame(({ clock }) => {
-    if (!geometryRef.current) return;
-    const t = clock.getElapsedTime() * motionFactor;
-    for (let i = 0; i < count; i += 1) {
-      phases[i] = t + i * 0.3;
-    }
-    geometryRef.current.attributes.aPhase.needsUpdate = true;
-  });
+  const indicatorNodes = useMemo(() => {
+    const rng = createSeededRandom(seed + segmentIndex * 17);
+    return racks.flatMap((rack, index) => {
+      const colors = [palette.cool, palette.accent, palette.warm];
+      const baseX = rack.position[0] > 0 ? rack.position[0] - 0.6 : rack.position[0] + 0.6;
+      const baseZ = rack.position[2] + (index % 2 === 0 ? 0.4 : -0.4);
+      return [
+        {
+          position: [baseX, 0.55, baseZ] as [number, number, number],
+          color: colors[Math.floor(rng() * colors.length)],
+          phase: rng() * Math.PI * 2,
+        },
+        {
+          position: [baseX, 1.65, baseZ] as [number, number, number],
+          color: colors[Math.floor(rng() * colors.length)],
+          phase: rng() * Math.PI * 2,
+        },
+      ];
+    });
+  }, [palette, racks, seed, segmentIndex]);
 
-  return (
-    <mesh>
-      <instancedBufferGeometry ref={geometryRef}>
-        <planeGeometry args={[1, 1]} />
-        <instancedBufferAttribute
-          attach="attributes-aOffset"
-          array={offsets}
-          count={count}
-          itemSize={3}
-        />
-        <instancedBufferAttribute
-          attach="attributes-aScale"
-          array={scales}
-          count={count}
-          itemSize={2}
-        />
-        <instancedBufferAttribute
-          attach="attributes-aPhase"
-          array={phases}
-          count={count}
-          itemSize={1}
-        />
-      </instancedBufferGeometry>
-      <shaderMaterial
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        vertexShader={ledVertex}
-        fragmentShader={ledFragment}
-      />
-    </mesh>
-  );
-}
-
-function LightVolumes({ palette }: { palette: (typeof paletteMap)[keyof typeof paletteMap] }) {
-  const beams = useMemo(
-    () => [
-      { position: new THREE.Vector3(-12, 5, -12), color: palette.teal },
-      { position: new THREE.Vector3(12, 6, -14), color: palette.cool },
-      { position: new THREE.Vector3(0, 7, -24), color: palette.accent },
-    ],
-    [palette]
-  );
+  const stripTransforms = useMemo(() => {
+    const transforms: Array<{ position: THREE.Vector3; rotation: THREE.Euler }> = [];
+    racks.forEach((rack) => {
+      const sideOffset = rack.position[0] > 0 ? -0.55 : 0.55;
+      const baseX = rack.position[0] + sideOffset;
+      const baseZ = rack.position[2] + 0.25;
+      transforms.push(
+        {
+          position: new THREE.Vector3(baseX, 0.25, baseZ),
+          rotation: new THREE.Euler(0, rack.position[0] > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
+        },
+        {
+          position: new THREE.Vector3(baseX, 2.35, baseZ),
+          rotation: new THREE.Euler(0, rack.position[0] > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
+        }
+      );
+    });
+    return transforms;
+  }, [racks]);
 
   return (
     <group>
-      {beams.map((beam, index) => (
-        <mesh key={index} position={beam.position} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.4, 3.2, 24, 16, 1, true]} />
-          <meshStandardMaterial
-            color={beam.color}
-            emissive={beam.color}
-            emissiveIntensity={0.4}
-            transparent
-            opacity={0.12}
+      <mesh position={[0, -0.02, -SEGMENT_LENGTH / 2]} receiveShadow>
+        <boxGeometry args={[10.2, 0.04, SEGMENT_LENGTH]} />
+        <meshStandardMaterial
+          color={palette.floor}
+          metalness={0.35}
+          roughness={0.45}
+          emissive={palette.ambient}
+          emissiveIntensity={0.08}
+        />
+      </mesh>
+
+      <mesh position={[0, 3.05, -SEGMENT_LENGTH / 2]} receiveShadow>
+        <boxGeometry args={[10.2, 0.06, SEGMENT_LENGTH]} />
+        <meshStandardMaterial
+          color="#151c26"
+          metalness={0.5}
+          roughness={0.25}
+          emissive={palette.ambient}
+          emissiveIntensity={0.1}
+        />
+      </mesh>
+
+      <mesh position={[-4.6, 1.5, -SEGMENT_LENGTH / 2]} receiveShadow>
+        <boxGeometry args={[0.2, 3.1, SEGMENT_LENGTH]} />
+        <meshStandardMaterial color="#10151d" metalness={0.3} roughness={0.7} />
+      </mesh>
+      <mesh position={[4.6, 1.5, -SEGMENT_LENGTH / 2]} receiveShadow>
+        <boxGeometry args={[0.2, 3.1, SEGMENT_LENGTH]} />
+        <meshStandardMaterial color="#10151d" metalness={0.3} roughness={0.7} />
+      </mesh>
+
+      <mesh position={[0, 2.72, -SEGMENT_LENGTH / 2]}>
+        <boxGeometry args={[6, 0.05, SEGMENT_LENGTH - 2]} />
+        <meshStandardMaterial
+          color={palette.cool}
+          emissive={palette.cool}
+          emissiveIntensity={0.4}
+          roughness={0.12}
+        />
+      </mesh>
+
+      <pointLight
+        position={[0, 2.8, -SEGMENT_LENGTH / 2]}
+        intensity={1.0}
+        color={palette.cool}
+        distance={11}
+        decay={2}
+      />
+      <pointLight
+        position={[0, 1.1, -SEGMENT_LENGTH / 2 + 4]}
+        intensity={0.7}
+        color={palette.accent}
+        distance={7}
+        decay={2}
+      />
+
+      {racks.map((rack) => (
+        <group
+          key={rack.rack.id}
+          position={rack.position}
+          rotation={rack.rotation}
+        >
+          <Rack3D
+            rack={rack.rack}
+            position={[0, 0, 0]}
+            isSelected={false}
+            onSelect={() => {}}
+            equipmentCatalog={equipmentMap}
+            showHud={false}
+            detailBudget={DETAIL_BUDGET}
+            lodIndex={rack.lodIndex}
+            detailRadius={DETAIL_RADIUS}
           />
-        </mesh>
+        </group>
       ))}
-    </group>
-  );
-}
 
-function RackShowcase({
-  count,
-  motionFactor,
-}: {
-  count: number;
-  motionFactor: number;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-  const equipmentMap = useMemo(
-    () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
-    []
-  );
-  const racks = useMemo(() => {
-    const ring: Rack[] = [];
-    const radius = 9;
-    for (let i = 0; i < count; i += 1) {
-      const angle = (i / count) * Math.PI * 2;
-      ring.push(buildShowcaseRack(i, Math.cos(angle) * radius, Math.sin(angle) * radius));
-    }
-    return ring;
-  }, [count]);
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime() * motionFactor;
-    if (groupRef.current) {
-      groupRef.current.rotation.y = t * 0.08;
-      groupRef.current.position.y = Math.sin(t * 0.4) * 0.25;
-    }
-  });
-
-  return (
-    <group ref={groupRef} position={[0, 0, -24]}>
-      {racks.map((rack, index) => (
-        <Rack3D
-          key={rack.id}
-          rack={rack}
-          position={[rack.positionX, 0, rack.positionY]}
-          isSelected={false}
-          onSelect={() => {}}
-          equipmentCatalog={equipmentMap}
-          lodIndex={index}
-          detailBudget={racks.length}
-          showHud={false}
+      {indicatorNodes.map((indicator, index) => (
+        <BlinkingIndicator
+          key={`indicator-${segmentIndex}-${index}`}
+          position={indicator.position}
+          color={indicator.color}
+          phase={indicator.phase}
         />
       ))}
+
+      <RackLedStrips transforms={stripTransforms} color={palette.cool} />
     </group>
   );
 }
 
-function PostEffects() {
-  const { gl, scene, camera, size } = useThree();
-  const composerRef = useRef<EffectComposer | null>(null);
-  const fxaaRef = useRef<ShaderPass | null>(null);
+function CameraRig({ motionFactor }: { motionFactor: number }) {
+  const { camera } = useThree();
+  const driftTarget = useRef(new THREE.Vector3(0, 0, 0));
+  const driftTime = useRef(0);
 
-  useEffect(() => {
-    const previousAutoClear = gl.autoClear;
-    gl.autoClear = false;
-    const composer = new EffectComposer(gl);
-    const renderPass = new RenderPass(scene, camera);
-    const bloom = new UnrealBloomPass(
-      new THREE.Vector2(size.width, size.height),
-      heroConfig.bloomIntensity,
-      0.6,
-      0.2
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime();
+    driftTime.current += delta;
+    if (driftTime.current > 2.4) {
+      driftTime.current = 0;
+      driftTarget.current.set(
+        Math.sin(t * 0.35) * 0.4,
+        1.42 + Math.cos(t * 0.22) * 0.18,
+        2.8
+      );
+    }
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, driftTarget.current.x, 0.04);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, driftTarget.current.y, 0.04);
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, driftTarget.current.z, 0.04);
+
+    const lookAhead = -4.2 - Math.sin(t * 0.15) * 1.0;
+    camera.lookAt(
+      THREE.MathUtils.lerp(0, Math.sin(t * 0.2) * 0.28, motionFactor),
+      1.35 + Math.sin(t * 0.3) * 0.14,
+      lookAhead
     );
-    const vignette = new ShaderPass(VignetteShader);
-    vignette.uniforms.offset.value = 0.4;
-    vignette.uniforms.darkness.value = 1.2;
-    const rgbShift = new ShaderPass(RGBShiftShader);
-    rgbShift.uniforms.amount.value = 0.0012;
-    const fxaa = new ShaderPass(FXAAShader);
-
-    composer.addPass(renderPass);
-    composer.addPass(bloom);
-    composer.addPass(vignette);
-    composer.addPass(rgbShift);
-    composer.addPass(fxaa);
-    composerRef.current = composer;
-    fxaaRef.current = fxaa;
-
-    return () => {
-      composer.dispose();
-      gl.autoClear = previousAutoClear;
-      composerRef.current = null;
-      fxaaRef.current = null;
-    };
-  }, [camera, gl, scene, size.height, size.width]);
-
-  useEffect(() => {
-    if (!composerRef.current || !fxaaRef.current) return;
-    composerRef.current.setSize(size.width, size.height);
-    fxaaRef.current.material.uniforms.resolution.value.set(
-      1 / size.width,
-      1 / size.height
-    );
-  }, [size.height, size.width]);
-
-  useFrame(() => {
-    if (!composerRef.current) return;
-    composerRef.current.render();
-  }, 1);
+  });
 
   return null;
 }
 
-function HeroScene({
+function DatacenterScene({
   palette,
-  particleCount,
   seed,
   paused,
   reducedMotion,
-  onPerfTick,
-  motionFactor,
 }: {
   palette: (typeof paletteMap)[keyof typeof paletteMap];
-  particleCount: number;
   seed: number;
   paused: boolean;
   reducedMotion: boolean;
-  onPerfTick: (delta: number) => void;
-  motionFactor: number;
 }) {
-  const { camera } = useThree();
-  const pointer = useRef(new THREE.Vector2());
-  const scrollRef = useRef(0);
-  const noise = useMemo(() => createNoise3D(seed + 4), [seed]);
+  const motionFactor = reducedMotion ? 0.35 : 1;
+  const equipmentMap = useMemo(
+    () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
+    []
+  );
+  const segmentRefs = useRef<THREE.Group[]>([]);
 
-  useEffect(() => {
-    const onMove = (event: PointerEvent) => {
-      pointer.current.x = (event.clientX / window.innerWidth) * 2 - 1;
-      pointer.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    };
-    const onScroll = () => {
-      const scrollTop = window.scrollY;
-      const max = Math.max(1, document.body.scrollHeight - window.innerHeight);
-      scrollRef.current = Math.min(1, scrollTop / max);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
-  useFrame(({ clock }, delta) => {
+  useFrame((_, delta) => {
     if (paused) return;
-    onPerfTick(delta);
-    if (reducedMotion) return;
-    const t = clock.getElapsedTime();
-    const scrollLift = scrollRef.current * heroConfig.scrollInfluence;
-    const sway = Math.sin(t * heroConfig.cameraSpeed * 0.4) * 0.3;
-    const lift = Math.cos(t * heroConfig.cameraSpeed * 0.3) * 0.25;
-    const drift = noise(t * 0.03, 0.2, 0.4) * 0.4;
-    camera.position.x = sway + pointer.current.x * heroConfig.interactionStrength * 0.5;
-    camera.position.y = 3.4 + lift + scrollLift * 1.1 + pointer.current.y * heroConfig.interactionStrength * 0.4;
-    camera.position.z = 9 + drift * 1.4 + scrollLift * 6;
-    camera.lookAt(0, 2.2 + scrollLift * 0.6, -26 - scrollLift * 12);
+    const move = delta * 1.2 * motionFactor;
+    segmentRefs.current.forEach((segment) => {
+      segment.position.z += move;
+      if (segment.position.z > SEGMENT_LENGTH) {
+        segment.position.z -= SEGMENT_LENGTH * SEGMENT_COUNT;
+      }
+    });
   });
 
   return (
     <>
       <color attach="background" args={[palette.base]} />
-      <fog attach="fog" args={[palette.base, 12, 70]} />
-      <PerspectiveCamera makeDefault fov={40} position={[0, 4, 10]} />
+      <fog attach="fog" args={[palette.base, 16, 130]} />
+      <PerspectiveCamera makeDefault fov={42} position={[0, 1.55, 2.8]} />
 
-      <ambientLight intensity={0.7} color={palette.cool} />
-      <directionalLight position={[10, 12, 8]} intensity={1.2} color={palette.cool} />
-      <directionalLight position={[-8, 10, -6]} intensity={0.8} color={palette.accent} />
-      <pointLight position={[0, 6, 4]} intensity={1.2} color={palette.teal} />
-      <pointLight position={[8, 4, -14]} intensity={1.0} color={palette.warm} />
-      <pointLight position={[-8, 4, -20]} intensity={1.0} color={palette.cool} />
-
-      <group position={[0, 0, -16]}>
-        <GridFloor palette={palette} />
-        <LedField
-          count={particleCount > 20000 ? 180 : 120}
-          seed={seed}
-          motionFactor={motionFactor}
-        />
-        <LightVolumes palette={palette} />
-      </group>
-      <RackShowcase count={24} motionFactor={motionFactor} />
-      <NetworkBubbles
-        count={Math.max(120, Math.floor(particleCount / 120))}
-        seed={seed}
-        paused={paused}
-        motionFactor={motionFactor}
+      <ambientLight intensity={0.45} color={palette.ambient} />
+      <directionalLight
+        position={[-6, 7.5, 5]}
+        intensity={0.9}
+        color={palette.cool}
+        castShadow
+        shadow-mapSize-width={768}
+        shadow-mapSize-height={768}
+        shadow-bias={-0.00015}
+      />
+      <directionalLight
+        position={[6, 6, -4]}
+        intensity={0.35}
+        color={palette.warm}
       />
 
-      <PostEffects />
+      <group position={[0, 0, 0]}>
+        {Array.from({ length: SEGMENT_COUNT }).map((_, index) => (
+          <group
+            key={`segment-${index}`}
+            ref={(node) => {
+              if (node) segmentRefs.current[index] = node;
+            }}
+            position={[0, 0, -index * SEGMENT_LENGTH]}
+          >
+            <DatacenterSegment
+              segmentIndex={index}
+              palette={palette}
+              seed={seed}
+              equipmentMap={equipmentMap}
+            />
+          </group>
+        ))}
+      </group>
+
+      <CameraRig motionFactor={motionFactor} />
     </>
   );
 }
@@ -593,38 +514,30 @@ function HeroScene({
 export function HeroAnimation({
   className,
   variant = "intro",
-  seed = heroConfig.seed,
+  seed = 420,
 }: HeroAnimationProps) {
   const reducedMotion = usePrefersReducedMotion();
   const visible = usePageVisibility();
-  const { dpr, update, particleCount } = useAdaptiveQuality(heroConfig.baseParticleCount);
   const palette = paletteMap[variant];
   const paused = !visible;
-  const motionFactor = Math.max(
-    reducedMotion ? heroConfig.reducedMotionFactor : 1,
-    0.35
-  );
-  const ensuredTraffic = Math.max(heroConfig.minParticleCount, particleCount);
 
   return (
     <div className={className}>
       <Canvas
-        dpr={dpr}
+        shadows
+        dpr={[1, 1.1]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         frameloop={paused ? "never" : "always"}
         className="h-full w-full"
       >
-        <HeroScene
+        <DatacenterScene
           palette={palette}
-          particleCount={ensuredTraffic}
           seed={seed}
           paused={paused}
           reducedMotion={reducedMotion}
-          onPerfTick={update}
-          motionFactor={motionFactor}
         />
       </Canvas>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/70" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80" />
     </div>
   );
 }
