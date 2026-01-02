@@ -1,122 +1,71 @@
+import { useMemo } from "react";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from "recharts";
+import { Bell, ShieldAlert, Activity, Clock } from "lucide-react";
 import { useGame } from "@/lib/game-context";
-import { MetricCard } from "@/components/noc/metric-card";
-import { AlertStream } from "@/components/noc/alert-stream";
-import { RackHeatmap } from "@/components/noc/rack-heatmap";
-import { PowerGauge } from "@/components/noc/power-gauge";
-import { CoolingGauge } from "@/components/noc/cooling-gauge";
-import { TopologyView } from "@/components/network/topology-view";
-import { Zap, Thermometer, Clock, Server, HardDrive, Network, AlertTriangle } from "lucide-react";
+import { DashboardShell } from "@/pages/dashboard-shell";
+import { KpiCard, Panel } from "@/pages/dashboard-widgets";
 
 export function NocDashboard() {
-  const { facilityMetrics, alerts, networkNodes } = useGame();
-  const criticalAlerts = alerts.filter((a) => a.severity === "critical" && !a.acknowledged).length;
-  const warningAlerts = alerts.filter((a) => a.severity === "warning" && !a.acknowledged).length;
-  const onlineNodes = networkNodes.filter((n) => n.status === "online").length;
+  const { alerts, facilityMetrics } = useGame();
+
+  const alertTimeline = useMemo(
+    () =>
+      Array.from({ length: 14 }).map((_, index) => ({
+        name: `H-${13 - index}`,
+        alerts: Math.round(2 + Math.random() * 6),
+      })),
+    []
+  );
+
+  const uptimeData = useMemo(
+    () =>
+      Array.from({ length: 8 }).map((_, index) => ({
+        name: `D-${7 - index}`,
+        uptime: Math.round(96 + Math.random() * 4),
+      })),
+    []
+  );
 
   return (
-    <div className="h-full overflow-auto p-4" data-testid="page-noc-dashboard">
-      <div className="grid grid-cols-12 gap-4 h-full min-h-[800px]">
-        <div className="col-span-12 lg:col-span-3 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <MetricCard
-              label="Uptime"
-              value={facilityMetrics.uptime.toFixed(4)}
-              unit="%"
-              trend="stable"
-              trendValue="30d avg"
-              status="normal"
-              icon={<Clock className="w-5 h-5" />}
-              testId="metric-uptime"
-            />
-            <MetricCard
-              label="PUE"
-              value={facilityMetrics.pue.toFixed(2)}
-              trend="down"
-              trendValue="-0.02"
-              status="normal"
-              icon={<Zap className="w-5 h-5" />}
-              testId="metric-pue"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <MetricCard
-              label="Servers"
-              value={facilityMetrics.serverCount}
-              trend="up"
-              trendValue="+3"
-              status="normal"
-              icon={<Server className="w-5 h-5" />}
-              testId="metric-servers"
-            />
-            <MetricCard
-              label="Network"
-              value={`${onlineNodes}/${networkNodes.length}`}
-              status={onlineNodes < networkNodes.length ? "warning" : "normal"}
-              icon={<Network className="w-5 h-5" />}
-              testId="metric-network"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <MetricCard
-              label="Critical"
-              value={criticalAlerts}
-              status={criticalAlerts > 0 ? "critical" : "normal"}
-              icon={<AlertTriangle className="w-5 h-5" />}
-              testId="metric-critical"
-            />
-            <MetricCard
-              label="Warnings"
-              value={warningAlerts}
-              status={warningAlerts > 2 ? "warning" : "normal"}
-              icon={<AlertTriangle className="w-5 h-5" />}
-              testId="metric-warnings"
-            />
-          </div>
-
-          <RackHeatmap />
-        </div>
-
-        <div className="col-span-12 lg:col-span-6 space-y-4">
-          <div className="h-[450px]">
-            <TopologyView />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <MetricCard
-              label="IT Load"
-              value={(facilityMetrics.itLoad / 1000).toFixed(1)}
-              unit="kW"
-              trend="up"
-              trendValue="+2.3kW"
-              status="normal"
-              icon={<Zap className="w-5 h-5" />}
-              testId="metric-it-load"
-            />
-            <MetricCard
-              label="Storage Used"
-              value={((facilityMetrics.storageUsed / facilityMetrics.storageCapacity) * 100).toFixed(0)}
-              unit="%"
-              trend="up"
-              trendValue="+120TB"
-              status={facilityMetrics.storageUsed / facilityMetrics.storageCapacity > 0.85 ? "warning" : "normal"}
-              icon={<HardDrive className="w-5 h-5" />}
-              testId="metric-storage"
-            />
-          </div>
-        </div>
-
-        <div className="col-span-12 lg:col-span-3 space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
-            <PowerGauge />
-            <CoolingGauge />
-          </div>
-          <div className="h-[300px]">
-            <AlertStream />
-          </div>
-        </div>
+    <DashboardShell
+      title="NOC Overview"
+      subtitle="Monitor alert volume, uptime stability, and response cadence."
+    >
+      <div className="grid gap-4 md:grid-cols-4">
+        <KpiCard label="Active Alerts" value={alerts.length.toString()} icon={<Bell className="h-4 w-4 text-cyan-300" />} />
+        <KpiCard label="Critical" value={facilityMetrics.criticalAlerts.toString()} icon={<ShieldAlert className="h-4 w-4 text-cyan-300" />} />
+        <KpiCard label="Uptime" value={`${facilityMetrics.uptime.toFixed(2)}%`} icon={<Activity className="h-4 w-4 text-cyan-300" />} />
+        <KpiCard label="Avg Response" value="4.2m" icon={<Clock className="h-4 w-4 text-cyan-300" />} />
       </div>
-    </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Panel title="Alert volume">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={alertTimeline}>
+                <CartesianGrid stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="name" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b" }} />
+                <Bar dataKey="alerts" fill="#22d3ee" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+        <Panel title="Uptime trend">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={uptimeData}>
+                <CartesianGrid stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="name" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" domain={[90, 100]} />
+                <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b" }} />
+                <Area type="monotone" dataKey="uptime" stroke="#10b981" fill="rgba(16,185,129,0.25)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+      </div>
+    </DashboardShell>
   );
 }
