@@ -7,6 +7,7 @@ export type QualityMode = "low" | "high";
 interface PerformanceOverlayProps {
   visible?: boolean;
   qualityMode?: QualityMode;
+  onQualityChange?: (quality: QualityMode, reason: string) => void;
   onWarningChange?: (warning: string | null) => void;
   positionClassName?: string;
 }
@@ -14,17 +15,23 @@ interface PerformanceOverlayProps {
 export function PerformanceOverlay({
   visible = false,
   qualityMode = "high",
+  onQualityChange,
   onWarningChange,
   positionClassName = "fixed top-6 right-6",
 }: PerformanceOverlayProps) {
   const [stats, setStats] = useState({ fps: 0, frameMs: 0 });
   const accRef = useRef({ t: 0, frames: 0 });
+  const qualityRef = useRef<QualityMode>(qualityMode);
   const warnRef = useRef({
     isLow: false,
     lowStreak: 0,
     recoverStreak: 0,
     lastMsg: null as string | null,
   });
+
+  useEffect(() => {
+    qualityRef.current = qualityMode;
+  }, [qualityMode]);
 
   useFrame((_, delta) => {
     accRef.current.t += delta;
@@ -47,6 +54,10 @@ export function PerformanceOverlay({
     }
     if (!warnRef.current.isLow && warnRef.current.lowStreak >= 3) {
       warnRef.current.isLow = true;
+      if (qualityRef.current !== "low") {
+        qualityRef.current = "low";
+        onQualityChange?.("low", "low-fps");
+      }
       const msg =
         "Low FPS detected — consider switching to low quality.";
       if (warnRef.current.lastMsg !== msg) {
@@ -56,6 +67,10 @@ export function PerformanceOverlay({
     }
     if (warnRef.current.isLow && warnRef.current.recoverStreak >= 3) {
       warnRef.current.isLow = false;
+      if (qualityRef.current !== "high") {
+        qualityRef.current = "high";
+        onQualityChange?.("high", "recovered-fps");
+      }
       onWarningChange?.(null);
     }
   });
