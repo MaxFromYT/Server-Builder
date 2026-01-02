@@ -158,13 +158,14 @@ const SEGMENT_COUNT = 30;
 const RACKS_PER_SEGMENT = 6;
 const RACK_SPACING = 3.0;
 const AISLE_HALF_WIDTH = 2.4;
-const DETAIL_BUDGET = 4;
+const DETAIL_BUDGET = 120;
+const DETAIL_RADIUS = 80;
 
 function BlinkingIndicator({
   position,
   color,
   phase,
-  intensity = 3.0,
+  intensity = 3.4,
 }: {
   position: [number, number, number];
   color: THREE.Color;
@@ -223,7 +224,7 @@ function RackLedStrips({
       <meshStandardMaterial
         color={color}
         emissive={color}
-        emissiveIntensity={2.4}
+        emissiveIntensity={3.0}
         roughness={0.35}
         metalness={0.2}
         toneMapped={false}
@@ -384,6 +385,7 @@ function DatacenterSegment({
             showHud={false}
             detailBudget={DETAIL_BUDGET}
             lodIndex={rack.lodIndex}
+            detailRadius={DETAIL_RADIUS}
           />
         </group>
       ))}
@@ -453,7 +455,7 @@ function DatacenterScene({
 
   useFrame((_, delta) => {
     if (paused) return;
-    const move = delta * 1.35 * motionFactor;
+    const move = delta * 1.2 * motionFactor;
     segmentRefs.current.forEach((segment) => {
       segment.position.z += move;
       if (segment.position.z > SEGMENT_LENGTH) {
@@ -465,13 +467,13 @@ function DatacenterScene({
   return (
     <>
       <color attach="background" args={[palette.base]} />
-      <fog attach="fog" args={[palette.base, 14, 90]} />
+      <fog attach="fog" args={[palette.base, 16, 130]} />
       <PerspectiveCamera makeDefault fov={42} position={[0, 1.55, 2.8]} />
 
       <ambientLight intensity={0.45} color={palette.ambient} />
       <directionalLight
         position={[-6, 7.5, 5]}
-        intensity={0.8}
+        intensity={0.9}
         color={palette.cool}
         castShadow
         shadow-mapSize-width={768}
@@ -522,7 +524,7 @@ export function HeroAnimation({
     <div className={className}>
       <Canvas
         shadows
-        dpr={[1, 1.2]}
+        dpr={[1, 1.1]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         frameloop={paused ? "never" : "always"}
         className="h-full w-full"
