@@ -1,6 +1,6 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Sparkles as DreiSparkles } from "@react-three/drei";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Eye, Hammer, Play, Shield, Sparkles } from "lucide-react";
@@ -211,7 +211,7 @@ function IntroScene() {
   }, []);
   const introRacks = useMemo(
     () =>
-      rackGrid.slice(0, 36).map(([x, _y, z], index) =>
+      rackGrid.slice(0, 16).map(([x, _y, z], index) =>
         buildIntroRack(index, x, z)
       ),
     [rackGrid]
@@ -284,7 +284,8 @@ function LiveFeed({
       <div className="h-40 overflow-hidden rounded-lg border border-white/10">
         <Canvas
           dpr={1}
-          gl={{ antialias: false }}
+          gl={{ antialias: false, powerPreference: "high-performance" }}
+          frameloop="demand"
           className="pointer-events-none"
         >
           <MiniRackScene variant={variant} />
@@ -309,7 +310,7 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
   );
   const racks = useMemo(
     () =>
-      Array.from({ length: 12 }).map((_, index) => {
+      Array.from({ length: 6 }).map((_, index) => {
         const row = Math.floor(index / 5);
         const col = index % 5;
         return buildIntroRack(index + (variant === "b" ? 40 : variant === "c" ? 80 : 0), col * 1.6 - 3.2, row * 1.6 - 3.2);
