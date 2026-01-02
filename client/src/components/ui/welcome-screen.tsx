@@ -1,6 +1,6 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Sparkles as DreiSparkles } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Eye, Hammer, Play, Shield, Sparkles } from "lucide-react";
@@ -99,6 +99,7 @@ export function WelcomeScreen({
         <Canvas
           dpr={1}
           gl={{ antialias: false, powerPreference: "high-performance" }}
+          frameloop="demand"
           className="h-full w-full pointer-events-auto"
         >
           <IntroScene />
@@ -192,8 +193,6 @@ export function WelcomeScreen({
 }
 
 function IntroScene() {
-  const groupRef = useRef<THREE.Group>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const fogColor = new THREE.Color("#05070f");
   const equipmentMap = useMemo(
     () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
@@ -218,25 +217,11 @@ function IntroScene() {
     [rackGrid]
   );
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (cameraRef.current) {
-      const radius = 18 + Math.sin(t * 0.2) * 2;
-      cameraRef.current.position.x = Math.cos(t * 0.15) * radius;
-      cameraRef.current.position.z = Math.sin(t * 0.15) * radius;
-      cameraRef.current.position.y = 8 + Math.sin(t * 0.3) * 1.5;
-      cameraRef.current.lookAt(0, 2, 0);
-    }
-    if (!groupRef.current) return;
-    groupRef.current.rotation.y = t * 0.05;
-    groupRef.current.position.y = Math.sin(t * 0.5) * 0.1;
-  });
-
   return (
     <>
       <fog attach="fog" args={[fogColor, 8, 40]} />
       <color attach="background" args={["#02030a"]} />
-      <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 8, 18]} fov={40} />
+      <PerspectiveCamera makeDefault position={[0, 8, 18]} fov={40} />
 
       <ambientLight intensity={0.6} color="#4dd6ff" />
       <directionalLight position={[10, 15, 10]} intensity={1.6} color="#b9e9ff" />
@@ -245,7 +230,7 @@ function IntroScene() {
       <pointLight position={[0, 4, 12]} intensity={1.2} color="#38bdf8" />
       <pointLight position={[-12, 6, -8]} intensity={1.0} color="#c084fc" />
 
-      <group ref={groupRef}>
+      <group>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[120, 120]} />
           <meshStandardMaterial color="#070b18" metalness={0.5} roughness={0.3} />
@@ -260,9 +245,10 @@ function IntroScene() {
               isSelected={false}
               onSelect={() => {}}
               equipmentCatalog={equipmentMap}
-              forceSimplified={false}
+              forceSimplified
               lodIndex={index}
               detailBudget={introRacks.length}
+              showHud={false}
             />
           ))}
         </group>
@@ -271,9 +257,7 @@ function IntroScene() {
         <IntroSweep offset={6} color="#a855f7" />
       </group>
 
-      <DreiSparkles count={200} speed={0.4} size={1.6} color="#22d3ee" scale={[40, 20, 40]} />
-      <DreiSparkles count={120} speed={0.2} size={2.4} color="#a855f7" scale={[45, 25, 45]} />
-      <DreiSparkles count={60} speed={0.15} size={3.2} color="#5eead4" scale={[50, 25, 50]} />
+      <DreiSparkles count={80} speed={0.2} size={1.2} color="#22d3ee" scale={[40, 20, 40]} />
     </>
   );
 }
@@ -358,6 +342,7 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
             forceSimplified
             lodIndex={index}
             detailBudget={racks.length}
+            showHud={false}
           />
         ))}
       </group>

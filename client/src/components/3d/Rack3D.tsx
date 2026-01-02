@@ -31,6 +31,7 @@ interface Rack3DProps {
   onDragStart?: (point: THREE.Vector3) => void;
   isDragging?: boolean;
   rackScale?: number;
+  showHud?: boolean;
 }
 
 const RACK_WIDTH = 0.85;
@@ -286,6 +287,7 @@ export function Rack3D({
   onDragStart,
   isDragging = false,
   rackScale = 1,
+  showHud = true,
 }: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -416,7 +418,7 @@ export function Rack3D({
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      {(hovered || isSelected) && !forceSimplified && (
+      {(hovered || isSelected) && !forceSimplified && showHud && (
         <group>
           <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <primitive object={getPlaneGeometry([RACK_WIDTH + 0.1, RACK_DEPTH + 0.1])} attach="geometry" />
