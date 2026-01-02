@@ -36,7 +36,7 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 export function DataCenter3D() {
-  const { isLoading, racks, isStaticMode, setRacksFromSave } = useGame();
+  const { isLoading, racks, isStaticMode, setRacksFromSave, addEmptyRack } = useGame();
   const { selectedIds, selectRack, clearSelection, undo, redo, canUndo, canRedo } = useBuild();
   const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
   const { toast } = useToast();
@@ -320,6 +320,14 @@ export function DataCenter3D() {
                   className="bg-white/10 text-white hover:bg-white/20"
                 >
                   Quality: {qualityMode.toUpperCase()}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={addEmptyRack}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Spawn Empty Rack
                 </Button>
               </div>
             </div>

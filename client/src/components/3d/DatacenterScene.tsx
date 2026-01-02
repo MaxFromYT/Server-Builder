@@ -195,8 +195,17 @@ function RackGrid({
     rackId: string;
     offsetX: number;
     offsetZ: number;
-    lastX: number;
-    lastY: number;
+    worldX: number;
+    worldZ: number;
+    snapX: number;
+    snapY: number;
+  } | null>(null);
+  const [dragPreview, setDragPreview] = useState<{
+    rackId: string;
+    worldX: number;
+    worldZ: number;
+    snapX: number;
+    snapY: number;
   } | null>(null);
   const floorPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
 
@@ -226,15 +235,35 @@ function RackGrid({
     const targetZ = intersection.z + drag.offsetZ;
     const positionX = Math.round((targetX + centerX) / rackSpacing);
     const positionY = Math.round((targetZ + centerZ) / aisleSpacing);
-    if (positionX === drag.lastX && positionY === drag.lastY) return;
-    drag.lastX = positionX;
-    drag.lastY = positionY;
-    onMoveRack(drag.rackId, positionX, positionY);
+    if (
+      drag.worldX === targetX &&
+      drag.worldZ === targetZ &&
+      drag.snapX === positionX &&
+      drag.snapY === positionY
+    ) {
+      return;
+    }
+    drag.worldX = targetX;
+    drag.worldZ = targetZ;
+    drag.snapX = positionX;
+    drag.snapY = positionY;
+    setDragPreview({
+      rackId: drag.rackId,
+      worldX: targetX,
+      worldZ: targetZ,
+      snapX: positionX,
+      snapY: positionY,
+    });
   });
 
   useEffect(() => {
     const stopDrag = () => {
+      const drag = draggingRef.current;
+      if (drag) {
+        onMoveRack(drag.rackId, drag.snapX, drag.snapY);
+      }
       draggingRef.current = null;
+      setDragPreview(null);
     };
     window.addEventListener("pointerup", stopDrag);
     window.addEventListener("pointercancel", stopDrag);
@@ -242,12 +271,38 @@ function RackGrid({
       window.removeEventListener("pointerup", stopDrag);
       window.removeEventListener("pointercancel", stopDrag);
     };
-  }, []);
+  }, [onMoveRack]);
 
   return (
     <group>
       {rackPositions.map(({ rack, position }, index) => (
         <group key={rack.id}>
+          {dragPreview?.rackId === rack.id ? (
+            <Rack3D
+              rack={rack}
+              position={[dragPreview.worldX, 0, dragPreview.worldZ]}
+              isSelected={rack.id === selectedRackId}
+              onSelect={() => onSelectRack(rack)}
+              equipmentCatalog={equipmentCatalog}
+              forceSimplified={forceSimplified}
+              detailBudget={detailBudget}
+              lodIndex={index}
+              buildMode={buildMode}
+              isDragging
+              onDragStart={(point) => {
+                if (!canMove || buildMode !== "place") return;
+                draggingRef.current = {
+                  rackId: rack.id,
+                  offsetX: position[0] - point.x,
+                  offsetZ: position[2] - point.z,
+                  worldX: dragPreview.worldX,
+                  worldZ: dragPreview.worldZ,
+                  snapX: dragPreview.snapX,
+                  snapY: dragPreview.snapY,
+                };
+              }}
+            />
+          ) : (
           <Rack3D
             rack={rack}
             position={position}
@@ -264,11 +319,21 @@ function RackGrid({
                 rackId: rack.id,
                 offsetX: position[0] - point.x,
                 offsetZ: position[2] - point.z,
-                lastX: rack.positionX,
-                lastY: rack.positionY,
+                worldX: position[0],
+                worldZ: position[2],
+                snapX: rack.positionX,
+                snapY: rack.positionY,
               };
+              setDragPreview({
+                rackId: rack.id,
+                worldX: position[0],
+                worldZ: position[2],
+                snapX: rack.positionX,
+                snapY: rack.positionY,
+              });
             }}
           />
+          )}
 
           {/* FIX: shimmer Z uses position[2], not position[1] */}
           {showHeatShimmer && rack.exhaustTemp > 35 && (
@@ -279,6 +344,20 @@ function RackGrid({
           )}
         </group>
       ))}
+
+      {dragPreview && (
+        <mesh
+          position={[
+            dragPreview.snapX * rackSpacing - centerX,
+            0.02,
+            dragPreview.snapY * aisleSpacing - centerZ,
+          ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <planeGeometry args={[1.8, 2.6]} />
+          <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={0.6} transparent opacity={0.35} />
+        </mesh>
+      )}
 
       {showNetworkMesh && (
         <DataCenterNetworkMesh

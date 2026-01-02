@@ -29,6 +29,7 @@ interface Rack3DProps {
   lodIndex?: number;
   buildMode?: BuildMode;
   onDragStart?: (point: THREE.Vector3) => void;
+  isDragging?: boolean;
 }
 
 const RACK_WIDTH = 0.85;
@@ -282,6 +283,7 @@ export function Rack3D({
   lodIndex = 0,
   buildMode,
   onDragStart,
+  isDragging = false,
 }: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -307,7 +309,8 @@ export function Rack3D({
       const eased = appearT * appearT * (3 - 2 * appearT);
       const appearLift = THREE.MathUtils.lerp(0, 0.12, eased);
       const baseY = position[1];
-      const targetY = baseY + appearLift + (hovered || isSelected ? 0.05 : 0);
+      const dragLift = isDragging ? 0.35 : 0;
+      const targetY = baseY + appearLift + dragLift + (hovered || isSelected ? 0.05 : 0);
       groupRef.current.position.y = THREE.MathUtils.lerp(
         groupRef.current.position.y,
         targetY,

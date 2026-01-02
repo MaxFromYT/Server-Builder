@@ -226,19 +226,20 @@ function LiveFeed({
 
 function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
   const camPos = useMemo(() => {
-    if (variant === "a") return [6, 4, 6] as [number, number, number];
-    if (variant === "b") return [0, 3.5, 7] as [number, number, number];
-    return [-6, 4, 6] as [number, number, number];
+    if (variant === "a") return [8, 5, 9] as [number, number, number];
+    if (variant === "b") return [0, 6, 10] as [number, number, number];
+    return [-9, 4.5, 7] as [number, number, number];
   }, [variant]);
 
   const target = useMemo(() => [0, 1.5, 0] as [number, number, number], []);
 
   const racks = useMemo(
-    () => [
-      [-1.8, 1.2, 0],
-      [0, 1.2, 0.4],
-      [1.8, 1.2, 0],
-    ],
+    () =>
+      Array.from({ length: 20 }).map((_, index) => {
+        const row = Math.floor(index / 5);
+        const col = index % 5;
+        return [col * 1.6 - 3.2, 1.2, row * 1.6 - 3.2] as [number, number, number];
+      }),
     []
   );
 
