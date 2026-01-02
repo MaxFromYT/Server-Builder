@@ -158,13 +158,13 @@ const SEGMENT_COUNT = 30;
 const RACKS_PER_SEGMENT = 6;
 const RACK_SPACING = 3.0;
 const AISLE_HALF_WIDTH = 2.4;
-const DETAIL_BUDGET = 6;
+const DETAIL_BUDGET = 4;
 
 function BlinkingIndicator({
   position,
   color,
   phase,
-  intensity = 2.0,
+  intensity = 3.0,
 }: {
   position: [number, number, number];
   color: THREE.Color;
@@ -190,6 +190,43 @@ function BlinkingIndicator({
         emissiveIntensity={intensity}
         roughness={0.2}
         metalness={0.1}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+function RackLedStrips({
+  transforms,
+  color,
+}: {
+  transforms: Array<{ position: THREE.Vector3; rotation: THREE.Euler }>;
+  color: THREE.Color;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+    const dummy = new THREE.Object3D();
+    transforms.forEach((transform, index) => {
+      dummy.position.copy(transform.position);
+      dummy.rotation.copy(transform.rotation);
+      dummy.updateMatrix();
+      meshRef.current?.setMatrixAt(index, dummy.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [transforms]);
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, transforms.length]}>
+      <boxGeometry args={[0.08, 0.04, 0.5]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={2.4}
+        roughness={0.35}
+        metalness={0.2}
+        toneMapped={false}
       />
     </mesh>
   );
@@ -253,6 +290,26 @@ function DatacenterSegment({
       ];
     });
   }, [palette, racks, seed, segmentIndex]);
+
+  const stripTransforms = useMemo(() => {
+    const transforms: Array<{ position: THREE.Vector3; rotation: THREE.Euler }> = [];
+    racks.forEach((rack) => {
+      const sideOffset = rack.position[0] > 0 ? -0.55 : 0.55;
+      const baseX = rack.position[0] + sideOffset;
+      const baseZ = rack.position[2] + 0.25;
+      transforms.push(
+        {
+          position: new THREE.Vector3(baseX, 0.25, baseZ),
+          rotation: new THREE.Euler(0, rack.position[0] > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
+        },
+        {
+          position: new THREE.Vector3(baseX, 2.35, baseZ),
+          rotation: new THREE.Euler(0, rack.position[0] > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
+        }
+      );
+    });
+    return transforms;
+  }, [racks]);
 
   return (
     <group>
@@ -339,6 +396,8 @@ function DatacenterSegment({
           phase={indicator.phase}
         />
       ))}
+
+      <RackLedStrips transforms={stripTransforms} color={palette.cool} />
     </group>
   );
 }
@@ -394,7 +453,7 @@ function DatacenterScene({
 
   useFrame((_, delta) => {
     if (paused) return;
-    const move = delta * 1.55 * motionFactor;
+    const move = delta * 1.35 * motionFactor;
     segmentRefs.current.forEach((segment) => {
       segment.position.z += move;
       if (segment.position.z > SEGMENT_LENGTH) {
@@ -406,17 +465,17 @@ function DatacenterScene({
   return (
     <>
       <color attach="background" args={[palette.base]} />
-      <fog attach="fog" args={[palette.base, 10, 70]} />
+      <fog attach="fog" args={[palette.base, 14, 90]} />
       <PerspectiveCamera makeDefault fov={42} position={[0, 1.55, 2.8]} />
 
       <ambientLight intensity={0.45} color={palette.ambient} />
       <directionalLight
         position={[-6, 7.5, 5]}
-        intensity={0.7}
+        intensity={0.8}
         color={palette.cool}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={768}
+        shadow-mapSize-height={768}
         shadow-bias={-0.00015}
       />
       <directionalLight
@@ -463,7 +522,7 @@ export function HeroAnimation({
     <div className={className}>
       <Canvas
         shadows
-        dpr={[1, 1.4]}
+        dpr={[1, 1.2]}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         frameloop={paused ? "never" : "always"}
         className="h-full w-full"
