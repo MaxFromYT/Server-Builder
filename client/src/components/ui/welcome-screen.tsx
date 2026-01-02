@@ -98,21 +98,86 @@ export function WelcomeScreen({
           50% { background-position: 120% 80%; }
           100% { background-position: 0% 0%; }
         }
+        @keyframes hyperscale-grid {
+          0% { background-position: 0px 0px; opacity: 0.55; }
+          50% { background-position: 160px 120px; opacity: 0.8; }
+          100% { background-position: 0px 0px; opacity: 0.55; }
+        }
+        @keyframes hyperscale-shift {
+          0% { transform: translate3d(0, 0, 0); }
+          50% { transform: translate3d(-4%, 3%, 0); }
+          100% { transform: translate3d(0, 0, 0); }
+        }
+        @keyframes hyperscale-glow {
+          0% { opacity: 0.35; }
+          50% { opacity: 0.75; }
+          100% { opacity: 0.35; }
+        }
       `}</style>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.35),_transparent_45%),radial-gradient(circle_at_70%_20%,_rgba(168,85,247,0.3),_transparent_45%),radial-gradient(circle_at_20%_80%,_rgba(20,184,166,0.35),_transparent_40%)] opacity-90" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
-      <div className="pointer-events-none absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.18),_transparent_60%)]" />
-      <div className="pointer-events-none absolute -inset-24 animate-[spin_40s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(34,211,238,0.2),rgba(59,130,246,0.08),rgba(168,85,247,0.28),rgba(34,211,238,0.2))] blur-2xl opacity-70" />
-      <div className="pointer-events-none absolute inset-0 animate-[spin_60s_linear_infinite] bg-[conic-gradient(from_180deg_at_50%_50%,rgba(14,165,233,0.2),rgba(236,72,153,0.12),rgba(59,130,246,0.22),rgba(14,165,233,0.2))] opacity-30" />
+      <div className="pointer-events-none absolute inset-0 bg-[#05060f]" />
       <div
-        className="pointer-events-none absolute inset-0 opacity-70 mix-blend-screen"
+        className="pointer-events-none absolute inset-0 opacity-90"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 20% 20%, rgba(236,72,153,0.35), transparent 55%), radial-gradient(circle at 80% 30%, rgba(56,189,248,0.35), transparent 60%), radial-gradient(circle at 30% 80%, rgba(34,211,238,0.35), transparent 60%), radial-gradient(circle at 75% 70%, rgba(168,85,247,0.3), transparent 60%)",
-          backgroundSize: "160% 160%",
-          animation: "hyperscale-pan 28s linear infinite",
+            "radial-gradient(circle at 15% 20%, rgba(236,72,153,0.55), transparent 50%), radial-gradient(circle at 85% 20%, rgba(56,189,248,0.45), transparent 55%), radial-gradient(circle at 25% 85%, rgba(34,211,238,0.5), transparent 55%), radial-gradient(circle at 75% 75%, rgba(168,85,247,0.5), transparent 60%)",
+          backgroundSize: "140% 140%",
+          animation: "hyperscale-pan 30s linear infinite",
         }}
       />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "linear-gradient(120deg, rgba(236,72,153,0.35), rgba(59,130,246,0.25), rgba(34,211,238,0.3)), radial-gradient(circle at 60% 30%, rgba(147,51,234,0.45), transparent 60%)",
+          backgroundSize: "200% 200%",
+          animation: "hyperscale-pan 22s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 40% 60%, rgba(14,165,233,0.35), transparent 45%), radial-gradient(circle at 70% 40%, rgba(94,234,212,0.4), transparent 55%)",
+          backgroundSize: "180% 180%",
+          animation: "hyperscale-pan 18s linear infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(236,72,153,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(94,234,212,0.12) 1px, transparent 1px)",
+          backgroundSize: "120px 120px",
+          animation: "hyperscale-grid 16s linear infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(236,72,153,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.12) 1px, transparent 1px)",
+          backgroundSize: "240px 240px",
+          animation: "hyperscale-grid 24s linear infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -inset-24 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "conic-gradient(from 90deg at 50% 50%, rgba(236,72,153,0.35), rgba(34,211,238,0.2), rgba(59,130,246,0.2), rgba(168,85,247,0.35))",
+          filter: "blur(80px)",
+          animation: "hyperscale-pan 40s linear infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 50%)",
+          animation: "hyperscale-glow 12s ease-in-out infinite",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 animate-[hyperscale-shift_18s_ease-in-out_infinite] bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{

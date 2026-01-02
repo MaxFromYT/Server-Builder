@@ -100,6 +100,14 @@ export function DataCenter3D() {
   const selectedRack = visibleRacks?.find((r) => r.id === selectedRackId) || null;
   const effectiveEffects = showEffects && !fastRamp;
 
+  useEffect(() => {
+    if (!isStaticMode) return;
+    if (racks.length > rackCount) {
+      setRackCount(racks.length);
+      setSliderValue(racks.length);
+    }
+  }, [isStaticMode, rackCount, racks.length]);
+
   const validateBuild = () => {
     const powerViolations = racks.filter((rack) => rack.currentPowerDraw > rack.powerCapacity);
     const slotViolations = racks.filter((rack) => {
@@ -373,10 +381,24 @@ export function DataCenter3D() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => setPlacingRack(true)}
+                  onClick={() => {
+                    if (placingRack) {
+                      setPlacingRack(false);
+                      return;
+                    }
+                    addEmptyRack();
+                  }}
                   className="bg-white/10 text-white hover:bg-white/20"
                 >
-                  {placingRack ? "Click to Place Rack" : "Spawn Empty Rack"}
+                  {placingRack ? "Cancel Placement" : "Spawn Empty Rack"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setPlacingRack((prev) => !prev)}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  {placingRack ? "Click to Place Rack" : "Place Rack"}
                 </Button>
               </div>
             </div>

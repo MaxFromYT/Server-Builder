@@ -15,6 +15,7 @@ import { NocDashboard } from "@/pages/noc-dashboard";
 import { IncidentsDashboard } from "@/pages/incidents-dashboard";
 import { AboutDashboard } from "@/pages/about-dashboard";
 import { disposePooledAssets } from "@/lib/asset-pool";
+import { PageBackground } from "@/components/ui/page-background";
 
 export default function App() {
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function App() {
         <ThemeProvider defaultTheme="dark" storageKey="hyperscale-theme">
           <GameProvider>
             <BuildProvider>
+              <PageBackground />
               <Switch>
                 <Route path="/" component={DataCenter3D} />
                 <Route path="/floor" component={DataCenter3D} />
