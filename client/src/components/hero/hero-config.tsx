@@ -13,6 +13,7 @@ export const heroConfig = {
   cameraSpeed: 0.18,
   interactionStrength: 0.35,
   scrollInfluence: 0.6,
+  reducedMotionFactor: 0.2,
 } as const;
 
 export type HeroQuality = keyof typeof heroConfig.qualityTiers;

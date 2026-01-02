@@ -173,11 +173,13 @@ function GlyphTraffic({
   seed,
   paused,
   scrollState,
+  motionFactor,
 }: {
   count: number;
   seed: number;
   paused: boolean;
   scrollState: number;
+  motionFactor: number;
 }) {
   const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
   const offsets = useMemo(() => new Float32Array(count * 3), [count]);
@@ -212,7 +214,7 @@ function GlyphTraffic({
   useFrame(({ clock }, delta) => {
     if (paused || !geometryRef.current) return;
     const time = clock.getElapsedTime();
-    const ramp = 0.4 + scrollState * 1.3;
+    const ramp = (0.35 + scrollState * 1.3) * motionFactor;
     for (let i = 0; i < count; i += 1) {
       progress[i] += delta * speeds[i] * ramp;
       if (progress[i] > 1) progress[i] -= 1;
@@ -223,9 +225,9 @@ function GlyphTraffic({
       const curve = laneCurves[laneIndex];
       const point = curve.getPointAt(progress[i]);
       offsets[i * 3] = point.x;
-      offsets[i * 3 + 1] = point.y + Math.sin(time * 2 + i) * 0.04;
+      offsets[i * 3 + 1] = point.y + Math.sin(time * 2 + i) * 0.04 * motionFactor;
       offsets[i * 3 + 2] = point.z;
-      pulses[i] = 0.6 + 0.4 * Math.sin(time * 5 + i * 0.3);
+      pulses[i] = 0.6 + 0.4 * Math.sin(time * 5 * motionFactor + i * 0.3);
     }
     geometryRef.current.attributes.aOffset.needsUpdate = true;
     geometryRef.current.attributes.aPulse.needsUpdate = true;
@@ -332,7 +334,15 @@ function RackField({
   );
 }
 
-function LedField({ count, seed }: { count: number; seed: number }) {
+function LedField({
+  count,
+  seed,
+  motionFactor,
+}: {
+  count: number;
+  seed: number;
+  motionFactor: number;
+}) {
   const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
   const offsets = useMemo(() => new Float32Array(count * 3), [count]);
   const scales = useMemo(() => new Float32Array(count * 2), [count]);
@@ -354,7 +364,7 @@ function LedField({ count, seed }: { count: number; seed: number }) {
 
   useFrame(({ clock }) => {
     if (!geometryRef.current) return;
-    const t = clock.getElapsedTime();
+    const t = clock.getElapsedTime() * motionFactor;
     for (let i = 0; i < count; i += 1) {
       phases[i] = t + i * 0.3;
     }
@@ -594,7 +604,11 @@ function HeroScene({
       <group position={[0, 0, -12]}>
         <GridFloor palette={palette} />
         <RackField count={particleCount > 20000 ? 260 : 140} palette={palette} seed={seed} />
-        <LedField count={particleCount > 20000 ? 240 : 140} seed={seed} />
+        <LedField
+          count={particleCount > 20000 ? 240 : 140}
+          seed={seed}
+          motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
+        />
         <RoutedLanes seed={seed} />
         <LightVolumes palette={palette} />
       </group>
@@ -602,8 +616,9 @@ function HeroScene({
       <GlyphTraffic
         count={particleCount}
         seed={seed}
-        paused={paused || reducedMotion}
+        paused={paused}
         scrollState={scrollRef.current}
+        motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
       />
 
       <PostEffects />
