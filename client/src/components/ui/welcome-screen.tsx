@@ -211,7 +211,7 @@ function IntroScene() {
   }, []);
   const introRacks = useMemo(
     () =>
-      rackGrid.map(([x, _y, z], index) =>
+      rackGrid.slice(0, 36).map(([x, _y, z], index) =>
         buildIntroRack(index, x, z)
       ),
     [rackGrid]
@@ -257,7 +257,7 @@ function IntroScene() {
         <IntroSweep offset={6} color="#a855f7" />
       </group>
 
-      <DreiSparkles count={80} speed={0.2} size={1.2} color="#22d3ee" scale={[40, 20, 40]} />
+      <DreiSparkles count={30} speed={0.1} size={1.1} color="#22d3ee" scale={[30, 16, 30]} />
     </>
   );
 }
@@ -309,7 +309,7 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
   );
   const racks = useMemo(
     () =>
-      Array.from({ length: 20 }).map((_, index) => {
+      Array.from({ length: 12 }).map((_, index) => {
         const row = Math.floor(index / 5);
         const col = index % 5;
         return buildIntroRack(index + (variant === "b" ? 40 : variant === "c" ? 80 : 0), col * 1.6 - 3.2, row * 1.6 - 3.2);
@@ -351,8 +351,7 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
         enablePan={false}
         enableZoom={false}
         enableRotate={true}
-        autoRotate
-        autoRotateSpeed={variant === "b" ? 1.0 : 0.7}
+        autoRotate={false}
         target={target}
       />
     </>

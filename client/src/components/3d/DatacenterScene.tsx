@@ -49,6 +49,7 @@ interface DatacenterSceneProps {
   lodResetToken?: number;
   onPerfWarningChange?: (warning: string | null) => void;
   onPointerGridChange?: (positionX: number, positionY: number) => void;
+  onPointerGridConfirm?: (positionX: number, positionY: number) => void;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -550,6 +551,7 @@ export function DatacenterScene({
   lodResetToken = 0,
   onPerfWarningChange,
   onPointerGridChange,
+  onPointerGridConfirm,
   proceduralOptions,
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog, preloadQueue, updateRackPosition } = useGame();
@@ -709,6 +711,24 @@ export function DatacenterScene({
           gl.domElement.style.touchAction = "none";
         }}
         onPointerMissed={handlePointerMissed}
+        onPointerDown={(event) => {
+          if (!onPointerGridConfirm) return;
+          const { camera, raycaster } = event;
+          raycaster.setFromCamera(event.pointer, camera);
+          const intersection = new THREE.Vector3();
+          const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+          if (raycaster.ray.intersectPlane(plane, intersection)) {
+            const rackSpacing = 2.8;
+            const aisleSpacing = 5.2;
+            const maxCol = Math.max(...displayRacks.map((r) => r.positionX), 2);
+            const maxRow = Math.max(...displayRacks.map((r) => r.positionY), 2);
+            const centerX = (maxCol * rackSpacing) / 2;
+            const centerZ = (maxRow * aisleSpacing) / 2;
+            const positionX = Math.round((intersection.x + centerX) / rackSpacing);
+            const positionY = Math.round((intersection.z + centerZ) / aisleSpacing);
+            onPointerGridConfirm(positionX, positionY);
+          }
+        }}
       >
         <fog attach="fog" args={[isLight ? "#dfe7f2" : "#080a10", 20, 120]} />
 

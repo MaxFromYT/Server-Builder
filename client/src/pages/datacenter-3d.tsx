@@ -67,6 +67,7 @@ export function DataCenter3D() {
   const [rackScale, setRackScale] = useState(1);
   const [controlDockOpen, setControlDockOpen] = useState(true);
   const [pointerGrid, setPointerGrid] = useState({ x: 0, y: 0 });
+  const [placingRack, setPlacingRack] = useState(false);
 
   const [fastRamp, setFastRamp] = useState(false);
   const fastRampTimer = useRef<number | null>(null);
@@ -237,6 +238,11 @@ export function DataCenter3D() {
         onPointerGridChange={(positionX, positionY) => {
           setPointerGrid({ x: positionX, y: positionY });
         }}
+        onPointerGridConfirm={(positionX, positionY) => {
+          if (!placingRack) return;
+          addEmptyRackAtPosition(positionX, positionY);
+          setPlacingRack(false);
+        }}
       />
 
       {!introVisible && (
@@ -356,10 +362,10 @@ export function DataCenter3D() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => addEmptyRackAtPosition(pointerGrid.x, pointerGrid.y)}
+                  onClick={() => setPlacingRack(true)}
                   className="bg-white/10 text-white hover:bg-white/20"
                 >
-                  Spawn Empty Rack
+                  {placingRack ? "Click to Place Rack" : "Spawn Empty Rack"}
                 </Button>
               </div>
             </div>
