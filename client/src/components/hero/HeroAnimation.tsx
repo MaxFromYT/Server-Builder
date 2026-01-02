@@ -228,7 +228,7 @@ function RackLedStrips({
         metalness={0.2}
         toneMapped={false}
       />
-    </instancedMesh>
+    </mesh>
   );
 }
 
