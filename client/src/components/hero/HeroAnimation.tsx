@@ -551,10 +551,12 @@ function EthernetStrands({
   count,
   paused,
   motionFactor,
+  color,
 }: {
   count: number;
   paused: boolean;
   motionFactor: number;
+  color: string;
 }) {
   const geometryRef = useRef<THREE.BufferGeometry>(null);
   const positions = useMemo(() => new Float32Array(count * 6), [count]);
@@ -598,7 +600,7 @@ function EthernetStrands({
           itemSize={3}
         />
       </bufferGeometry>
-      <lineBasicMaterial color="#5eead4" transparent opacity={0.6} />
+      <lineBasicMaterial color={color} transparent opacity={0.35} />
     </lineSegments>
   );
 }
@@ -816,7 +818,7 @@ function LightVolumes({ palette }: { palette: (typeof paletteMap)[keyof typeof p
   );
 }
 
-function RoutedLanes({ seed }: { seed: number }) {
+function RoutedLanes({ seed, color }: { seed: number; color: string }) {
   const curves = useMemo(() => buildLanes(seed + 17), [seed]);
   return (
     <group>
@@ -824,10 +826,10 @@ function RoutedLanes({ seed }: { seed: number }) {
         <Line
           key={index}
           points={curve.getPoints(40)}
-          color={index % 2 === 0 ? "#22d3ee" : "#a855f7"}
+          color={color}
           lineWidth={1}
           transparent
-          opacity={0.35}
+          opacity={0.25}
         />
       ))}
     </group>
@@ -984,7 +986,7 @@ function HeroScene({
           seed={seed}
           motionFactor={motionFactor}
         />
-        <RoutedLanes seed={seed} />
+        <RoutedLanes seed={seed} color="#38bdf8" />
         <LightVolumes palette={palette} />
       </group>
       <RackShowcase count={20} motionFactor={motionFactor} />
@@ -1012,6 +1014,7 @@ function HeroScene({
         count={ethernetCount}
         paused={paused}
         motionFactor={motionFactor}
+        color="#38bdf8"
       />
 
       <PostEffects />
