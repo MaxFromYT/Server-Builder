@@ -113,6 +113,21 @@ export function WelcomeScreen({
           50% { opacity: 0.75; }
           100% { opacity: 0.35; }
         }
+        @keyframes hyperscale-scan {
+          0% { transform: translateY(-10%); opacity: 0.3; }
+          50% { opacity: 0.6; }
+          100% { transform: translateY(10%); opacity: 0.3; }
+        }
+        @keyframes hyperscale-pulse {
+          0% { opacity: 0.2; }
+          50% { opacity: 0.6; }
+          100% { opacity: 0.2; }
+        }
+        @keyframes hyperscale-drift {
+          0% { transform: translate3d(0, 0, 0) scale(1); }
+          50% { transform: translate3d(3%, -2%, 0) scale(1.02); }
+          100% { transform: translate3d(0, 0, 0) scale(1); }
+        }
       `}</style>
       <div className="pointer-events-none absolute inset-0 bg-[#05060f]" />
       <div
@@ -161,6 +176,22 @@ export function WelcomeScreen({
         }}
       />
       <div
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(90deg, rgba(236,72,153,0.12), rgba(236,72,153,0.12) 1px, transparent 1px, transparent 18px)",
+          animation: "hyperscale-grid 14s linear infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(59,130,246,0.08), rgba(59,130,246,0.08) 1px, transparent 1px, transparent 14px)",
+          animation: "hyperscale-grid 12s linear infinite",
+        }}
+      />
+      <div
         className="pointer-events-none absolute -inset-24 mix-blend-screen"
         style={{
           backgroundImage:
@@ -175,6 +206,30 @@ export function WelcomeScreen({
           backgroundImage:
             "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 50%)",
           animation: "hyperscale-glow 12s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 50%, rgba(236,72,153,0.18), transparent 40%), radial-gradient(circle at 80% 50%, rgba(56,189,248,0.18), transparent 40%)",
+          animation: "hyperscale-drift 16s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60 mix-blend-soft-light"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.05) 100%)",
+          animation: "hyperscale-scan 14s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 50% 50%, rgba(236,72,153,0.15), transparent 35%), radial-gradient(circle at 50% 50%, rgba(56,189,248,0.12), transparent 55%)",
+          animation: "hyperscale-pulse 10s ease-in-out infinite",
         }}
       />
       <div className="pointer-events-none absolute inset-0 animate-[hyperscale-shift_18s_ease-in-out_infinite] bg-gradient-to-b from-black/20 via-black/10 to-black/70" />

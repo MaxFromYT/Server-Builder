@@ -75,7 +75,7 @@ export function PageBackground() {
   const preset = useMemo(() => resolvePreset(location), [location]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <style>{`
         @keyframes page-pan {
           0% { background-position: 0% 0%; }
@@ -113,6 +113,22 @@ export function PageBackground() {
             "linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px)",
           backgroundSize: "160px 160px",
           animation: "page-grid 22s linear infinite",
+        }}
+      />
+      <div
+        className="absolute inset-0 mix-blend-soft-light"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 1px, transparent 1px, transparent 6px)",
+          animation: "page-grid 18s linear infinite",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), transparent 55%)",
+          animation: "page-pan 20s ease-in-out infinite",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/70" />

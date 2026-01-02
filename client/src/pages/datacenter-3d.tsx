@@ -100,13 +100,7 @@ export function DataCenter3D() {
   const selectedRack = visibleRacks?.find((r) => r.id === selectedRackId) || null;
   const effectiveEffects = showEffects && !fastRamp;
 
-  useEffect(() => {
-    if (!isStaticMode) return;
-    if (racks.length > rackCount) {
-      setRackCount(racks.length);
-      setSliderValue(racks.length);
-    }
-  }, [isStaticMode, rackCount, racks.length]);
+
 
   const validateBuild = () => {
     const powerViolations = racks.filter((rack) => rack.currentPowerDraw > rack.powerCapacity);
@@ -236,7 +230,7 @@ export function DataCenter3D() {
   const sceneCameraMode: CameraMode = introVisible ? "cinematic" : cameraMode;
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-background">
+    <div className="relative w-full h-screen overflow-hidden bg-transparent">
       <DatacenterScene
         onSelectRack={handleSelectRack}
         selectedRackId={selectedRackId}
