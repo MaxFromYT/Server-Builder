@@ -219,11 +219,7 @@ function RackLedStrips({
     meshRef.current.instanceMatrix.needsUpdate = true;
   }, [transforms]);
 
-  if (instanceCount === 0) {
-    return null;
-  }
-
-  return (
+  return instanceCount === 0 ? null : (
     <instancedMesh ref={meshRef} args={[undefined, undefined, instanceCount]}>
       <boxGeometry args={[0.08, 0.04, 0.5]} />
       <meshStandardMaterial
