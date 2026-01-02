@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Sparkles as DreiSparkles } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Link } from "wouter";
@@ -10,6 +10,7 @@ import { Rack3D } from "@/components/3d/Rack3D";
 import { staticEquipmentCatalog } from "@/lib/static-equipment";
 import type { Rack } from "@shared/schema";
 import * as THREE from "three";
+import { HeroAnimation } from "@/components/hero/HeroAnimation";
 
 type StartMode = "build" | "explore";
 
@@ -92,167 +93,8 @@ export function WelcomeScreen({
 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden bg-black">
-      <style>{`
-        @keyframes hyperscale-pan {
-          0% { background-position: 0% 0%; }
-          50% { background-position: 120% 80%; }
-          100% { background-position: 0% 0%; }
-        }
-        @keyframes hyperscale-grid {
-          0% { background-position: 0px 0px; opacity: 0.55; }
-          50% { background-position: 160px 120px; opacity: 0.8; }
-          100% { background-position: 0px 0px; opacity: 0.55; }
-        }
-        @keyframes hyperscale-shift {
-          0% { transform: translate3d(0, 0, 0); }
-          50% { transform: translate3d(-4%, 3%, 0); }
-          100% { transform: translate3d(0, 0, 0); }
-        }
-        @keyframes hyperscale-glow {
-          0% { opacity: 0.35; }
-          50% { opacity: 0.75; }
-          100% { opacity: 0.35; }
-        }
-        @keyframes hyperscale-scan {
-          0% { transform: translateY(-10%); opacity: 0.3; }
-          50% { opacity: 0.6; }
-          100% { transform: translateY(10%); opacity: 0.3; }
-        }
-        @keyframes hyperscale-pulse {
-          0% { opacity: 0.2; }
-          50% { opacity: 0.6; }
-          100% { opacity: 0.2; }
-        }
-        @keyframes hyperscale-drift {
-          0% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(3%, -2%, 0) scale(1.02); }
-          100% { transform: translate3d(0, 0, 0) scale(1); }
-        }
-      `}</style>
-      <div className="pointer-events-none absolute inset-0 bg-[#05060f]" />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-90"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 15% 20%, rgba(236,72,153,0.55), transparent 50%), radial-gradient(circle at 85% 20%, rgba(56,189,248,0.45), transparent 55%), radial-gradient(circle at 25% 85%, rgba(34,211,238,0.5), transparent 55%), radial-gradient(circle at 75% 75%, rgba(168,85,247,0.5), transparent 60%)",
-          backgroundSize: "140% 140%",
-          animation: "hyperscale-pan 30s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "linear-gradient(120deg, rgba(236,72,153,0.35), rgba(59,130,246,0.25), rgba(34,211,238,0.3)), radial-gradient(circle at 60% 30%, rgba(147,51,234,0.45), transparent 60%)",
-          backgroundSize: "200% 200%",
-          animation: "hyperscale-pan 22s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 40% 60%, rgba(14,165,233,0.35), transparent 45%), radial-gradient(circle at 70% 40%, rgba(94,234,212,0.4), transparent 55%)",
-          backgroundSize: "180% 180%",
-          animation: "hyperscale-pan 18s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(236,72,153,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(94,234,212,0.12) 1px, transparent 1px)",
-          backgroundSize: "120px 120px",
-          animation: "hyperscale-grid 16s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(236,72,153,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.12) 1px, transparent 1px)",
-          backgroundSize: "240px 240px",
-          animation: "hyperscale-grid 24s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(236,72,153,0.12), rgba(236,72,153,0.12) 1px, transparent 1px, transparent 18px)",
-          animation: "hyperscale-grid 14s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(59,130,246,0.08), rgba(59,130,246,0.08) 1px, transparent 1px, transparent 14px)",
-          animation: "hyperscale-grid 12s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute -inset-24 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "conic-gradient(from 90deg at 50% 50%, rgba(236,72,153,0.35), rgba(34,211,238,0.2), rgba(59,130,246,0.2), rgba(168,85,247,0.35))",
-          filter: "blur(80px)",
-          animation: "hyperscale-pan 40s linear infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 50%)",
-          animation: "hyperscale-glow 12s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 20% 50%, rgba(236,72,153,0.18), transparent 40%), radial-gradient(circle at 80% 50%, rgba(56,189,248,0.18), transparent 40%)",
-          animation: "hyperscale-drift 16s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60 mix-blend-soft-light"
-        style={{
-          backgroundImage:
-            "linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.05) 100%)",
-          animation: "hyperscale-scan 14s ease-in-out infinite",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-screen"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 50% 50%, rgba(236,72,153,0.15), transparent 35%), radial-gradient(circle at 50% 50%, rgba(56,189,248,0.12), transparent 55%)",
-          animation: "hyperscale-pulse 10s ease-in-out infinite",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 animate-[hyperscale-shift_18s_ease-in-out_infinite] bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.06) 1px, transparent 1px)",
-          backgroundSize: "120px 120px",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 animate-[pulse_10s_ease-in-out_infinite] bg-[radial-gradient(circle_at_30%_70%,_rgba(236,72,153,0.25),_transparent_45%)]" />
-
-      <div className="absolute inset-0 z-0">
-        <Canvas
-          dpr={1.2}
-          gl={{ antialias: true, powerPreference: "high-performance" }}
-          frameloop="always"
-          className="h-full w-full pointer-events-auto"
-        >
-          <IntroScene />
-        </Canvas>
-      </div>
+      <HeroAnimation className="absolute inset-0" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-black/60 to-black/80" />
 
       <div className="mx-auto flex h-full max-w-6xl flex-col justify-center px-6 py-10 relative z-10 pointer-events-auto">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-6">
