@@ -60,6 +60,8 @@ interface GameContextType {
   refetchRacks: () => void;
   addEquipmentToRack: (rackId: string, equipmentId: string, uStart: number) => boolean;
   removeEquipmentFromRack: (rackId: string, equipmentInstanceId: string) => boolean;
+  updateRackPosition: (rackId: string, positionX: number, positionY: number) => boolean;
+  addEmptyRack: () => void;
   setRacksFromSave: (racks: Rack[]) => void;
 }
 
@@ -347,6 +349,57 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [useStaticData]
   );
 
+  const updateRackPosition = useCallback(
+    (rackId: string, positionX: number, positionY: number) => {
+      if (!useStaticData) return false;
+      if (!Number.isFinite(positionX) || !Number.isFinite(positionY)) return false;
+      let didMove = false;
+      setStaticRacksState((prev) =>
+        prev.map((rack) => {
+          if (rack.id !== rackId) return rack;
+          didMove = true;
+          return {
+            ...rack,
+            positionX: Math.round(positionX),
+            positionY: Math.round(positionY),
+          };
+        })
+      );
+      return didMove;
+    },
+    [useStaticData]
+  );
+
+  const addEmptyRack = useCallback(() => {
+    if (!useStaticData) return;
+    setStaticRacksState((prev) => {
+      const maxCol = Math.max(...prev.map((rack) => rack.positionX), 0);
+      const maxRow = Math.max(...prev.map((rack) => rack.positionY), 0);
+      const nextPositionX = maxCol + 1;
+      const nextPositionY = maxRow;
+      const slots = Array.from({ length: 42 }).map((_, index) => ({
+        uPosition: index + 1,
+        equipmentInstanceId: null,
+      }));
+      const newRack: Rack = {
+        id: `empty-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: `Sandbox ${prev.length + 1}`,
+        type: "enclosed_42U",
+        totalUs: 42,
+        slots,
+        installedEquipment: [],
+        powerCapacity: 12000,
+        currentPowerDraw: 0,
+        inletTemp: 22,
+        exhaustTemp: 24,
+        airflowRestriction: 0.1,
+        positionX: nextPositionX,
+        positionY: nextPositionY,
+      };
+      return [...prev, newRack];
+    });
+  }, [useStaticData]);
+
   const setRacksFromSave = useCallback((racks: Rack[]) => {
     if (!useStaticData) return;
     const sanitized = sanitizeRacks(racks);
@@ -420,6 +473,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     refetchRacks,
     addEquipmentToRack,
     removeEquipmentFromRack,
+    updateRackPosition,
+    addEmptyRack,
     setRacksFromSave,
   };
 

@@ -7,11 +7,11 @@ import { MiniMap } from "@/components/3d/MiniMap";
 import { BuildToolbar } from "@/components/3d/BuildToolbar";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { WelcomeScreen } from "@/components/ui/welcome-screen";
-import { Onboarding } from "@/components/ui/onboarding";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DebugOverlay } from "@/components/ui/debug-overlay";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { GameHeader } from "@/components/layout/game-header";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/lib/theme-provider";
 import { buildSummaryText, downloadBuildSummary } from "@/lib/export";
@@ -21,27 +21,9 @@ import {
   rollbackAutosaveSnapshot,
   saveSlot,
 } from "@/lib/save-system";
-import {
-  Camera,
-  Play,
-  Sparkles,
-  Eye,
-  EyeOff,
-  RotateCcw,
-  Info,
-  Save,
-  Upload,
-  Undo2,
-  FileText,
-  Clipboard,
-  ShieldCheck,
-  Rocket,
-  Redo2,
-} from "lucide-react";
 import type { Rack } from "@shared/schema";
 import type { AutosaveSnapshot, SaveSlot } from "@/lib/save-system";
 import { useBuild } from "@/lib/build-context";
-import { PerformanceOverlay } from "@/components/3d/PerformanceOverlay";
 
 type CameraMode = "orbit" | "auto" | "cinematic";
 type SessionMode = "build" | "explore";
@@ -54,7 +36,7 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 export function DataCenter3D() {
-  const { isLoading, racks, isStaticMode, setRacksFromSave } = useGame();
+  const { isLoading, racks, isStaticMode, setRacksFromSave, addEmptyRack } = useGame();
   const { selectedIds, selectRack, clearSelection, undo, redo, canUndo, canRedo } = useBuild();
   const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
   const { toast } = useToast();
@@ -74,6 +56,7 @@ export function DataCenter3D() {
   const [showToolbars, setShowToolbars] = useState(true);
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
   const [perfWarning, setPerfWarning] = useState<string | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const [fastRamp, setFastRamp] = useState(false);
   const fastRampTimer = useRef<number | null>(null);
@@ -87,7 +70,6 @@ export function DataCenter3D() {
     tempBase: 20,
   });
 
-  const [showControls, setShowControls] = useState(false);
   const [saveSlots, setSaveSlots] = useState<SaveSlot[]>(() => loadSaveSlots());
   const [autosaves, setAutosaves] = useState<AutosaveSnapshot[]>(() => loadAutosaveSnapshots());
   const [slotLabels, setSlotLabels] = useState<Record<string, string>>(() => {
@@ -166,6 +148,33 @@ export function DataCenter3D() {
     fastRampTimer.current = window.setTimeout(() => setFastRamp(false), 500);
   };
 
+  const handleShowIntro = () => {
+    setSessionMode(null);
+    setFocusMode(false);
+    setShowOverlays(true);
+    setShowToolbars(true);
+    setShowPerfOverlay(false);
+  };
+
+  const handleSetMode = (mode: SessionMode) => {
+    setSessionMode(mode);
+    if (mode === "explore") {
+      setFocusMode(true);
+      setShowOverlays(false);
+      setShowToolbars(false);
+      setCameraMode("cinematic");
+      setShowHUD(true);
+      setShowEffects(true);
+    } else {
+      setFocusMode(false);
+      setShowOverlays(true);
+      setShowToolbars(true);
+      setCameraMode("orbit");
+      setShowHUD(true);
+      setShowEffects(true);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) return;
@@ -205,6 +214,7 @@ export function DataCenter3D() {
         cameraMode={sceneCameraMode}
         showEffects={introVisible ? true : effectiveEffects}
         showHUD={introVisible ? false : showHUD}
+        showPerfOverlay={showPerfOverlay}
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
@@ -212,33 +222,129 @@ export function DataCenter3D() {
         visibleRacks={visibleRacks}
         forceSimplified={isStaticMode && fastRamp}
         lodResetToken={lodResetToken}
+        onPerfWarningChange={setPerfWarning}
       />
 
-      <PerformanceOverlay
-        visible={showPerfOverlay}
-        qualityMode={qualityMode}
-        onWarningChange={setPerfWarning}
-      />
+      {!introVisible && (
+        <>
+          <div className="fixed top-0 left-0 right-0 z-40">
+            <GameHeader />
+          </div>
+          <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-cyan-500/30 bg-black/60 px-6 py-2 text-center shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg">
+            <div className="text-xs uppercase tracking-[0.4em] text-cyan-300/80">
+              Hyperscale
+            </div>
+            <div className="text-sm text-white/70">Datacenter Operations Console · Max Doubin</div>
+          </div>
+
+          <div
+            data-ui="true"
+            className="fixed top-20 left-4 z-50 w-[320px] rounded-2xl border border-cyan-500/30 bg-black/60 p-4 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-xs uppercase tracking-[0.3em] text-cyan-300/80">
+                  Hyperscale Control
+                </div>
+                <div className="text-xl font-semibold text-white">Datacenter Command</div>
+                <div className="text-[10px] text-white/60">
+                  Live orchestration for power, thermals, and topology. Created by Max Doubin.
+                </div>
+              </div>
+              <ThemeToggle />
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-widest text-white/60">
+                  <span>Rack density</span>
+                  <span className="text-cyan-200">{sliderValue}</span>
+                </div>
+                <Slider
+                  value={[sliderValue]}
+                  min={1}
+                  max={500}
+                  step={1}
+                  onValueChange={(value) => handleRackCountChange(value[0])}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleSetMode("build")}
+                  className={`bg-white/10 text-white hover:bg-white/20 ${
+                    sessionMode === "build" ? "border border-cyan-400/60" : ""
+                  }`}
+                >
+                  Build Mode
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleSetMode("explore")}
+                  className={`bg-white/10 text-white hover:bg-white/20 ${
+                    sessionMode === "explore" ? "border border-purple-400/60" : ""
+                  }`}
+                >
+                  Explore Mode
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleShowIntro}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Intro
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setShowDiagnostics((prev) => !prev)}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Diagnostics
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setShowPerfOverlay((prev) => !prev)}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Perf HUD
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setQualityMode((prev) => (prev === "high" ? "low" : "high"))}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Quality: {qualityMode.toUpperCase()}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={addEmptyRack}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Spawn Empty Rack
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {showDiagnostics && (
+            <div className="fixed top-20 right-4 z-50 w-[260px]">
+              <DebugOverlay visible />
+            </div>
+          )}
+        </>
+      )}
 
       <WelcomeScreen
         isVisible={introVisible}
         onStart={(mode) => {
-          setSessionMode(mode);
-          if (mode === "explore") {
-            setFocusMode(true);
-            setShowOverlays(false);
-            setShowToolbars(false);
-            setCameraMode("cinematic");
-            setShowHUD(true);
-            setShowEffects(true);
-          } else {
-            setFocusMode(false);
-            setShowOverlays(true);
-            setShowToolbars(true);
-            setCameraMode("orbit");
-            setShowHUD(true);
-            setShowEffects(true);
-          }
+          handleSetMode(mode);
         }}
       />
 
@@ -258,7 +364,7 @@ export function DataCenter3D() {
         <RackDetailPanel rack={selectedRack} onClose={clearSelection} isUnlocked={isUnlocked} />
       )}
 
-      {showControls && perfWarning && (
+      {showDiagnostics && perfWarning && (
         <div className="fixed bottom-28 right-4 rounded-md border border-orange-400/30 bg-orange-500/10 p-2 text-[10px] text-orange-200">
           {perfWarning}
         </div>

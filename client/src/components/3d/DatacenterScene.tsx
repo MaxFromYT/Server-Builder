@@ -29,8 +29,7 @@ import { PerformanceOverlay } from "./PerformanceOverlay";
 import type { Rack, Equipment, InstalledEquipment } from "@shared/schema";
 import * as THREE from "three";
 import { precompileSceneMaterials } from "@/lib/asset-manager";
-import { useToast } from "@/hooks/use-toast";
-import { logInfo } from "@/lib/error-log";
+import { useBuild } from "@/lib/build-context";
 
 interface DatacenterSceneProps {
   onSelectRack: (rack: Rack | null) => void;
@@ -39,6 +38,7 @@ interface DatacenterSceneProps {
   showEffects?: boolean;
   cameraMode?: "orbit" | "auto" | "cinematic";
   showHUD?: boolean;
+  showPerfOverlay?: boolean;
   rackCount?: number;
   showHeatmap?: boolean;
   performanceMode?: boolean;
@@ -46,6 +46,7 @@ interface DatacenterSceneProps {
   visibleRacks?: Rack[];
   forceSimplified?: boolean;
   lodResetToken?: number;
+  onPerfWarningChange?: (warning: string | null) => void;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -168,6 +169,9 @@ interface RackGridProps {
   heatmapMode?: boolean;
   forceSimplified?: boolean;
   detailBudget?: number;
+  buildMode: ReturnType<typeof useBuild>["mode"];
+  canMove: boolean;
+  onMoveRack: (rackId: string, positionX: number, positionY: number) => void;
 }
 
 function RackGrid({
@@ -180,9 +184,30 @@ function RackGrid({
   heatmapMode = false,
   forceSimplified = false,
   detailBudget,
+  buildMode,
+  canMove,
+  onMoveRack,
 }: RackGridProps) {
   const rackSpacing = 2.8;
   const aisleSpacing = 5.2;
+  const { camera, raycaster, mouse } = useThree();
+  const draggingRef = useRef<{
+    rackId: string;
+    offsetX: number;
+    offsetZ: number;
+    worldX: number;
+    worldZ: number;
+    snapX: number;
+    snapY: number;
+  } | null>(null);
+  const [dragPreview, setDragPreview] = useState<{
+    rackId: string;
+    worldX: number;
+    worldZ: number;
+    snapX: number;
+    snapY: number;
+  } | null>(null);
+  const floorPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
 
   const maxCol = Math.max(...racks.map((r) => r.positionX), 0);
   const maxRow = Math.max(...racks.map((r) => r.positionY), 0);
@@ -200,10 +225,84 @@ function RackGrid({
     }));
   }, [racks, rackSpacing, aisleSpacing, centerX, centerZ]);
 
+  useFrame(() => {
+    const drag = draggingRef.current;
+    if (!drag) return;
+    raycaster.setFromCamera(mouse, camera);
+    const intersection = new THREE.Vector3();
+    if (!raycaster.ray.intersectPlane(floorPlane, intersection)) return;
+    const targetX = intersection.x + drag.offsetX;
+    const targetZ = intersection.z + drag.offsetZ;
+    const positionX = Math.round((targetX + centerX) / rackSpacing);
+    const positionY = Math.round((targetZ + centerZ) / aisleSpacing);
+    if (
+      drag.worldX === targetX &&
+      drag.worldZ === targetZ &&
+      drag.snapX === positionX &&
+      drag.snapY === positionY
+    ) {
+      return;
+    }
+    drag.worldX = targetX;
+    drag.worldZ = targetZ;
+    drag.snapX = positionX;
+    drag.snapY = positionY;
+    setDragPreview({
+      rackId: drag.rackId,
+      worldX: targetX,
+      worldZ: targetZ,
+      snapX: positionX,
+      snapY: positionY,
+    });
+  });
+
+  useEffect(() => {
+    const stopDrag = () => {
+      const drag = draggingRef.current;
+      if (drag) {
+        onMoveRack(drag.rackId, drag.snapX, drag.snapY);
+      }
+      draggingRef.current = null;
+      setDragPreview(null);
+    };
+    window.addEventListener("pointerup", stopDrag);
+    window.addEventListener("pointercancel", stopDrag);
+    return () => {
+      window.removeEventListener("pointerup", stopDrag);
+      window.removeEventListener("pointercancel", stopDrag);
+    };
+  }, [onMoveRack]);
+
   return (
     <group>
       {rackPositions.map(({ rack, position }, index) => (
         <group key={rack.id}>
+          {dragPreview?.rackId === rack.id ? (
+            <Rack3D
+              rack={rack}
+              position={[dragPreview.worldX, 0, dragPreview.worldZ]}
+              isSelected={rack.id === selectedRackId}
+              onSelect={() => onSelectRack(rack)}
+              equipmentCatalog={equipmentCatalog}
+              forceSimplified={forceSimplified}
+              detailBudget={detailBudget}
+              lodIndex={index}
+              buildMode={buildMode}
+              isDragging
+              onDragStart={(point) => {
+                if (!canMove || buildMode !== "place") return;
+                draggingRef.current = {
+                  rackId: rack.id,
+                  offsetX: position[0] - point.x,
+                  offsetZ: position[2] - point.z,
+                  worldX: dragPreview.worldX,
+                  worldZ: dragPreview.worldZ,
+                  snapX: dragPreview.snapX,
+                  snapY: dragPreview.snapY,
+                };
+              }}
+            />
+          ) : (
           <Rack3D
             rack={rack}
             position={position}
@@ -213,7 +312,28 @@ function RackGrid({
             forceSimplified={forceSimplified}
             detailBudget={detailBudget}
             lodIndex={index}
+            buildMode={buildMode}
+            onDragStart={(point) => {
+              if (!canMove || buildMode !== "place") return;
+              draggingRef.current = {
+                rackId: rack.id,
+                offsetX: position[0] - point.x,
+                offsetZ: position[2] - point.z,
+                worldX: position[0],
+                worldZ: position[2],
+                snapX: rack.positionX,
+                snapY: rack.positionY,
+              };
+              setDragPreview({
+                rackId: rack.id,
+                worldX: position[0],
+                worldZ: position[2],
+                snapX: rack.positionX,
+                snapY: rack.positionY,
+              });
+            }}
           />
+          )}
 
           {/* FIX: shimmer Z uses position[2], not position[1] */}
           {showHeatShimmer && rack.exhaustTemp > 35 && (
@@ -225,14 +345,28 @@ function RackGrid({
         </group>
       ))}
 
+      {dragPreview && (
+        <mesh
+          position={[
+            dragPreview.snapX * rackSpacing - centerX,
+            0.02,
+            dragPreview.snapY * aisleSpacing - centerZ,
+          ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <planeGeometry args={[1.8, 2.6]} />
+          <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={0.6} transparent opacity={0.35} />
+        </mesh>
+      )}
+
       {showNetworkMesh && (
         <DataCenterNetworkMesh
           racks={rackPositions.map(({ position, rack }) => ({
             position,
             heat: rack.exhaustTemp,
           }))}
-          maxConnections={Math.min(60, rackPositions.length * 2)}
-          maxStreams={Math.min(24, Math.floor(rackPositions.length / 2))}
+          maxConnections={Math.min(160, rackPositions.length * 4)}
+          maxStreams={Math.min(120, rackPositions.length * 2)}
           heatmapInfluence={heatmapMode ? 1 : 0}
         />
       )}
@@ -388,6 +522,7 @@ export function DatacenterScene({
   showEffects = true,
   cameraMode = "orbit",
   showHUD = true,
+  showPerfOverlay = false,
   rackCount = 9,
   showHeatmap = false,
   performanceMode = false,
@@ -395,15 +530,14 @@ export function DatacenterScene({
   visibleRacks,
   forceSimplified = false,
   lodResetToken = 0,
+  onPerfWarningChange,
   proceduralOptions,
 }: DatacenterSceneProps) {
-  const { racks, equipmentCatalog, preloadQueue } = useGame();
+  const { racks, equipmentCatalog, preloadQueue, updateRackPosition } = useGame();
+  const { mode: buildMode } = useBuild();
   const { theme } = useTheme();
-  const { toast } = useToast();
 
   const controlsRef = useRef<any>(null);
-
-  const [dynamicQuality, setDynamicQuality] = useState<"low" | "high">(qualityMode);
 
   // NEW: UI lock disables OrbitControls while clicking UI
   const [uiLock, setUiLock] = useState(false);
@@ -429,15 +563,11 @@ export function DatacenterScene({
     return racks || [];
   }, [equipmentCatalog, isUnlocked, rackCount, racks, proceduralOptions, visibleRacks]);
 
-  useEffect(() => {
-    setDynamicQuality(qualityMode);
-  }, [qualityMode]);
-
   const maxCol = Math.max(...displayRacks.map((r) => r.positionX), 2);
   const maxRow = Math.max(...displayRacks.map((r) => r.positionY), 2);
   const floorSize = Math.max(maxCol * 2.8 + 30, maxRow * 5.2 + 30, 60);
 
-  const useLowEffects = performanceMode || dynamicQuality === "low" || displayRacks.length > 200;
+  const useLowEffects = performanceMode || qualityMode === "low" || displayRacks.length > 200;
 
   const cinematicWaypoints = useMemo(
     () => [
@@ -625,8 +755,13 @@ export function DatacenterScene({
               showHeatShimmer={showEffects && !useLowEffects}
               showNetworkMesh={!useLowEffects}
               heatmapMode={showHeatmap}
-              forceSimplified={forceSimplified || dynamicQuality === "low"}
+              forceSimplified={forceSimplified || qualityMode === "low"}
               detailBudget={detailBudget}
+              buildMode={buildMode}
+              canMove={isUnlocked}
+              onMoveRack={(rackId, positionX, positionY) => {
+                updateRackPosition(rackId, positionX, positionY);
+              }}
             />
           )}
 
@@ -641,23 +776,9 @@ export function DatacenterScene({
           {showHUD && <HolographicHUD position={[0, 10, -floorSize * 0.7]} visible />}
 
           <PerformanceOverlay
-            visible={showHUD}
-            onQualityChange={(quality, reason) => {
-              setDynamicQuality(quality);
-              if (quality === "low") {
-                toast({
-                  title: "Performance mode enabled",
-                  description: "FPS dropped below target. Effects reduced to keep things smooth.",
-                });
-                logInfo("Performance mode enabled.", { reason });
-              } else {
-                toast({
-                  title: "Performance restored",
-                  description: "Frame time stabilized. High quality restored.",
-                });
-                logInfo("Performance mode restored.", { reason });
-              }
-            }}
+            visible={showPerfOverlay}
+            qualityMode={qualityMode}
+            onWarningChange={onPerfWarningChange}
           />
 
           <ScenePrecompiler />
