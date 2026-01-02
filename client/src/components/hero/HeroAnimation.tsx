@@ -205,9 +205,10 @@ function RackLedStrips({
   color: THREE.Color;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const instanceCount = transforms.length;
 
   useEffect(() => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || instanceCount === 0) return;
     const dummy = new THREE.Object3D();
     transforms.forEach((transform, index) => {
       dummy.position.copy(transform.position);
@@ -218,8 +219,12 @@ function RackLedStrips({
     meshRef.current.instanceMatrix.needsUpdate = true;
   }, [transforms]);
 
+  if (instanceCount === 0) {
+    return null;
+  }
+
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, transforms.length]}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, instanceCount]}>
       <boxGeometry args={[0.08, 0.04, 0.5]} />
       <meshStandardMaterial
         color={color}
