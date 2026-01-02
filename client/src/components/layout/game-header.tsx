@@ -23,9 +23,14 @@ export function GameHeader() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Building2 className="w-6 h-6 text-noc-blue" />
-          <h1 className="font-display text-lg font-bold tracking-wider hidden sm:block">
-            HYPERSCALE
-          </h1>
+          <div className="hidden sm:flex flex-col leading-none">
+            <h1 className="font-display text-lg font-bold tracking-wider">
+              HYPERSCALE
+            </h1>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-cyan-300/70">
+              Max Doubin
+            </span>
+          </div>
         </div>
         <div className="h-6 w-px bg-border hidden md:block" />
         <div className="hidden md:flex items-center gap-2">
