@@ -84,10 +84,21 @@ export function WelcomeScreen({
   defaultMode?: StartMode;
 }) {
   const [mode, setMode] = useState<StartMode>(defaultMode);
+  const [showPanels, setShowPanels] = useState(false);
 
   useEffect(() => {
     setMode(defaultMode);
   }, [defaultMode]);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "e") {
+        setShowPanels((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   if (!isVisible) return null;
 
@@ -152,38 +163,58 @@ export function WelcomeScreen({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <LiveFeed title="Cam A" subtitle="Aisle sweep" variant="a" />
-          <LiveFeed title="Cam B" subtitle="Cold side" variant="b" />
-          <LiveFeed title="Cam C" subtitle="Hot aisle" variant="c" />
-        </div>
+        {showPanels && (
+          <>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <LiveFeed title="Cam A" subtitle="Aisle sweep" variant="a" />
+              <LiveFeed title="Cam B" subtitle="Cold side" variant="b" />
+              <LiveFeed title="Cam C" subtitle="Hot aisle" variant="c" />
+            </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <InfoCard
-            icon={<Cpu className="h-4 w-4 text-cyan-200" />}
-            title="Performance"
-            body="Use the Quality toggle to tune visuals. Press H to toggle the HUD."
-          />
-          <InfoCard
-            icon={<Shield className="h-4 w-4 text-cyan-200" />}
-            title="Controls"
-            body="Click racks to select. Drag to orbit. Scroll to zoom. Press T to toggle toolbars."
-          />
-          <InfoCard
-            icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
-            title="Modes"
-            body="Build mode shows editing toolbars. Explore mode can default to cinematic camera."
-          />
-          <InfoCard
-            icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
-            title="How to Play"
-            body="Design your datacenter: place racks, add servers, and watch live traffic. Explore for cinematic tours."
-          />
-          <InfoCard
-            icon={<Shield className="h-4 w-4 text-cyan-200" />}
-            title="Help & Credits"
-            body="Use the Control Dock to switch modes, set rack density, and open diagnostics. Created by Max Doubin."
-          />
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <InfoCard
+                icon={<Cpu className="h-4 w-4 text-cyan-200" />}
+                title="Performance"
+                body="Use the Quality toggle to tune visuals. Press H to toggle the HUD."
+              />
+              <InfoCard
+                icon={<Shield className="h-4 w-4 text-cyan-200" />}
+                title="Controls"
+                body="Click racks to select. Drag to orbit. Scroll to zoom. Press T to toggle toolbars."
+              />
+              <InfoCard
+                icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
+                title="Modes"
+                body="Build mode shows editing toolbars. Explore mode can default to cinematic camera."
+              />
+              <InfoCard
+                icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
+                title="How to Play"
+                body="Design your datacenter: place racks, add servers, and watch live traffic. Explore for cinematic tours."
+              />
+              <InfoCard
+                icon={<Shield className="h-4 w-4 text-cyan-200" />}
+                title="Help & Credits"
+                body="Use the Control Dock to switch modes, set rack density, and open diagnostics. Created by Max Doubin."
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="absolute right-6 top-1/2 z-20 -translate-y-1/2">
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={() => setShowPanels((prev) => !prev)}
+          className="h-10 w-10 rounded-full border border-cyan-500/30 bg-black/50 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.35)]"
+          aria-label="Toggle intro panels"
+        >
+          {showPanels ? "⟨" : "⟩"}
+        </Button>
+        <div className="mt-2 text-[10px] uppercase tracking-[0.3em] text-cyan-200/70 text-center">
+          Press E
         </div>
       </div>
     </div>

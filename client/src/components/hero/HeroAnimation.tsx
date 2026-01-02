@@ -14,6 +14,9 @@ import * as THREE from "three";
 import { heroConfig, type HeroQuality } from "./hero-config";
 import { createNoise3D } from "./hero-noise";
 import { glyphFragment, glyphVertex, ledFragment, ledVertex } from "./hero-shaders";
+import { Rack3D } from "@/components/3d/Rack3D";
+import { staticEquipmentCatalog } from "@/lib/static-equipment";
+import type { Rack } from "@shared/schema";
 
 type HeroAnimationProps = {
   className?: string;
@@ -71,6 +74,62 @@ const paletteMap = {
     warm: new THREE.Color("#60a5fa"),
     accent: new THREE.Color("#a855f7"),
   },
+};
+
+const createSeededRandom = (seed: number) => {
+  let t = seed;
+  return () => {
+    t += 0x6d2b79f5;
+    let r = t;
+    r = Math.imul(r ^ (r >>> 15), r | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+const buildShowcaseRack = (index: number, positionX: number, positionY: number): Rack => {
+  const slots = Array.from({ length: 42 }).map((_, slotIndex) => ({
+    uPosition: slotIndex + 1,
+    equipmentInstanceId: null,
+  }));
+  const rng = createSeededRandom(300 + index);
+  const installedEquipment: Rack["installedEquipment"] = [];
+  let u = 1;
+  while (u <= 42) {
+    const equipment = staticEquipmentCatalog[Math.floor(rng() * staticEquipmentCatalog.length)];
+    const uEnd = Math.min(42, u + equipment.uHeight - 1);
+    const instanceId = `showcase-${index}-${u}-${equipment.id}`;
+    for (let slot = u; slot <= uEnd; slot += 1) {
+      slots[slot - 1].equipmentInstanceId = instanceId;
+    }
+    installedEquipment.push({
+      id: instanceId,
+      equipmentId: equipment.id,
+      uStart: u,
+      uEnd,
+      status: "online",
+      cpuLoad: 40 + rng() * 40,
+      memoryUsage: 30 + rng() * 50,
+      networkActivity: 20 + rng() * 60,
+    });
+    u = uEnd + 1 + (rng() > 0.75 ? 1 : 0);
+  }
+
+  return {
+    id: `showcase-rack-${index}`,
+    name: `Showcase ${index + 1}`,
+    type: "enclosed_42U",
+    totalUs: 42,
+    slots,
+    installedEquipment,
+    powerCapacity: 12000,
+    currentPowerDraw: 3200,
+    inletTemp: 22,
+    exhaustTemp: 28,
+    airflowRestriction: 0.1,
+    positionX,
+    positionY,
+  };
 };
 
 const usePrefersReducedMotion = () => {
@@ -544,6 +603,55 @@ function EthernetStrands({
   );
 }
 
+function RackShowcase({
+  count,
+  motionFactor,
+}: {
+  count: number;
+  motionFactor: number;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const equipmentMap = useMemo(
+    () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
+    []
+  );
+  const racks = useMemo(() => {
+    const ring: Rack[] = [];
+    const radius = 10;
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2;
+      ring.push(buildShowcaseRack(i, Math.cos(angle) * radius, Math.sin(angle) * radius));
+    }
+    return ring;
+  }, [count]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime() * motionFactor;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = t * 0.12;
+      groupRef.current.position.y = Math.sin(t * 0.6) * 0.3;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[0, 0, -20]}>
+      {racks.map((rack, index) => (
+        <Rack3D
+          key={rack.id}
+          rack={rack}
+          position={[rack.positionX, 0, rack.positionY]}
+          isSelected={false}
+          onSelect={() => {}}
+          equipmentCatalog={equipmentMap}
+          lodIndex={index}
+          detailBudget={racks.length}
+          showHud={false}
+        />
+      ))}
+    </group>
+  );
+}
+
 function RackField({
   count,
   palette,
@@ -879,6 +987,7 @@ function HeroScene({
         <RoutedLanes seed={seed} />
         <LightVolumes palette={palette} />
       </group>
+      <RackShowcase count={20} motionFactor={motionFactor} />
 
       <GlyphTraffic
         count={particleCount}
