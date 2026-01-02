@@ -103,6 +103,8 @@ const useAdaptiveQuality = (baseCount: number) => {
     tier: "high" as HeroQuality,
     samples: 0,
     lastSwitch: 0,
+    pending: null as HeroQuality | null,
+    pendingSamples: 0,
   });
 
   const update = useCallback((delta: number) => {
@@ -111,18 +113,32 @@ const useAdaptiveQuality = (baseCount: number) => {
     targetRef.current.avg = nextAvg;
     targetRef.current.samples += 1;
     const now = performance.now();
-    if (now - targetRef.current.lastSwitch < 4000) return;
-    if (targetRef.current.samples < 120) return;
+    if (now - targetRef.current.lastSwitch < 12000) return;
+    if (targetRef.current.samples < 240) return;
+
     let nextTier = targetRef.current.tier;
-    if (nextAvg > 30) nextTier = "low";
-    else if (nextAvg > 22) nextTier = "medium";
-    else if (nextAvg < 18) nextTier = "high";
+    if (nextAvg > 32) nextTier = "low";
+    else if (nextAvg > 24) nextTier = "medium";
+    else if (nextAvg < 17) nextTier = "high";
+
     if (nextTier !== targetRef.current.tier) {
+      if (targetRef.current.pending !== nextTier) {
+        targetRef.current.pending = nextTier;
+        targetRef.current.pendingSamples = 0;
+        return;
+      }
+      targetRef.current.pendingSamples += 1;
+      if (targetRef.current.pendingSamples < 120) return;
       targetRef.current.tier = nextTier;
       setQuality(nextTier);
       setDpr(heroConfig.qualityTiers[nextTier].dpr);
       targetRef.current.lastSwitch = now;
       targetRef.current.samples = 0;
+      targetRef.current.pending = null;
+      targetRef.current.pendingSamples = 0;
+    } else {
+      targetRef.current.pending = null;
+      targetRef.current.pendingSamples = 0;
     }
   }, []);
 
@@ -451,6 +467,8 @@ function PostEffects() {
   const fxaaRef = useRef<ShaderPass | null>(null);
 
   useEffect(() => {
+    const previousAutoClear = gl.autoClear;
+    gl.autoClear = false;
     const composer = new EffectComposer(gl);
     const renderPass = new RenderPass(scene, camera);
     const bloom = new UnrealBloomPass(
@@ -480,6 +498,7 @@ function PostEffects() {
 
     return () => {
       composer.dispose();
+      gl.autoClear = previousAutoClear;
       composerRef.current = null;
       renderPassRef.current = null;
       bloomRef.current = null;
