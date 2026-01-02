@@ -1,6 +1,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Sparkles as DreiSparkles } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Eye, Hammer, Play, Shield, Sparkles } from "lucide-react";
@@ -367,8 +368,8 @@ function IntroRack({
   height: number;
 }) {
   const [hovered, setHovered] = useState(false);
-  const rackRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
+  const rackRef = React.useRef<THREE.Mesh>(null);
+  const glowRef = React.useRef<THREE.Mesh>(null);
   const lights = useMemo(
     () =>
       Array.from({ length: 6 }).map((_, index) => ({
@@ -433,7 +434,7 @@ function IntroSweep({
   offset?: number;
   color?: string;
 }) {
-  const sweepRef = useRef<THREE.Mesh>(null);
+  const sweepRef = React.useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
     if (!sweepRef.current) return;
