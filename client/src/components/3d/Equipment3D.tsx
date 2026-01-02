@@ -242,11 +242,30 @@ export function Equipment3D({ equipment, installed, uHeight, onClick }: Equipmen
   );
 }
 
-export function EmptySlot({ uPosition, onClick }: { uPosition: number; onClick?: () => void }) {
+export function EmptySlot({
+  uPosition,
+  onClick,
+  onDropEquipment,
+}: {
+  uPosition: number;
+  onClick?: () => void;
+  onDropEquipment?: (equipmentId: string) => void;
+}) {
   return (
     <div
       className="w-full h-[18px] cursor-pointer transition-colors hover:bg-noc-cyan/10 border border-dashed border-white/5 hover:border-noc-cyan/30 rounded-sm flex items-center justify-center"
       onClick={onClick}
+      onDragOver={(event) => {
+        if (onDropEquipment) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={(event) => {
+        if (!onDropEquipment) return;
+        event.preventDefault();
+        const equipmentId = event.dataTransfer.getData("equipment-id");
+        if (equipmentId) onDropEquipment(equipmentId);
+      }}
       data-testid={`empty-slot-${uPosition}`}
     >
       <span className="text-[8px] font-mono text-white/20">{uPosition}U</span>

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBuild } from "@/lib/build-context";
+import { useGame } from "@/lib/game-context";
 
 const modeButtons = [
   { id: "select", label: "Select", icon: MousePointer2 },
@@ -41,6 +42,7 @@ export function BuildToolbar() {
     undo,
     redo,
   } = useBuild();
+  const { deleteRacks, duplicateRacks } = useGame();
 
   const stop = (e: React.PointerEvent) => e.stopPropagation();
 
@@ -114,13 +116,19 @@ export function BuildToolbar() {
         <ToolbarButton
           label="Duplicate"
           icon={Copy}
-          onClick={duplicateSelection}
+          onClick={() => {
+            duplicateRacks(selectedIds);
+            duplicateSelection();
+          }}
           disabled={!selectedIds.length}
         />
         <ToolbarButton
           label="Delete"
           icon={Trash2}
-          onClick={deleteSelection}
+          onClick={() => {
+            deleteRacks(selectedIds);
+            deleteSelection();
+          }}
           disabled={!selectedIds.length}
         />
         <div className="h-6 w-px bg-white/10" />
