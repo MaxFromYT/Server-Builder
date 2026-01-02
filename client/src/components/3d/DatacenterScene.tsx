@@ -39,6 +39,7 @@ interface DatacenterSceneProps {
   cameraMode?: "orbit" | "auto" | "cinematic";
   showHUD?: boolean;
   showPerfOverlay?: boolean;
+  rackScale?: number;
   rackCount?: number;
   showHeatmap?: boolean;
   performanceMode?: boolean;
@@ -47,6 +48,7 @@ interface DatacenterSceneProps {
   forceSimplified?: boolean;
   lodResetToken?: number;
   onPerfWarningChange?: (warning: string | null) => void;
+  onPointerGridChange?: (positionX: number, positionY: number) => void;
   proceduralOptions?: {
     seed?: number;
     fillRateMultiplier?: number;
@@ -172,6 +174,8 @@ interface RackGridProps {
   buildMode: ReturnType<typeof useBuild>["mode"];
   canMove: boolean;
   onMoveRack: (rackId: string, positionX: number, positionY: number) => void;
+  rackScale: number;
+  onPointerGridChange?: (positionX: number, positionY: number) => void;
 }
 
 function RackGrid({
@@ -187,6 +191,8 @@ function RackGrid({
   buildMode,
   canMove,
   onMoveRack,
+  rackScale,
+  onPointerGridChange,
 }: RackGridProps) {
   const rackSpacing = 2.8;
   const aisleSpacing = 5.2;
@@ -227,6 +233,15 @@ function RackGrid({
 
   useFrame(() => {
     const drag = draggingRef.current;
+    if (!drag && onPointerGridChange) {
+      raycaster.setFromCamera(mouse, camera);
+      const intersection = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(floorPlane, intersection)) {
+        const positionX = Math.round((intersection.x + centerX) / rackSpacing);
+        const positionY = Math.round((intersection.z + centerZ) / aisleSpacing);
+        onPointerGridChange(positionX, positionY);
+      }
+    }
     if (!drag) return;
     raycaster.setFromCamera(mouse, camera);
     const intersection = new THREE.Vector3();
@@ -289,6 +304,7 @@ function RackGrid({
               lodIndex={index}
               buildMode={buildMode}
               isDragging
+              rackScale={rackScale}
               onDragStart={(point) => {
                 if (!canMove || buildMode !== "place") return;
                 draggingRef.current = {
@@ -303,17 +319,18 @@ function RackGrid({
               }}
             />
           ) : (
-          <Rack3D
-            rack={rack}
-            position={position}
-            isSelected={rack.id === selectedRackId}
-            onSelect={() => onSelectRack(rack)}
-            equipmentCatalog={equipmentCatalog}
-            forceSimplified={forceSimplified}
-            detailBudget={detailBudget}
-            lodIndex={index}
-            buildMode={buildMode}
-            onDragStart={(point) => {
+            <Rack3D
+              rack={rack}
+              position={position}
+              isSelected={rack.id === selectedRackId}
+              onSelect={() => onSelectRack(rack)}
+              equipmentCatalog={equipmentCatalog}
+              forceSimplified={forceSimplified}
+              detailBudget={detailBudget}
+              lodIndex={index}
+              buildMode={buildMode}
+              rackScale={rackScale}
+              onDragStart={(point) => {
               if (!canMove || buildMode !== "place") return;
               draggingRef.current = {
                 rackId: rack.id,
@@ -354,7 +371,7 @@ function RackGrid({
           ]}
           rotation={[-Math.PI / 2, 0, 0]}
         >
-          <planeGeometry args={[1.8, 2.6]} />
+          <planeGeometry args={[1.8 * rackScale, 2.6 * rackScale]} />
           <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={0.6} transparent opacity={0.35} />
         </mesh>
       )}
@@ -523,6 +540,7 @@ export function DatacenterScene({
   cameraMode = "orbit",
   showHUD = true,
   showPerfOverlay = false,
+  rackScale = 1,
   rackCount = 9,
   showHeatmap = false,
   performanceMode = false,
@@ -531,6 +549,7 @@ export function DatacenterScene({
   forceSimplified = false,
   lodResetToken = 0,
   onPerfWarningChange,
+  onPointerGridChange,
   proceduralOptions,
 }: DatacenterSceneProps) {
   const { racks, equipmentCatalog, preloadQueue, updateRackPosition } = useGame();
@@ -762,6 +781,8 @@ export function DatacenterScene({
               onMoveRack={(rackId, positionX, positionY) => {
                 updateRackPosition(rackId, positionX, positionY);
               }}
+              rackScale={rackScale}
+              onPointerGridChange={onPointerGridChange}
             />
           )}
 

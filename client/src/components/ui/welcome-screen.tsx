@@ -4,9 +4,72 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Eye, Hammer, Play, Shield, Sparkles } from "lucide-react";
+import { Rack3D } from "@/components/3d/Rack3D";
+import { staticEquipmentCatalog } from "@/lib/static-equipment";
+import type { Rack } from "@shared/schema";
 import * as THREE from "three";
 
 type StartMode = "build" | "explore";
+
+const createSeededRandom = (seed: number) => {
+  let t = seed;
+  return () => {
+    t += 0x6d2b79f5;
+    let r = t;
+    r = Math.imul(r ^ (r >>> 15), r | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+const buildIntroRack = (
+  index: number,
+  positionX: number,
+  positionY: number
+): Rack => {
+  const slots = Array.from({ length: 42 }).map((_, slotIndex) => ({
+    uPosition: slotIndex + 1,
+    equipmentInstanceId: null,
+  }));
+  const rng = createSeededRandom(100 + index);
+  const installedEquipment: Rack["installedEquipment"] = [];
+  let u = 1;
+  while (u <= 42) {
+    const equipment = staticEquipmentCatalog[Math.floor(rng() * staticEquipmentCatalog.length)];
+    const uEnd = Math.min(42, u + equipment.uHeight - 1);
+    const instanceId = `intro-${index}-${u}-${equipment.id}`;
+    for (let slot = u; slot <= uEnd; slot += 1) {
+      slots[slot - 1].equipmentInstanceId = instanceId;
+    }
+    installedEquipment.push({
+      id: instanceId,
+      equipmentId: equipment.id,
+      uStart: u,
+      uEnd,
+      status: "online",
+      cpuLoad: 40 + rng() * 40,
+      memoryUsage: 30 + rng() * 50,
+      networkActivity: 20 + rng() * 60,
+    });
+    u = uEnd + 1 + (rng() > 0.8 ? 1 : 0);
+  }
+
+  return {
+    id: `intro-rack-${index}`,
+    name: `R${index + 1}`,
+    type: "enclosed_42U",
+    totalUs: 42,
+    slots,
+    installedEquipment,
+    powerCapacity: 12000,
+    currentPowerDraw: 3200,
+    inletTemp: 22,
+    exhaustTemp: 28,
+    airflowRestriction: 0.1,
+    positionX,
+    positionY,
+  };
+};
 
 export function WelcomeScreen({
   isVisible,
@@ -132,6 +195,10 @@ function IntroScene() {
   const groupRef = useRef<THREE.Group>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const fogColor = new THREE.Color("#05070f");
+  const equipmentMap = useMemo(
+    () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
+    []
+  );
 
   const rackGrid = useMemo(() => {
     const positions: [number, number, number, number][] = [];
@@ -143,6 +210,13 @@ function IntroScene() {
     }
     return positions;
   }, []);
+  const introRacks = useMemo(
+    () =>
+      rackGrid.map(([x, _y, z], index) =>
+        buildIntroRack(index, x, z)
+      ),
+    [rackGrid]
+  );
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -177,9 +251,21 @@ function IntroScene() {
           <meshStandardMaterial color="#070b18" metalness={0.5} roughness={0.3} />
         </mesh>
 
-        {rackGrid.map(([x, y, z, h], index) => (
-          <IntroRack key={`${x}-${z}-${index}`} position={[x, y, z]} height={h} />
-        ))}
+        <group scale={0.9}>
+          {introRacks.map((rack, index) => (
+            <Rack3D
+              key={rack.id}
+              rack={rack}
+              position={[rack.positionX, 0, rack.positionY]}
+              isSelected={index % 7 === 0}
+              onSelect={() => {}}
+              equipmentCatalog={equipmentMap}
+              forceSimplified={false}
+              lodIndex={index}
+              detailBudget={introRacks.length}
+            />
+          ))}
+        </group>
 
         <IntroSweep />
         <IntroSweep offset={6} color="#a855f7" />
@@ -233,14 +319,18 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
 
   const target = useMemo(() => [0, 1.5, 0] as [number, number, number], []);
 
+  const equipmentMap = useMemo(
+    () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
+    []
+  );
   const racks = useMemo(
     () =>
       Array.from({ length: 20 }).map((_, index) => {
         const row = Math.floor(index / 5);
         const col = index % 5;
-        return [col * 1.6 - 3.2, 1.2, row * 1.6 - 3.2] as [number, number, number];
+        return buildIntroRack(index + (variant === "b" ? 40 : variant === "c" ? 80 : 0), col * 1.6 - 3.2, row * 1.6 - 3.2);
       }),
-    []
+    [variant]
   );
 
   return (
@@ -256,9 +346,21 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
         <meshStandardMaterial color="#0b1220" />
       </mesh>
 
-      {racks.map((pos, index) => (
-        <IntroRack key={`${variant}-${index}`} position={pos as [number, number, number]} height={2.4} />
-      ))}
+      <group scale={0.6}>
+        {racks.map((rack, index) => (
+          <Rack3D
+            key={`${variant}-${rack.id}`}
+            rack={rack}
+            position={[rack.positionX, 0, rack.positionY]}
+            isSelected={index % 6 === 0}
+            onSelect={() => {}}
+            equipmentCatalog={equipmentMap}
+            forceSimplified={false}
+            lodIndex={index}
+            detailBudget={racks.length}
+          />
+        ))}
+      </group>
 
       <OrbitControls
         enablePan={false}

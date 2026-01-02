@@ -30,6 +30,7 @@ interface Rack3DProps {
   buildMode?: BuildMode;
   onDragStart?: (point: THREE.Vector3) => void;
   isDragging?: boolean;
+  rackScale?: number;
 }
 
 const RACK_WIDTH = 0.85;
@@ -284,6 +285,7 @@ export function Rack3D({
   buildMode,
   onDragStart,
   isDragging = false,
+  rackScale = 1,
 }: Rack3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -317,7 +319,7 @@ export function Rack3D({
         0.15
       );
       const scale = THREE.MathUtils.lerp(0.9, 1, eased);
-      groupRef.current.scale.setScalar(scale);
+      groupRef.current.scale.setScalar(scale * rackScale);
       if (buildMode === "rotate" && (hovered || isSelected)) {
         groupRef.current.rotation.y += delta * 0.8;
       }

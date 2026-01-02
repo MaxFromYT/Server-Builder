@@ -62,6 +62,9 @@ interface GameContextType {
   removeEquipmentFromRack: (rackId: string, equipmentInstanceId: string) => boolean;
   updateRackPosition: (rackId: string, positionX: number, positionY: number) => boolean;
   addEmptyRack: () => void;
+  addEmptyRackAtPosition: (positionX: number, positionY: number) => void;
+  deleteRacks: (rackIds: string[]) => void;
+  duplicateRacks: (rackIds: string[]) => void;
   setRacksFromSave: (racks: Rack[]) => void;
 }
 
@@ -274,26 +277,39 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         prev.map((rack) => {
           if (rack.id !== rackId) return rack;
           if (uStart < 1 || uEnd > rack.totalUs) return rack;
-          if (uEnd > rack.totalUs) return rack;
-          const isOccupied = rack.slots.some(
-            (slot) =>
-              slot.uPosition >= uStart &&
-              slot.uPosition <= uEnd &&
-              slot.equipmentInstanceId
+          const overlappingIds = new Set(
+            rack.slots
+              .filter(
+                (slot) =>
+                  slot.uPosition >= uStart &&
+                  slot.uPosition <= uEnd &&
+                  slot.equipmentInstanceId
+              )
+              .map((slot) => slot.equipmentInstanceId!)
           );
-          if (isOccupied) return rack;
+          const equipmentById = new Map(staticEquipmentCatalog.map((item) => [item.id, item]));
+          const cleanedInstalled = rack.installedEquipment.filter(
+            (item) => !overlappingIds.has(item.id)
+          );
+          const removedPower = rack.installedEquipment.reduce((acc, item) => {
+            if (!overlappingIds.has(item.id)) return acc;
+            const removed = equipmentById.get(item.equipmentId);
+            return acc + (removed?.powerDraw ?? 0);
+          }, 0);
           didAdd = true;
           const instanceId = `inst-${equipment.id}-${uStart}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
           const updatedSlots = rack.slots.map((slot) =>
             slot.uPosition >= uStart && slot.uPosition <= uEnd
               ? { ...slot, equipmentInstanceId: instanceId }
+              : overlappingIds.has(slot.equipmentInstanceId ?? "")
+              ? { ...slot, equipmentInstanceId: null }
               : slot
           );
           return {
             ...rack,
             slots: updatedSlots,
             installedEquipment: [
-              ...rack.installedEquipment,
+              ...cleanedInstalled,
               {
                 id: instanceId,
                 equipmentId: equipment.id,
@@ -305,7 +321,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
                 networkActivity: Math.random() * 90 + 5,
               },
             ],
-            currentPowerDraw: rack.currentPowerDraw + equipment.powerDraw,
+            currentPowerDraw: Math.max(0, rack.currentPowerDraw - removedPower + equipment.powerDraw),
           };
         })
       );
@@ -400,6 +416,69 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, [useStaticData]);
 
+  const addEmptyRackAtPosition = useCallback(
+    (positionX: number, positionY: number) => {
+      if (!useStaticData) return;
+      if (!Number.isFinite(positionX) || !Number.isFinite(positionY)) return;
+      setStaticRacksState((prev) => {
+        const slots = Array.from({ length: 42 }).map((_, index) => ({
+          uPosition: index + 1,
+          equipmentInstanceId: null,
+        }));
+        const newRack: Rack = {
+          id: `empty-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: `Sandbox ${prev.length + 1}`,
+          type: "enclosed_42U",
+          totalUs: 42,
+          slots,
+          installedEquipment: [],
+          powerCapacity: 12000,
+          currentPowerDraw: 0,
+          inletTemp: 22,
+          exhaustTemp: 24,
+          airflowRestriction: 0.1,
+          positionX: Math.round(positionX),
+          positionY: Math.round(positionY),
+        };
+        return [...prev, newRack];
+      });
+    },
+    [useStaticData]
+  );
+
+  const deleteRacks = useCallback(
+    (rackIds: string[]) => {
+      if (!useStaticData) return;
+      if (!rackIds.length) return;
+      setStaticRacksState((prev) => prev.filter((rack) => !rackIds.includes(rack.id)));
+    },
+    [useStaticData]
+  );
+
+  const duplicateRacks = useCallback(
+    (rackIds: string[]) => {
+      if (!useStaticData) return;
+      if (!rackIds.length) return;
+      setStaticRacksState((prev) => {
+        const toClone = prev.filter((rack) => rackIds.includes(rack.id));
+        const clones = toClone.map((rack, index) => ({
+          ...rack,
+          id: `dup-${rack.id}-${Date.now()}-${index}`,
+          name: `${rack.name} Copy`,
+          positionX: rack.positionX + 1 + index,
+          positionY: rack.positionY,
+          slots: rack.slots.map((slot) => ({ ...slot })),
+          installedEquipment: rack.installedEquipment.map((item) => ({
+            ...item,
+            id: `dup-${item.id}-${Date.now()}-${index}`,
+          })),
+        }));
+        return [...prev, ...clones];
+      });
+    },
+    [useStaticData]
+  );
+
   const setRacksFromSave = useCallback((racks: Rack[]) => {
     if (!useStaticData) return;
     const sanitized = sanitizeRacks(racks);
@@ -475,6 +554,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     removeEquipmentFromRack,
     updateRackPosition,
     addEmptyRack,
+    addEmptyRackAtPosition,
+    deleteRacks,
+    duplicateRacks,
     setRacksFromSave,
   };
 

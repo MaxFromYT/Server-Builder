@@ -36,7 +36,14 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 export function DataCenter3D() {
-  const { isLoading, racks, isStaticMode, setRacksFromSave, addEmptyRack } = useGame();
+  const {
+    isLoading,
+    racks,
+    isStaticMode,
+    setRacksFromSave,
+    addEmptyRack,
+    addEmptyRackAtPosition,
+  } = useGame();
   const { selectedIds, selectRack, clearSelection, undo, redo, canUndo, canRedo } = useBuild();
   const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
   const { toast } = useToast();
@@ -57,6 +64,9 @@ export function DataCenter3D() {
   const [showPerfOverlay, setShowPerfOverlay] = useState(false);
   const [perfWarning, setPerfWarning] = useState<string | null>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [rackScale, setRackScale] = useState(1);
+  const [controlDockOpen, setControlDockOpen] = useState(true);
+  const [pointerGrid, setPointerGrid] = useState({ x: 0, y: 0 });
 
   const [fastRamp, setFastRamp] = useState(false);
   const fastRampTimer = useRef<number | null>(null);
@@ -215,6 +225,7 @@ export function DataCenter3D() {
         showEffects={introVisible ? true : effectiveEffects}
         showHUD={introVisible ? false : showHUD}
         showPerfOverlay={showPerfOverlay}
+        rackScale={rackScale}
         rackCount={rackCount}
         proceduralOptions={proceduralOptions}
         showHeatmap={showHeatmap}
@@ -223,6 +234,9 @@ export function DataCenter3D() {
         forceSimplified={isStaticMode && fastRamp}
         lodResetToken={lodResetToken}
         onPerfWarningChange={setPerfWarning}
+        onPointerGridChange={(positionX, positionY) => {
+          setPointerGrid({ x: positionX, y: positionY });
+        }}
       />
 
       {!introVisible && (
@@ -230,17 +244,19 @@ export function DataCenter3D() {
           <div className="fixed top-0 left-0 right-0 z-40">
             <GameHeader />
           </div>
-          <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-cyan-500/30 bg-black/60 px-6 py-2 text-center shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg">
-            <div className="text-xs uppercase tracking-[0.4em] text-cyan-300/80">
-              Hyperscale
-            </div>
-            <div className="text-sm text-white/70">Datacenter Operations Console · Max Doubin</div>
-          </div>
-
           <div
             data-ui="true"
-            className="fixed top-20 left-4 z-50 w-[320px] rounded-2xl border border-cyan-500/30 bg-black/60 p-4 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg"
+            className={`fixed top-20 left-4 z-50 w-[320px] rounded-2xl border border-cyan-500/30 bg-black/60 p-4 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-lg transition-transform ${
+              controlDockOpen ? "translate-x-0" : "-translate-x-[110%]"
+            }`}
           >
+            <button
+              type="button"
+              className="absolute -right-6 top-6 h-8 w-8 rounded-full border border-cyan-500/30 bg-black/70 text-cyan-200 shadow-md"
+              onClick={() => setControlDockOpen((prev) => !prev)}
+            >
+              {controlDockOpen ? "◀" : "▶"}
+            </button>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-[0.3em] text-cyan-300/80">
@@ -324,7 +340,23 @@ export function DataCenter3D() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={addEmptyRack}
+                  onClick={() => setRackScale((prev) => Math.min(1.6, prev + 0.1))}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Scale +
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setRackScale((prev) => Math.max(0.6, prev - 0.1))}
+                  className="bg-white/10 text-white hover:bg-white/20"
+                >
+                  Scale -
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => addEmptyRackAtPosition(pointerGrid.x, pointerGrid.y)}
                   className="bg-white/10 text-white hover:bg-white/20"
                 >
                   Spawn Empty Rack
@@ -335,6 +367,13 @@ export function DataCenter3D() {
 
           {showDiagnostics && (
             <div className="fixed top-20 right-4 z-50 w-[260px]">
+              <button
+                type="button"
+                className="absolute -left-6 top-6 h-8 w-8 rounded-full border border-cyan-500/30 bg-black/70 text-cyan-200 shadow-md"
+                onClick={() => setShowDiagnostics(false)}
+              >
+                ▶
+              </button>
               <DebugOverlay visible />
             </div>
           )}
