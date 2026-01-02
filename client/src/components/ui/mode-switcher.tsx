@@ -14,7 +14,7 @@ const modes: { id: GameMode; label: string; icon: typeof Wrench }[] = [
 
 const modeRoutes: Record<GameMode, string> = {
   build: "/build",
-  floor: "/",
+  floor: "/floor",
   network: "/network",
   noc: "/noc",
   incident: "/incidents",
@@ -32,8 +32,7 @@ export function ModeSwitcher() {
     <div className="flex gap-1" data-testid="mode-switcher">
       {modes.map((mode) => {
         const Icon = mode.icon;
-        const isActive =
-          location === modeRoutes[mode.id] || (location === "/" && mode.id === "floor");
+        const isActive = location === modeRoutes[mode.id];
         return (
           <Button
             key={mode.id}

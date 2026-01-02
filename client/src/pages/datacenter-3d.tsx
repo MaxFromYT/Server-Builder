@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useGame } from "@/lib/game-context";
 import { DatacenterScene } from "@/components/3d/DatacenterScene";
 import { GameHUD } from "@/components/3d/GameHUD";
@@ -24,6 +24,7 @@ import {
 import type { Rack } from "@shared/schema";
 import type { AutosaveSnapshot, SaveSlot } from "@/lib/save-system";
 import { useBuild } from "@/lib/build-context";
+import { useLocation } from "wouter";
 
 type CameraMode = "orbit" | "auto" | "cinematic";
 type SessionMode = "build" | "explore";
@@ -47,6 +48,7 @@ export function DataCenter3D() {
   const { selectedIds, selectRack, clearSelection, undo, redo, canUndo, canRedo } = useBuild();
   const { fontScale, setFontScale, highContrast, toggleHighContrast } = useTheme();
   const { toast } = useToast();
+  const [location] = useLocation();
 
   const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
   const introVisible = sessionMode === null;
@@ -167,7 +169,7 @@ export function DataCenter3D() {
     setShowPerfOverlay(false);
   };
 
-  const handleSetMode = (mode: SessionMode) => {
+  const handleSetMode = useCallback((mode: SessionMode) => {
     setSessionMode(mode);
     if (mode === "explore") {
       setFocusMode(true);
@@ -184,7 +186,16 @@ export function DataCenter3D() {
       setShowHUD(true);
       setShowEffects(true);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (location === "/floor") {
+      handleSetMode("build");
+    }
+    if (location === "/") {
+      setSessionMode(null);
+    }
+  }, [handleSetMode, location]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

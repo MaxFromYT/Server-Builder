@@ -412,7 +412,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         positionX: nextPositionX,
         positionY: nextPositionY,
       };
-      return [...prev, newRack];
+      return [newRack, ...prev];
     });
   }, [useStaticData]);
 
@@ -440,7 +440,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           positionX: Math.round(positionX),
           positionY: Math.round(positionY),
         };
-        return [...prev, newRack];
+        return [newRack, ...prev];
       });
     },
     [useStaticData]
@@ -473,7 +473,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             id: `dup-${item.id}-${Date.now()}-${index}`,
           })),
         }));
-        return [...prev, ...clones];
+        return [...clones, ...prev];
       });
     },
     [useStaticData]

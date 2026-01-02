@@ -34,8 +34,9 @@ export default function App() {
             <BuildProvider>
               <Switch>
                 <Route path="/" component={DataCenter3D} />
+                <Route path="/floor" component={DataCenter3D} />
                 <Route path="/build" component={BuildDashboard} />
-                <Route path="/floor" component={FloorDashboard} />
+                <Route path="/floor-dashboard" component={FloorDashboard} />
                 <Route path="/network" component={NetworkDashboard} />
                 <Route path="/noc" component={NocDashboard} />
                 <Route path="/incidents" component={IncidentsDashboard} />

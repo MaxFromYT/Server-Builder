@@ -2,6 +2,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Sparkles as DreiSparkles } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Eye, Hammer, Play, Shield, Sparkles } from "lucide-react";
@@ -91,11 +92,27 @@ export function WelcomeScreen({
 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden bg-black">
+      <style>{`
+        @keyframes hyperscale-pan {
+          0% { background-position: 0% 0%; }
+          50% { background-position: 120% 80%; }
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.35),_transparent_45%),radial-gradient(circle_at_70%_20%,_rgba(168,85,247,0.3),_transparent_45%),radial-gradient(circle_at_20%_80%,_rgba(20,184,166,0.35),_transparent_40%)] opacity-90" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/70" />
       <div className="pointer-events-none absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-[radial-gradient(circle_at_50%_50%,_rgba(14,165,233,0.18),_transparent_60%)]" />
       <div className="pointer-events-none absolute -inset-24 animate-[spin_40s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(34,211,238,0.2),rgba(59,130,246,0.08),rgba(168,85,247,0.28),rgba(34,211,238,0.2))] blur-2xl opacity-70" />
       <div className="pointer-events-none absolute inset-0 animate-[spin_60s_linear_infinite] bg-[conic-gradient(from_180deg_at_50%_50%,rgba(14,165,233,0.2),rgba(236,72,153,0.12),rgba(59,130,246,0.22),rgba(14,165,233,0.2))] opacity-30" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-70 mix-blend-screen"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 20%, rgba(236,72,153,0.35), transparent 55%), radial-gradient(circle at 80% 30%, rgba(56,189,248,0.35), transparent 60%), radial-gradient(circle at 30% 80%, rgba(34,211,238,0.35), transparent 60%), radial-gradient(circle at 75% 70%, rgba(168,85,247,0.3), transparent 60%)",
+          backgroundSize: "160% 160%",
+          animation: "hyperscale-pan 28s linear infinite",
+        }}
+      />
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
@@ -108,8 +125,8 @@ export function WelcomeScreen({
 
       <div className="absolute inset-0 z-0">
         <Canvas
-          dpr={1}
-          gl={{ antialias: false, powerPreference: "high-performance" }}
+          dpr={1.2}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
           frameloop="always"
           className="h-full w-full pointer-events-auto"
         >
@@ -168,7 +185,7 @@ export function WelcomeScreen({
               asChild
               className="text-cyan-100 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20"
             >
-              <a href="/about">About</a>
+              <Link href="/about">About</Link>
             </Button>
           </div>
         </div>
@@ -351,8 +368,8 @@ function LiveFeed({
 
       <div className="h-40 overflow-hidden rounded-lg border border-white/10">
         <Canvas
-          dpr={1}
-          gl={{ antialias: false, powerPreference: "high-performance" }}
+          dpr={1.4}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
           frameloop="always"
           className="pointer-events-none"
         >
