@@ -200,8 +200,8 @@ function GlyphTraffic({
       offsets[i * 3] = point.x;
       offsets[i * 3 + 1] = point.y;
       offsets[i * 3 + 2] = point.z;
-      scales[i * 2] = 0.35 + Math.random() * 0.6;
-      scales[i * 2 + 1] = 0.16 + Math.random() * 0.35;
+      scales[i * 2] = 0.55 + Math.random() * 0.9;
+      scales[i * 2 + 1] = 0.24 + Math.random() * 0.45;
       rotations[i] = Math.random() * Math.PI;
       glyphs[i] = Math.floor(Math.random() * 5);
       lanes[i] = lane / laneCurves.length;
@@ -228,6 +228,107 @@ function GlyphTraffic({
       offsets[i * 3 + 1] = point.y + Math.sin(time * 2 + i) * 0.04 * motionFactor;
       offsets[i * 3 + 2] = point.z;
       pulses[i] = 0.6 + 0.4 * Math.sin(time * 5 * motionFactor + i * 0.3);
+    }
+    geometryRef.current.attributes.aOffset.needsUpdate = true;
+    geometryRef.current.attributes.aPulse.needsUpdate = true;
+  });
+
+  return (
+    <mesh>
+      <instancedBufferGeometry ref={geometryRef}>
+        <planeGeometry args={[1, 1]} />
+        <instancedBufferAttribute
+          attach="attributes-aOffset"
+          array={offsets}
+          count={count}
+          itemSize={3}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aScale"
+          array={scales}
+          count={count}
+          itemSize={2}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aRotation"
+          array={rotations}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aGlyph"
+          array={glyphs}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aLane"
+          array={lanes}
+          count={count}
+          itemSize={1}
+        />
+        <instancedBufferAttribute
+          attach="attributes-aPulse"
+          array={pulses}
+          count={count}
+          itemSize={1}
+        />
+      </instancedBufferGeometry>
+      <shaderMaterial
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        vertexShader={glyphVertex}
+        fragmentShader={glyphFragment}
+      />
+    </mesh>
+  );
+}
+
+function AmbientGlyphs({
+  count,
+  seed,
+  paused,
+  motionFactor,
+}: {
+  count: number;
+  seed: number;
+  paused: boolean;
+  motionFactor: number;
+}) {
+  const geometryRef = useRef<THREE.InstancedBufferGeometry>(null);
+  const offsets = useMemo(() => new Float32Array(count * 3), [count]);
+  const scales = useMemo(() => new Float32Array(count * 2), [count]);
+  const rotations = useMemo(() => new Float32Array(count), [count]);
+  const glyphs = useMemo(() => new Float32Array(count), [count]);
+  const lanes = useMemo(() => new Float32Array(count), [count]);
+  const pulses = useMemo(() => new Float32Array(count), [count]);
+  const noise = useMemo(() => createNoise3D(seed + 71), [seed]);
+
+  useMemo(() => {
+    for (let i = 0; i < count; i += 1) {
+      offsets[i * 3] = (Math.random() - 0.5) * 40;
+      offsets[i * 3 + 1] = 1.5 + Math.random() * 8;
+      offsets[i * 3 + 2] = -Math.random() * 60;
+      scales[i * 2] = 0.3 + Math.random() * 0.8;
+      scales[i * 2 + 1] = 0.12 + Math.random() * 0.35;
+      rotations[i] = Math.random() * Math.PI;
+      glyphs[i] = Math.floor(Math.random() * 5);
+      lanes[i] = Math.random();
+      pulses[i] = Math.random();
+    }
+  }, [count, glyphs, lanes, offsets, pulses, rotations, scales]);
+
+  useFrame(({ clock }, delta) => {
+    if (paused || !geometryRef.current) return;
+    const t = clock.getElapsedTime() * motionFactor;
+    for (let i = 0; i < count; i += 1) {
+      const idx = i * 3;
+      const drift = noise(offsets[idx] * 0.06, offsets[idx + 1] * 0.04, t * 0.12);
+      offsets[idx] += drift * delta * 1.2 * motionFactor;
+      offsets[idx + 2] += delta * 1.6 * motionFactor;
+      if (offsets[idx + 2] > 8) offsets[idx + 2] = -80;
+      pulses[i] = 0.4 + 0.6 * Math.sin(t * 3 + i * 0.4);
     }
     geometryRef.current.attributes.aOffset.needsUpdate = true;
     geometryRef.current.attributes.aPulse.needsUpdate = true;
@@ -618,6 +719,12 @@ function HeroScene({
         seed={seed}
         paused={paused}
         scrollState={scrollRef.current}
+        motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
+      />
+      <AmbientGlyphs
+        count={particleCount > 20000 ? 8000 : 4000}
+        seed={seed}
+        paused={paused}
         motionFactor={reducedMotion ? heroConfig.reducedMotionFactor : 1}
       />
 

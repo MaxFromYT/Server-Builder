@@ -94,14 +94,14 @@ export const glyphFragment = `
   void main() {
     vec2 p = vUv * 2.0 - 1.0;
     float sdf = renderGlyph(p, vGlyph);
-    float edge = smoothstep(0.08, -0.02, sdf);
-    float glow = smoothstep(0.3, -0.1, sdf) * 0.6;
+    float edge = smoothstep(0.1, -0.04, sdf);
+    float glow = smoothstep(0.38, -0.12, sdf) * 0.9;
     vec3 cool = vec3(0.2, 0.8, 1.0);
     vec3 warm = vec3(1.0, 0.35, 0.6);
     vec3 color = mix(cool, warm, vLane);
-    float alpha = edge + glow * 0.6;
-    alpha *= 0.7 + vPulse * 0.6;
-    gl_FragColor = vec4(color * (edge * 1.2 + glow), alpha);
+    float alpha = edge + glow * 0.8;
+    alpha *= 0.85 + vPulse * 0.8;
+    gl_FragColor = vec4(color * (edge * 1.4 + glow * 1.1), alpha);
     if (gl_FragColor.a < 0.02) discard;
   }
 `;
