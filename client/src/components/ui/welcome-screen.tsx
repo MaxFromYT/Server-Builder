@@ -221,6 +221,125 @@ export function WelcomeScreen({
   );
 }
 
+function IntroScene() {
+  const fogColor = new THREE.Color("#070b18");
+  const equipmentMap = useMemo(
+    () => new Map(staticEquipmentCatalog.map((item) => [item.id, item])),
+    []
+  );
+  const orbitRef = React.useRef<THREE.Group>(null);
+  const lightARef = React.useRef<THREE.PointLight>(null);
+  const lightBRef = React.useRef<THREE.PointLight>(null);
+  const lightCRef = React.useRef<THREE.PointLight>(null);
+
+  const rackGrid = useMemo(() => {
+    const positions: [number, number, number, number][] = [];
+    for (let x = -8; x <= 8; x += 2) {
+      for (let z = -8; z <= 8; z += 2) {
+        const height = 2.4 + Math.random() * 0.8;
+        positions.push([x * 2.2, height / 2, z * 2.4, height]);
+      }
+    }
+    return positions;
+  }, []);
+  const introRacks = useMemo(
+    () =>
+      rackGrid.slice(0, 16).map(([x, _y, z], index) =>
+        buildIntroRack(index, x, z)
+      ),
+    [rackGrid]
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (orbitRef.current) {
+      orbitRef.current.rotation.y = Math.sin(t * 0.08) * 0.15;
+      orbitRef.current.position.x = Math.sin(t * 0.12) * 0.6;
+      orbitRef.current.position.z = Math.cos(t * 0.1) * 0.4;
+    }
+    if (lightARef.current) {
+      lightARef.current.intensity = 1.6 + Math.sin(t * 1.2) * 0.4;
+      lightARef.current.position.x = Math.sin(t * 0.6) * 10;
+    }
+    if (lightBRef.current) {
+      lightBRef.current.intensity = 1.2 + Math.cos(t * 1.4) * 0.3;
+      lightBRef.current.position.z = Math.cos(t * 0.5) * 12;
+    }
+    if (lightCRef.current) {
+      lightCRef.current.intensity = 1.0 + Math.sin(t * 1.1) * 0.25;
+      lightCRef.current.position.x = Math.cos(t * 0.4) * -12;
+    }
+  });
+
+  return (
+    <>
+      <fog attach="fog" args={[fogColor, 6, 34]} />
+      <color attach="background" args={["#040813"]} />
+      <PerspectiveCamera makeDefault position={[0, 8, 18]} fov={40} />
+
+      <ambientLight intensity={0.9} color="#7dd3fc" />
+      <directionalLight position={[10, 15, 10]} intensity={1.9} color="#b9e9ff" />
+      <directionalLight position={[-10, 10, -8]} intensity={1.1} color="#c084fc" />
+      <pointLight ref={lightARef} position={[0, 8, 0]} intensity={1.5} color="#22d3ee" />
+      <pointLight ref={lightBRef} position={[0, 4, 12]} intensity={1.5} color="#38bdf8" />
+      <pointLight ref={lightCRef} position={[-12, 6, -8]} intensity={1.2} color="#c084fc" />
+      <pointLight position={[12, 3, -6]} intensity={1.3} color="#f472b6" />
+      <pointLight position={[-6, 5, 10]} intensity={1.0} color="#34d399" />
+      <pointLight position={[6, 2, 14]} intensity={0.9} color="#f97316" />
+
+      <group ref={orbitRef}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+          <planeGeometry args={[120, 120]} />
+          <meshStandardMaterial
+            color="#0b1220"
+            metalness={0.4}
+            roughness={0.25}
+            emissive="#0f172a"
+            emissiveIntensity={0.35}
+          />
+        </mesh>
+
+        <group position={[0, 0.08, 0]}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <mesh key={`strip-${index}`} position={[index * 6 - 15, 0, -10 + (index % 2) * 8]}>
+              <boxGeometry args={[4, 0.05, 12]} />
+              <meshStandardMaterial
+                color={index % 2 === 0 ? "#22d3ee" : "#a855f7"}
+                emissive={index % 2 === 0 ? "#22d3ee" : "#a855f7"}
+                emissiveIntensity={1.1}
+              />
+            </mesh>
+          ))}
+        </group>
+
+        <group scale={0.9}>
+          {introRacks.map((rack, index) => (
+            <Rack3D
+              key={rack.id}
+              rack={rack}
+              position={[rack.positionX, 0, rack.positionY]}
+              isSelected={false}
+              onSelect={() => {}}
+              equipmentCatalog={equipmentMap}
+              forceSimplified
+              lodIndex={index}
+              detailBudget={introRacks.length}
+              showHud={false}
+            />
+          ))}
+        </group>
+
+        <IntroSweep />
+        <IntroSweep offset={6} color="#a855f7" />
+      </group>
+
+      <DreiSparkles count={80} speed={0.18} size={1.4} color="#22d3ee" scale={[30, 16, 30]} />
+      <DreiSparkles count={32} speed={0.12} size={2.4} color="#f472b6" scale={[26, 12, 26]} />
+      <DreiSparkles count={18} speed={0.08} size={2.8} color="#34d399" scale={[24, 10, 24]} />
+    </>
+  );
+}
+
 function LiveFeed({
   title,
   subtitle,
@@ -372,6 +491,96 @@ function MiniRackScene({ variant }: { variant: "a" | "b" | "c" }) {
         target={target}
       />
     </>
+  );
+}
+
+function IntroRack({
+  position,
+  height,
+}: {
+  position: [number, number, number];
+  height: number;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const rackRef = React.useRef<THREE.Mesh>(null);
+  const glowRef = React.useRef<THREE.Mesh>(null);
+  const lights = useMemo(
+    () =>
+      Array.from({ length: 6 }).map((_, index) => ({
+        y: 0.2 + index * (height / 7),
+        hue: Math.random() > 0.5 ? "#22d3ee" : "#a855f7",
+      })),
+    [height]
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (rackRef.current) {
+      rackRef.current.rotation.y = Math.sin(t * 0.6 + position[0]) * 0.15;
+    }
+    if (glowRef.current) {
+      glowRef.current.scale.y = 1 + Math.sin(t * 1.6 + position[2]) * 0.06;
+    }
+  });
+
+  return (
+    <group
+      position={position}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <mesh ref={rackRef} position={[0, height / 2, 0]}>
+        <boxGeometry args={[1.2, height, 1.8]} />
+        <meshStandardMaterial
+          color={hovered ? "#0ea5e9" : "#1f2937"}
+          emissive={hovered ? "#38bdf8" : "#0b1220"}
+          emissiveIntensity={hovered ? 0.8 : 0.3}
+          metalness={0.6}
+          roughness={0.3}
+        />
+      </mesh>
+      {lights.map((light, index) => (
+        <mesh key={index} position={[0, light.y, 0.92]}>
+          <boxGeometry args={[0.9, 0.08, 0.05]} />
+          <meshStandardMaterial
+            color={light.hue}
+            emissive={light.hue}
+            emissiveIntensity={hovered ? 1.4 : 0.6}
+          />
+        </mesh>
+      ))}
+      <mesh ref={glowRef} position={[0, height / 2, 0]}>
+        <boxGeometry args={[1.4, height * 1.05, 2]} />
+        <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.4} transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[0, height * 0.25, 0.92]}>
+        <boxGeometry args={[0.8, 0.35, 0.05]} />
+        <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function IntroSweep({
+  offset = 0,
+  color = "#22d3ee",
+}: {
+  offset?: number;
+  color?: string;
+}) {
+  const sweepRef = React.useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!sweepRef.current) return;
+    const t = clock.getElapsedTime();
+    sweepRef.current.position.z = ((t * 2 + offset) % 24) - 12;
+  });
+
+  return (
+    <mesh ref={sweepRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -12]}>
+      <planeGeometry args={[80, 6]} />
+      <meshBasicMaterial color={color} transparent opacity={0.08} />
+    </mesh>
   );
 }
 
