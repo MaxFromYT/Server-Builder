@@ -153,12 +153,12 @@ const usePageVisibility = () => {
   return visible;
 };
 
-const SEGMENT_LENGTH = 16;
-const SEGMENT_COUNT = 6;
-const RACKS_PER_SEGMENT = 3;
-const RACK_SPACING = 4.1;
+const SEGMENT_LENGTH = 20;
+const SEGMENT_COUNT = 7;
+const RACKS_PER_SEGMENT = 6;
+const RACK_SPACING = 3.2;
 const AISLE_HALF_WIDTH = 2.4;
-const DETAIL_BUDGET = 10;
+const DETAIL_BUDGET = 8;
 
 function BlinkingIndicator({
   position,
