@@ -58,7 +58,7 @@ export const dellRowRack: RackDefinition = {
   slug: "dell-row-24u",
   name: "Dell compute and storage 24U",
   blurb:
-    "An eighty four bay PowerVault under three generations of PowerEdge, with an S5248F-ON on top of the rack. Every device is modelled here from Dell's own service documentation, and the four faces are deliberately four different mouldings: a 1U cannot stand a 2.5 inch drive on edge, so the R660 carries two rows of five while the R760 carries twenty four upright.",
+    "An eighty four bay PowerVault under three generations of PowerEdge, with a pair of S5248F-ON leaves on top of the rack. Every Dell box here is modelled from Dell's own service documentation, and their five fronts are five different mouldings: a 1U cannot stand a 2.5 inch drive on edge, so the R660 carries two rows of five while the R760 carries twenty four upright and the R760xd2 lays twelve large ones flat in a grid.",
   height: 24,
 
   devices: [

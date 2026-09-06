@@ -55,7 +55,7 @@ export const juniperMxRack: RackDefinition = {
   slug: "juniper-mx-24u",
   name: "Juniper provider edge 24U",
   blurb:
-    "An MX240 card chassis with the rest of the Juniper line arranged around it: an MX204 for compact edge, a QFX5120 leaf, EX4400 and EX4300 access, and an SRX1500 on the boundary. Every device is modelled here from Juniper's own photographs and hardware guides, and the SRX is drawn with the twelve copper ports it actually has rather than the sixteen interfaces its specification counts.",
+    "An MX240 card chassis with the rest of the Juniper line arranged around it: an MX204 for compact edge, a QFX5120 leaf pair, EX4400 and a two member EX4300 virtual chassis for access, and an SRX1500 cluster on the boundary. Everything here that carries a Juniper badge is modelled from Juniper's own photographs and hardware guides, and the SRX is drawn with the twelve copper ports it actually has rather than the sixteen interfaces its specification counts.",
   height: 24,
 
   devices: [

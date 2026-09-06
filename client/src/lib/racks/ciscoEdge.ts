@@ -64,7 +64,7 @@ export const ciscoEdgeRack: RackDefinition = {
   slug: "cisco-edge-16u",
   name: "Cisco enterprise edge 16U",
   blurb:
-    "A WAN edge and campus distribution stack, built only from hardware modelled here from photographs: an ASR 1001-X on the circuit, an ISR 4451-X behind it, a Firepower 2140 between that and the campus, a Nexus 9336C-FX2 spine, and two Catalyst access switches. Ten units in a sixteen unit frame, because an edge rack that starts full has nowhere to grow.",
+    "A WAN edge and campus distribution stack: an ASR 1001-X on the circuit, an ISR 4451-X behind it, an ISR 4331 beside that, a Firepower 2140 between them and the campus, a Nexus 9336C-FX2 spine, and two Catalyst access switches. Every one of those seven is modelled here from photographs of that product. The patch panels, cable manager, console server and PDU around them are not: they are frame furniture, drawn by the frame, which is what they are in a real rack too.",
   height: 16,
 
   devices: [

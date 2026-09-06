@@ -68,7 +68,7 @@ export const juniperCoreRack: RackDefinition = {
   slug: "juniper-core-42u",
   name: "Juniper Core 42U",
   blurb:
-    "A service provider edge built the way Juniper's range actually splits. Two five rack unit modular chassis in the middle, an EX9204 switching and an MX240 routing, are the reason the rack exists: everything above them is access and leaf switching feeding them, everything below is security and power serving them. The MX240's fan tray is a tall column on the right rather than a row along the bottom, which is the fastest way to tell it from a switch of the same height.",
+    "A service provider edge built the way Juniper's range actually splits, and the one rack here that carries the whole line at once. Two five rack unit modular chassis sit in the middle, an EX9204 switching and an MX240 routing; above them is access and leaf switching feeding those, and below them the edge and transport tier they feed, down to an eight unit MX480 on the floor because weight goes low. The MX240's fan tray is a tall column on the right rather than a row along the bottom, which is the fastest way to tell it from a switch of the same height.",
   height: 42,
   /*
     Thirty one of the forty two units are populated and the bottom eleven
