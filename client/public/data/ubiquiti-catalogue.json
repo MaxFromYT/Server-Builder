@@ -462,7 +462,6 @@
    "triangles": 18161,
    "bytes": 206076,
    "model": "/models/vendor/ubiquiti/u-lte-backup-pro.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u-lte-backup-pro.webp",
    "store": "https://store.ui.com/us/en/products/u-lte-backup-pro"
   },
   {
@@ -480,7 +479,6 @@
    "triangles": 77058,
    "bytes": 357380,
    "model": "/models/vendor/ubiquiti/u5g-max.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u5g-max.webp",
    "store": "https://store.ui.com/us/en/products/u5g-max"
   },
   {
@@ -498,7 +496,6 @@
    "triangles": 54311,
    "bytes": 313788,
    "model": "/models/vendor/ubiquiti/u5g-max-outdoor.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u5g-max-outdoor.webp",
    "store": "https://store.ui.com/us/en/products/u5g-max-outdoor"
   },
   {
@@ -516,7 +513,6 @@
    "triangles": 19455,
    "bytes": 128640,
    "model": "/models/vendor/ubiquiti/u5g-us.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u5g-us.webp",
    "store": "https://store.ui.com/us/en/products/u5g-us"
   },
   {
@@ -588,7 +584,6 @@
    "triangles": 26132,
    "bytes": 160680,
    "model": "/models/vendor/ubiquiti/u6-mesh.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u6-mesh.webp",
    "store": "https://store.ui.com/us/en/products/u6-mesh"
   },
   {
@@ -606,7 +601,6 @@
    "triangles": 77918,
    "bytes": 276840,
    "model": "/models/vendor/ubiquiti/u6-mesh-pro.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u6-mesh-pro.webp",
    "store": "https://store.ui.com/us/en/products/u6-mesh-pro"
   },
   {
@@ -714,7 +708,6 @@
    "triangles": 8441,
    "bytes": 47892,
    "model": "/models/vendor/ubiquiti/u7-mesh.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u7-mesh.webp",
    "store": "https://store.ui.com/us/en/products/u7-mesh"
   },
   {
@@ -732,7 +725,6 @@
    "triangles": 97478,
    "bytes": 330324,
    "model": "/models/vendor/ubiquiti/u7-outdoor.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u7-outdoor.webp",
    "store": "https://store.ui.com/us/en/products/u7-outdoor"
   },
   {
@@ -786,7 +778,6 @@
    "triangles": 103458,
    "bytes": 372612,
    "model": "/models/vendor/ubiquiti/u7-pro-outdoor-us.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/u7-pro-outdoor-us.webp",
    "store": "https://store.ui.com/us/en/products/u7-pro-outdoor-us"
   },
   {
@@ -912,7 +903,6 @@
    "triangles": 27034,
    "bytes": 227016,
    "model": "/models/vendor/ubiquiti/ua-g2-pro.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-g2-pro.webp",
    "store": "https://store.ui.com/us/en/products/ua-g2-pro"
   },
   {
@@ -966,7 +956,6 @@
    "triangles": 30406,
    "bytes": 598412,
    "model": "/models/vendor/ubiquiti/ua-g3-flex.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-g3-flex.webp",
    "store": "https://store.ui.com/us/en/products/ua-g3-flex"
   },
   {
@@ -984,7 +973,6 @@
    "triangles": 300527,
    "bytes": 651504,
    "model": "/models/vendor/ubiquiti/ua-g3-intercom.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-g3-intercom.webp",
    "store": "https://store.ui.com/us/en/products/ua-g3-intercom"
   },
   {
@@ -1002,7 +990,6 @@
    "triangles": 27034,
    "bytes": 227384,
    "model": "/models/vendor/ubiquiti/ua-g3-pro.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-g3-pro.webp",
    "store": "https://store.ui.com/us/en/products/ua-g3-pro"
   },
   {
@@ -1074,7 +1061,6 @@
    "triangles": 300527,
    "bytes": 654292,
    "model": "/models/vendor/ubiquiti/ua-intercom.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-intercom.webp",
    "store": "https://store.ui.com/us/en/products/ua-intercom"
   },
   {
@@ -1092,7 +1078,6 @@
    "triangles": 34024,
    "bytes": 195048,
    "model": "/models/vendor/ubiquiti/ua-intercom-viewer.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-intercom-viewer.webp",
    "store": "https://store.ui.com/us/en/products/ua-intercom-viewer"
   },
   {
@@ -1128,7 +1113,6 @@
    "triangles": 29576,
    "bytes": 181248,
    "model": "/models/vendor/ubiquiti/ua-retrofit-reader.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-retrofit-reader.webp",
    "store": "https://store.ui.com/us/en/products/ua-retrofit-reader"
   },
   {
@@ -1146,7 +1130,6 @@
    "triangles": 41026,
    "bytes": 276252,
    "model": "/models/vendor/ubiquiti/ua-retrofit-reader-fingerprint.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-retrofit-reader-fingerprint.webp",
    "store": "https://store.ui.com/us/en/products/ua-retrofit-reader-fingerprint"
   },
   {
@@ -1164,7 +1147,6 @@
    "triangles": 19735,
    "bytes": 149484,
    "model": "/models/vendor/ubiquiti/ua-ultra.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ua-ultra.webp",
    "store": "https://store.ui.com/us/en/products/ua-ultra"
   },
   {
@@ -1586,7 +1568,6 @@
    "triangles": 58212,
    "bytes": 306436,
    "model": "/models/vendor/ubiquiti/uap-ac-mesh.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uap-ac-mesh.webp",
    "store": "https://store.ui.com/us/en/products/uap-ac-mesh"
   },
   {
@@ -1676,7 +1657,6 @@
    "triangles": 9526,
    "bytes": 85560,
    "model": "/models/vendor/ubiquiti/uc-cast-pro.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uc-cast-pro.webp",
    "store": "https://store.ui.com/us/en/products/uc-cast-pro"
   },
   {
@@ -1860,7 +1840,6 @@
    "triangles": 17530,
    "bytes": 909228,
    "model": "/models/vendor/ubiquiti/udb.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/udb.webp",
    "store": "https://store.ui.com/us/en/products/udb"
   },
   {
@@ -1914,7 +1893,6 @@
    "triangles": 47469,
    "bytes": 222864,
    "model": "/models/vendor/ubiquiti/udb-pro-sector.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/udb-pro-sector.webp",
    "store": "https://store.ui.com/us/en/products/udb-pro-sector"
   },
   {
@@ -2074,7 +2052,6 @@
    "triangles": 51496,
    "bytes": 254320,
    "model": "/models/vendor/ubiquiti/ufp-viewport.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ufp-viewport.webp",
    "store": "https://store.ui.com/us/en/products/ufp-viewport"
   },
   {
@@ -2092,7 +2069,6 @@
    "triangles": 154993,
    "bytes": 371956,
    "model": "/models/vendor/ubiquiti/uk-ultra.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uk-ultra.webp",
    "store": "https://store.ui.com/us/en/products/uk-ultra"
   },
   {
@@ -2110,7 +2086,6 @@
    "triangles": 47599,
    "bytes": 283628,
    "model": "/models/vendor/ubiquiti/umr-industrial-us.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/umr-industrial-us.webp",
    "store": "https://store.ui.com/us/en/products/umr-industrial-us"
   },
   {
@@ -2128,7 +2103,6 @@
    "triangles": 218126,
    "bytes": 557040,
    "model": "/models/vendor/ubiquiti/umr-ultra-us.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/umr-ultra-us.webp",
    "store": "https://store.ui.com/us/en/products/umr-ultra-us"
   },
   {
@@ -2408,7 +2382,6 @@
    "triangles": 112915,
    "bytes": 302224,
    "model": "/models/vendor/ubiquiti/up-ai-port.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/up-ai-port.webp",
    "store": "https://store.ui.com/us/en/products/up-ai-port"
   },
   {
@@ -2516,7 +2489,6 @@
    "triangles": 23036,
    "bytes": 118056,
    "model": "/models/vendor/ubiquiti/up-sense.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/up-sense.webp",
    "store": "https://store.ui.com/us/en/products/up-sense"
   },
   {
@@ -2714,7 +2686,6 @@
    "triangles": 63144,
    "bytes": 330820,
    "model": "/models/vendor/ubiquiti/usl-g2-gateway-ha.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/usl-g2-gateway-ha.webp",
    "store": "https://store.ui.com/us/en/products/usl-g2-gateway-ha"
   },
   {
@@ -2750,7 +2721,6 @@
    "triangles": 23097,
    "bytes": 93428,
    "model": "/models/vendor/ubiquiti/usl-glassbreak.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/usl-glassbreak.webp",
    "store": "https://store.ui.com/us/en/products/usl-glassbreak"
   },
   {
@@ -2768,7 +2738,6 @@
    "triangles": 77286,
    "bytes": 242960,
    "model": "/models/vendor/ubiquiti/usl-motion.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/usl-motion.webp",
    "store": "https://store.ui.com/us/en/products/usl-motion"
   },
   {
@@ -3634,7 +3603,6 @@
    "triangles": 45725,
    "bytes": 193068,
    "model": "/models/vendor/ubiquiti/ut-g3-handset.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/ut-g3-handset.webp",
    "store": "https://store.ui.com/us/en/products/ut-g3-handset"
   },
   {
@@ -4084,7 +4052,6 @@
    "triangles": 184449,
    "bytes": 505344,
    "model": "/models/vendor/ubiquiti/uvc-doorbell-lite.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uvc-doorbell-lite.webp",
    "store": "https://store.ui.com/us/en/products/uvc-doorbell-lite"
   },
   {
@@ -4102,7 +4069,6 @@
    "triangles": 26896,
    "bytes": 251092,
    "model": "/models/vendor/ubiquiti/uvc-g4-doorbell-pro.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uvc-g4-doorbell-pro.webp",
    "store": "https://store.ui.com/us/en/products/uvc-g4-doorbell-pro"
   },
   {
@@ -4120,7 +4086,6 @@
    "triangles": 24563,
    "bytes": 248896,
    "model": "/models/vendor/ubiquiti/uvc-g4-doorbell-pro-poe-kit.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uvc-g4-doorbell-pro-poe-kit.webp",
    "store": "https://store.ui.com/us/en/products/uvc-g4-doorbell-pro-poe-kit"
   },
   {
@@ -4390,7 +4355,6 @@
    "triangles": 727297,
    "bytes": 1289900,
    "model": "/models/vendor/ubiquiti/uvc-g6-entry.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uvc-g6-entry.webp",
    "store": "https://store.ui.com/us/en/products/uvc-g6-entry"
   },
   {
@@ -4498,7 +4462,6 @@
    "triangles": 543040,
    "bytes": 1096924,
    "model": "/models/vendor/ubiquiti/uvc-g6-pro-entry.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uvc-g6-pro-entry.webp",
    "store": "https://store.ui.com/us/en/products/uvc-g6-pro-entry"
   },
   {
@@ -4534,7 +4497,6 @@
    "triangles": 133086,
    "bytes": 551556,
    "model": "/models/vendor/ubiquiti/uvc-g6-ptz.glb",
-   "thumb": "/models/vendor/ubiquiti/thumbs/uvc-g6-ptz.webp",
    "store": "https://store.ui.com/us/en/products/uvc-g6-ptz"
   },
   {
@@ -4747,5 +4709,6 @@
    "thumb": "/models/vendor/ubiquiti/thumbs/wm-w.webp",
    "store": "https://store.ui.com/us/en/products/wm-w"
   }
- ]
+ ],
+ "thumbnailNote": "Devices with no thumb key render as a white product on the white studio ground and trim to a blank card, so they carry no thumbnail rather than a blank one. They would need a darker background to photograph."
 }
