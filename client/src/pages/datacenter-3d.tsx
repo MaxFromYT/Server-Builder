@@ -16,7 +16,6 @@ import { WelcomeScreen } from "@/components/ui/welcome-screen";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DebugOverlay } from "@/components/ui/debug-overlay";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { GameHeader } from "@/components/layout/game-header";
 import { useToast } from "@/hooks/use-toast";
 import { deriveCapacity, facilityPue, formatWatts } from "@/lib/capacity";
@@ -636,7 +635,7 @@ export function DataCenter3D({
       {chromeVisible && (
         <>
           <div className="absolute top-0 left-0 right-0 z-40">
-            <GameHeader />
+            <GameHeader showThemeToggle={false} />
           </div>
           <div
             data-ui="true"
@@ -666,7 +665,6 @@ export function DataCenter3D({
                     Live orchestration for power, thermals, and topology. Created by Max Doubin.
                   </div>
                 </div>
-                <ThemeToggle />
               </div>
 
               <div className="mt-4 space-y-3">
