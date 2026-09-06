@@ -196,6 +196,15 @@ jobs:
       - name: Wide content stays reachable
         run: node scripts-ci/check-wide-content.mjs
 
+      # Headings are how a screen reader user moves around a page, so a page
+      # with no h1 has no title in that outline and an h1 straight to an h3
+      # implies a section that is not there. Three pages shipped with no h1:
+      # their React source has one, but the prerenderer writes hand-authored
+      # prose for the WebGL pages and those blocks started a level too deep.
+      # Reads the built HTML, because the source was already right.
+      - name: Heading outlines
+        run: node scripts-ci/check-heading-order.mjs
+
       # Last because it reads both the source trees and the built HTML.
       - name: Em dashes
         run: node scripts-ci/check-em-dashes.mjs

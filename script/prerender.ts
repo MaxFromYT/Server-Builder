@@ -1489,7 +1489,7 @@ ${JSON.stringify({
   worth indexing.
 */
 const wiredRackContent = `
-  <h2>The wired rack</h2>
+  <h1>The wired rack</h1>
   <p>Fourteen units of UniFi, patched the way somebody would actually patch it.
   The hardware is Ubiquiti's own geometry, the same models their store loads
   into its 3D viewer, so the panels are the panels and the ports are where the
@@ -1497,7 +1497,7 @@ const wiredRackContent = `
   fibre uplinks to the aggregation switch, storage taking copper straight to
   the nearest switch, and every power lead running down the side of the frame
   into the distribution unit.</p>
-  <h3>What is in it</h3>
+  <h2>What is in it</h2>
   <ul>
     <li>Dream Machine SE, the gateway, at the top of the rack.</li>
     <li>Pro Aggregation, which every other switch uplinks to on fibre.</li>
@@ -1506,7 +1506,7 @@ const wiredRackContent = `
     <li>Enterprise Gateway, Network Video Recorder Pro and Network Attached Storage Pro.</li>
     <li>Power Distribution Pro at the bottom, which every power lead runs to.</li>
   </ul>
-  <h3>Why it looks combed instead of tangled</h3>
+  <h2>Why it looks combed instead of tangled</h2>
   <p>The first version of this cabling let every lead find its own way from A
   to B, and the result was a bowl of spaghetti across the front of the rack. A
   dressed bundle is four moves and every lead makes the same four: out of the
@@ -1527,12 +1527,12 @@ const wiredRackContent = `
 `;
 
 const rackBuilderContent = `
-  <h2>Build a rack</h2>
+  <h1>Build a rack</h1>
   <p>Fifty one rack mountable UniFi devices, in Ubiquiti's own geometry, and
   an empty frame. Pick something and it lands in the highest free slot that
   fits it. A 2U will not go into a 1U gap, because a 2U does not go into a 1U
   gap. What you build is saved in your browser and can be shared as a link.</p>
-  <h3>A rack is a list of occupied units, not a list of devices</h3>
+  <h2>A rack is a list of occupied units, not a list of devices</h2>
   <p>That distinction is most of the code behind the page. Treat a rack as a
   list and a 2U dropped between two 1U devices either overlaps one of them or
   silently pushes it down, and both are wrong, because real hardware does
@@ -1540,7 +1540,7 @@ const rackBuilderContent = `
   asks whether a specific run of units is free, and refuses when it is not,
   which is why the frame buttons grey out when something in the build would
   hang below a shorter frame.</p>
-  <h3>What a build weighs</h3>
+  <h2>What a build weighs</h2>
   <p>The weight is on screen because this page cannot hide it. A drawn
   elevation costs a reader nothing whatever it contains, and this one costs
   them a download per distinct device. Bytes are counted once per file,
@@ -1548,7 +1548,7 @@ const rackBuilderContent = `
   two of the same switch are two of the same switch as far as the GPU is
   concerned. Reporting one figure for both would be wrong in one direction or
   the other.</p>
-  <h3>Why nothing is patched</h3>
+  <h2>Why nothing is patched</h2>
   <p>A vendor model is a closed box that does not know where its own jacks
   are. The wired rack manages leads only because its build is fixed and every
   port position was measured off a render by hand, which cannot be done for a
@@ -1558,7 +1558,7 @@ const rackBuilderContent = `
 `;
 
 const teardownContent = `
-  <h2>A PowerEdge, opened</h2>
+  <h1>A PowerEdge, opened</h1>
   <p>This is a Dell PowerEdge R760 coming apart in the order a technician
   would take it apart, and the geometry is Dell's own. Their repair guides are
   built on a service model of the machine as thirty four named assemblies, so
@@ -1566,7 +1566,7 @@ const teardownContent = `
   photograph. A 2U rather than a 1U on purpose: the GPUs, the four expansion
   risers, the RAID controller and the rear drive cage are the parts that do
   not fit in a 1U at all, and they are the ones worth watching come out.</p>
-  <h3>The order of removal</h3>
+  <h2>The order of removal</h2>
   <ol>
     <li>Front bezel. Unlocks and pulls straight off. Nothing can be reached until it is gone.</li>
     <li>System cover, and the backplane cover behind it.</li>
@@ -1577,7 +1577,7 @@ const teardownContent = `
     <li>Drive backplane, internal USB, intrusion switch, control panels, side wall brackets, system battery and TPM.</li>
     <li>System board, last, because everything else is bolted to it or plugged into it.</li>
   </ol>
-  <h3>Where the geometry came from</h3>
+  <h2>Where the geometry came from</h2>
   <p>Dell publish WebXR repair guides for a handful of PowerEdge platforms,
   and behind each one is a glTF scene of the machine. It is not offered as a
   download and nothing links to it: the guide list is a POST only endpoint,
