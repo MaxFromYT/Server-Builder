@@ -148,6 +148,9 @@ export function CinematicBlogPost() {
       post?.excerpt ??
       "Max Doubin is a 10th grade cybersecurity student at South Career Technical Academy in Las Vegas, Nevada.",
     canonical: post ? `${SITE_URL}/blog/${post.slug}` : SITE_URL,
+    // Same as the rack page: a slug matching no post renders "Post not
+    // found", and that should not be indexable.
+    noindex: !post,
     ogType: post ? "article" : "profile",
     ogImage: post ? `${SITE_URL}${post.coverImage}` : `${SITE_URL}/images/og-image.jpg`,
     ogImageAlt: post ? post.title : "Max Doubin, cybersecurity student",

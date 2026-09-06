@@ -106,7 +106,12 @@ export function CinematicRackDetail() {
     description: rack
       ? `An annotated ${rack.name} rack elevation: every device, port count and published wattage, with sources. Click any device to learn what it does.`
       : "This rack is not in the library.",
-    canonical: `${SITE_URL}/racks/${params?.slug ?? ""}`,
+    canonical: rack ? `${SITE_URL}/racks/${rack.slug}` : `${SITE_URL}/racks`,
+    // A slug that matches nothing still renders a page, because the router
+    // cannot know the library from a static host. Without this the soft 404
+    // is indexable, and the canonical above used to point at the bad URL,
+    // which asks for it to be indexed rather than ignored.
+    noindex: !rack,
   });
 
   if (!rack) {
