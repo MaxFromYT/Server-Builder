@@ -59,7 +59,7 @@ export function GameHeader() {
             <span className="font-display text-lg font-bold tracking-wider">
               HYPERSCALE
             </span>
-            <span className="text-[10px] uppercase tracking-[0.3em] text-cyan-300/70">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-[hsl(var(--console-accent))]">
               Max Doubin
             </span>
           </div>

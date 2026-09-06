@@ -12,6 +12,16 @@
   --brand-graphite: 220 10% 9%;
   --brand-carbon: 220 8% 14%;
   --brand-iron: 220 6% 22%;
+  /*
+    A surface that reads as recessed against the page. Four cinematic pages
+    already asked for it in seven places and it was never defined, so
+    `hsl(var(--brand-void))` was an invalid colour and those backgrounds
+    silently did not paint: the stat grids on /racks/wired and /racks/build
+    showed their divider wash through transparent cells, and the rack
+    builder's name field had no field. CSS drops an invalid declaration
+    without a word, which is why it survived review.
+  */
+  --brand-void: 220 14% 2%;
   --brand-ash: 220 5% 56%;
   --brand-bone: 40 16% 92%;
   --brand-bone-dim: 40 10% 72%;
@@ -23,6 +33,14 @@
 }
 
 .cinematic {
+  --console-accent: 187 92% 69%;
+  /*
+    Parity with --primary below, so the `.dark .text-primary` rule at the end
+    of this file is a no-op in here. Without it a shadcn primitive rendered on
+    a cinematic page in the dark theme would pick up the blue meant for the
+    legacy site instead of the signal green everything else in here uses.
+  */
+  --primary-text: var(--brand-signal);
   --background: var(--brand-obsidian);
   --foreground: var(--brand-bone);
   --border: var(--brand-iron);
@@ -611,6 +629,15 @@ html.lenis-smooth {
 
 /* LIGHT MODE */
 :root {
+  /*
+    The simulator header's brand line. It was cyan-300 at 70%, which is 1.24:1
+    on the light page ground: the words were there and could not be read. The
+    accent is worth keeping, so it is a token with a value per surface rather
+    than one colour used on three different backgrounds. 4.91:1 here, and
+    12.5:1 on the dark bar, where the .dark and .cinematic blocks override it.
+  */
+  --console-accent: 193 82% 31%;
+
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
@@ -704,6 +731,22 @@ html.lenis-smooth {
 }
 
 .dark {
+  --console-accent: 187 92% 69%;
+
+  /*
+    The brand blue has to do two jobs on a near-black page and cannot do both
+    with one value. As a button fill it carries --primary-foreground, which is
+    near-white, so it has to be dark: white clears 4.5:1 only at lightness 52
+    or below. As link text it sits on the page itself, so it has to be light:
+    it clears 4.5:1 on the background only at 58 or above. At the shipped 55 it
+    was 4.11:1 under the button label and 4.29:1 as the navbar brand, so every
+    primary button and every primary link on the site was just under AA in the
+    default theme. A search over hue 200 to 230, saturation 50 to 100 and
+    lightness 35 to 75 returns no value that satisfies both, so the two jobs
+    get two tokens: 4.86:1 on the button, 5.46:1 as text.
+  */
+  --primary-text: 217 91% 62%;
+
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: 9;
@@ -726,7 +769,7 @@ html.lenis-smooth {
   --popover: 210 5% 14%;
   --popover-foreground: 210 5% 92%;
   --popover-border: 210 5% 18%;
-  --primary: 217 91% 55%;
+  --primary: 217 91% 50%;
   --primary-foreground: 210 5% 98%;
   --secondary: 210 8% 18%;
   --secondary-foreground: 210 5% 92%;
@@ -1307,4 +1350,24 @@ html.lenis-smooth {
   ::view-transition-new(root) {
     animation: none;
   }
+}
+
+/*
+  Route text-primary to the text value in the dark theme.
+
+  Tailwind derives .text-primary and .bg-primary from one colour key, so a
+  component asking for the brand blue as text and one asking for it as a fill
+  get the same value. On a near-black page those two want opposite lightnesses
+  and no single value satisfies both (see the note beside --primary-text), so
+  the split happens here rather than at forty-one call sites. Written after
+  the utilities so it wins on order as well as specificity, and it covers the
+  state variants, which is what we want: a link that hovers to the brand blue
+  should hover to the readable one.
+*/
+.dark .text-primary,
+.dark .hover\:text-primary:hover,
+.dark .group:hover .group-hover\:text-primary,
+.dark .focus\:text-primary:focus,
+.dark .focus-visible\:text-primary:focus-visible {
+  color: hsl(var(--primary-text));
 }

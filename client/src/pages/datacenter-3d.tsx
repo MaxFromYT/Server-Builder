@@ -579,7 +579,24 @@ export function DataCenter3D({
   return (
     <div
       ref={sceneRef}
-      className="relative w-full h-full min-h-[520px] overflow-hidden bg-transparent"
+      /*
+        `dark` is deliberate rather than inherited. Every piece of chrome in
+        this console is a hardcoded dark surface, from the control dock's
+        bg-black/85 down, because it floats over a black 3D canvas and there
+        is no light version of it. The one exception was GameHeader, which
+        asks for bg-card and text-muted-foreground: in the light theme that
+        gave a pale bar with dark grey text sitting on top of the scene, at
+        1.1:1. Pinning the token set here means the shadcn components inside
+        resolve to the same dark palette everything else already assumes.
+
+        text-foreground has to be restated here rather than left to inherit.
+        `color` inherits as a resolved colour, not as the var reference that
+        produced it, so the page above this one having set text-foreground
+        from the light palette hands down a near-black that redefining the
+        token underneath cannot undo. Setting it again inside the `dark`
+        scope resolves it against the dark palette.
+      */
+      className="dark relative h-full min-h-[520px] w-full overflow-hidden bg-transparent text-foreground"
       data-tour="scene"
     >
       {showInstantShell && (

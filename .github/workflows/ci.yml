@@ -122,6 +122,13 @@ jobs:
       - name: Reveal thresholds
         run: node scripts-ci/check-inview-clamp.mjs
 
+      # CSS drops an invalid declaration silently, so a custom property that
+      # was never defined just means the thing it was meant to paint is not
+      # painted, with nothing anywhere to say so. --brand-void shipped that
+      # way in seven places. Source-only, so it runs before the build.
+      - name: Custom properties exist
+        run: node scripts-ci/check-css-tokens.mjs
+
       # vite build, then the prerenderer over 200+ posts, then the server
       # bundle. The heap bump is for the prerender pass, which holds the whole
       # post index and the rendered HTML for a batch at once.
