@@ -116,12 +116,13 @@ export function CinematicRackBuilder() {
 
   /*
     Restore in one pass once the catalogue is in, because both sources need
-    it: a link has to be checked against real slugs, and a saved build has to
-    be too, since the catalogue can be regenerated between visits.
+    it: a link has to be checked against the real catalogue, and a saved build
+    has to be too, since the catalogue can be regenerated between visits.
+    decodeBuild takes the whole device map rather than a set of slugs because
+    checking a placement means knowing how tall the device is.
   */
   useEffect(() => {
     if (!catalogue || placements.length > 0) return;
-    const known = new Set(rackDevices.map((d) => d.slug));
 
     const fromUrl = new URLSearchParams(window.location.search).get("b");
     const saved = (() => {
@@ -132,7 +133,7 @@ export function CinematicRackBuilder() {
       }
     })();
 
-    const restored = (fromUrl && decodeBuild(fromUrl, known)) || (saved && decodeBuild(saved, known));
+    const restored = (fromUrl && decodeBuild(fromUrl, byslug)) || (saved && decodeBuild(saved, byslug));
     if (restored && restored.placements.length > 0) {
       setFrame(restored.frame);
       setPlacements(restored.placements);
@@ -140,14 +141,14 @@ export function CinematicRackBuilder() {
       return;
     }
 
-    const starter = STARTER.filter(([slug]) => known.has(slug)).map(([slug, at], i) => ({
+    const starter = STARTER.filter(([slug]) => byslug.has(slug)).map(([slug, at], i) => ({
       id: i + 1,
       slug,
       at,
     }));
     setPlacements(starter);
     setNextId(starter.length + 1);
-  }, [catalogue, rackDevices, placements.length]);
+  }, [catalogue, byslug, placements.length]);
 
   /* Save on every change, so a reload never loses a build. */
   useEffect(() => {

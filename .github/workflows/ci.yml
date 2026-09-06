@@ -129,6 +129,16 @@ jobs:
       - name: Custom properties exist
         run: node scripts-ci/check-css-tokens.mjs
 
+      # The rack builder refuses to stack two devices in one unit, and says so
+      # on the page. Its decoder did not: ?b= is readable and editable by
+      # design, and a hand-edited link could hang a 3U off the bottom of a 12U
+      # frame or put two devices in one unit, both of which then drew. Runs
+      # the real decoder over generated links rather than reading the source,
+      # because the property is about what it returns rather than what it
+      # looks like. Source-only, so it runs before the build.
+      - name: Shared rack builds obey the placement rule
+        run: npx tsx scripts-ci/check-rack-decode.ts
+
       # vite build, then the prerenderer over 200+ posts, then the server
       # bundle. The heap bump is for the prerender pass, which holds the whole
       # post index and the rendered HTML for a batch at once.
