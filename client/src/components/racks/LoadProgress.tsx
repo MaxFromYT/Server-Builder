@@ -9,11 +9,16 @@
  * Sits over the canvas rather than inside it, so it is ordinary DOM that
  * renders before any WebGL context exists and cannot itself be waiting on
  * the thing it is reporting.
+ *
+ * It counts files rather than models, and the label says so. A glTF carries
+ * its textures inside it, and the loading manager tracks each decoded image
+ * as its own item, so a ten device rack legitimately reports forty six
+ * items. Calling those "models" made a normal count look like a fault.
  */
 
 import { useProgress } from "@react-three/drei";
 
-export function LoadProgress({ label = "models" }: { label?: string }) {
+export function LoadProgress({ label = "files" }: { label?: string }) {
   const { active, progress, loaded, total } = useProgress();
   if (!active) return null;
 

@@ -14,6 +14,7 @@
  */
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useLoadWindow } from "./useLoadWindow";
 import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { StudioEnvironment } from "./StudioEnvironment";
@@ -102,10 +103,13 @@ function MountedDevice({
   device,
   onPick,
   dimmed,
+  onReady,
 }: {
   device: WiredDevice;
   onPick: (label: string | null) => void;
   dimmed: boolean;
+  /* Called once the model has resolved, so the next one may start. */
+  onReady?: () => void;
 }) {
   const { gl } = useThree();
   const url = device.own
@@ -155,6 +159,10 @@ function MountedDevice({
     const size = box.getSize(new THREE.Vector3());
     return Math.abs(size.x - PANEL_W) <= Math.abs(size.z - PANEL_W) ? 0 : -Math.PI / 2;
   }, [gltf, device.own]);
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   /** Our own generators emit Z-up geometry, so it has to be laid back. */
   const pitch = device.own ? -Math.PI / 2 : 0;
@@ -370,6 +378,7 @@ export function WiredRackScene({ onPick }: { onPick?: (label: string | null) => 
   };
   const height = WIRED_RACK_UNITS * U;
   const controls = useRef(null);
+  const { visible, markReady, ready } = useLoadWindow(WIRED_DEVICES.length);
 
   return (
     <Canvas
@@ -404,15 +413,26 @@ export function WiredRackScene({ onPick }: { onPick?: (label: string | null) => 
           a slab of exactly the volume it will occupy, so the rack fills in
           rather than flicking from empty to complete.
         */}
-        {WIRED_DEVICES.map((d, i) => (
-          <Suspense key={`${d.slug}-${i}`} fallback={<DeviceSlab device={d} />}>
-            <MountedDevice
-              device={d}
-              onPick={pick}
-              dimmed={picked !== null && picked !== d.label}
-            />
-          </Suspense>
-        ))}
+        {WIRED_DEVICES.map((d, i) => {
+          const key = `${d.slug}-${i}`;
+          /*
+            Past the window this is the slab and nothing else, so no fetch
+            and no decode is started for it yet. That is the whole point:
+            the browser is never holding more image decodes than it can
+            finish, which is what was stranding them on a phone.
+          */
+          if (i >= visible) return <DeviceSlab key={key} device={d} />;
+          return (
+            <Suspense key={key} fallback={<DeviceSlab device={d} />}>
+              <MountedDevice
+                device={d}
+                onPick={pick}
+                dimmed={picked !== null && picked !== d.label}
+                onReady={() => markReady(key)}
+              />
+            </Suspense>
+          );
+        })}
         {/*
           Leads last, and behind their own boundary, because they are drawn
           between port positions that come from the build definition rather

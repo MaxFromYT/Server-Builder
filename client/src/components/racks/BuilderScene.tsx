@@ -16,7 +16,7 @@
  * one from a bounding box would put leads in places there are no holes.
  */
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -26,6 +26,7 @@ import { U } from "@/components/cinematic/rack3d/rackConfig";
 import { FRAME_FOOT, OpenRackFrame } from "./OpenRackFrame";
 import { StudioEnvironment } from "./StudioEnvironment";
 import { unitsOf, type CatalogueDevice, type Placement } from "@/lib/rackBuilder";
+import { useLoadWindow } from "./useLoadWindow";
 
 /** Ubiquiti face plates are 442.4mm across; the frame's opening is wider. */
 const PANEL_W = 0.4424;
@@ -55,6 +56,7 @@ function MountedDevice({
   selected,
   dimmed,
   onPick,
+  onReady,
 }: {
   device: CatalogueDevice;
   placement: Placement;
@@ -62,6 +64,8 @@ function MountedDevice({
   selected: boolean;
   dimmed: boolean;
   onPick: (id: number | null) => void;
+  /* Called once the model has resolved, so the next one may start. */
+  onReady?: () => void;
 }) {
   const gltf = useVendorModel(device.model);
 
@@ -130,6 +134,10 @@ function MountedDevice({
     const c = box.getCenter(new THREE.Vector3());
     return new THREE.Vector3(-c.x, -box.min.y, -box.max.z);
   }, [gltf, yaw, pitch]);
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   const fromBottom = frame - placement.at - unitsOf(device);
   const y = FRAME_FOOT + fromBottom * U;
@@ -237,6 +245,8 @@ export function BuilderScene({
     the world origin by lifting it half its own height, which is also what
     the orbit target then points at.
   */
+  const { visible, markReady } = useLoadWindow(placements.length);
+
   const height = frame * U;
   /*
     Pull back far enough to see the whole frame including its feet, with a
@@ -270,9 +280,18 @@ export function BuilderScene({
       <group position={[0, -height / 2 - FRAME_FOOT, 0]}>
         <OpenRackFrame units={frame} depth={DEPTH} style="white" />
         <EmptyUnits used={used} frame={frame} />
-        {placements.map((p) => {
+        {placements.map((p, i) => {
           const d = byslug.get(p.slug);
           if (!d) return null;
+          /*
+            Outside the window this is the slab alone, so nothing is fetched
+            or decoded for it yet. A build of twenty devices otherwise starts
+            twenty downloads and sixty image decodes in one tick, which is
+            what strands them on a phone.
+          */
+          if (i >= visible) {
+            return <LoadingSlab key={p.id} at={p.at} height={unitsOf(d)} frame={frame} />;
+          }
           return (
             <Suspense
               key={p.id}
@@ -285,6 +304,7 @@ export function BuilderScene({
                 selected={selected === p.id}
                 dimmed={selected !== null && selected !== p.id}
                 onPick={onPick}
+                onReady={() => markReady(String(p.id))}
               />
             </Suspense>
           );
