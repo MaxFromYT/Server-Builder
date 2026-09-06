@@ -317,6 +317,25 @@ for (const slug of new Set(DATASET.devices.map((d) => d.rack))) {
     if (seen.has(d.id)) fail(`${slug}: two devices share the id "${d.id}", so only the first can ever be selected`);
     seen.add(d.id);
   }
+
+  /*
+    A rack with a UPS and no PDU is a rack nobody could plug in.
+
+    Not a style rule. A rack UPS has a handful of outlets on its back, four
+    or eight, and every rack here has more powered devices than that, so a
+    frame holding one and no strip is a drawing of something that does not
+    work. Five racks were in exactly that state, and the reason is worth
+    knowing: a PDU is the least interesting thing in a rack, so it is the
+    thing that gets left out of a device list and never missed.
+  */
+  const families = new Set(rows.map((d) => d.family));
+  const powered = rows.filter((d) => !["blank", "patch", "pdu", "ups"].includes(d.family));
+  if (families.has("ups") && !families.has("pdu") && powered.length > 2) {
+    fail(
+      `${slug}: ${powered.length} powered devices and a UPS, but no PDU.` +
+        ` A rack UPS has a handful of outlets on its back, so this is a rack nobody could plug in.`,
+    );
+  }
 }
 
 if (problems.length) {
