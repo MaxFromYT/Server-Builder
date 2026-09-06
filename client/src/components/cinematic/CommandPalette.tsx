@@ -142,6 +142,7 @@ export function CommandPalette() {
   const [racks, setRacks] = useState<RackDefinition[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   /* Where focus was, so closing puts it back rather than on the body. */
   const returnTo = useRef<HTMLElement | null>(null);
 
@@ -326,6 +327,36 @@ export function CommandPalette() {
     }
   };
 
+  /*
+    Keep Tab inside the dialog.
+
+    aria-modal="true" is a promise to a screen reader that the rest of the
+    page is inert, and it was only half true: tabbing forward stayed inside
+    because the results list is long, but one Shift+Tab out of the search box
+    landed on the "Get in touch" button behind the overlay, which the reader
+    cannot see and did not ask for. A modal that leaks backwards is worse
+    than one that does not claim to be modal at all.
+  */
+  const trapTab = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const root = dialogRef.current;
+    if (!root) return;
+    const stops = [...root.querySelectorAll<HTMLElement>(
+      'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])',
+    )].filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+    if (stops.length === 0) return;
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey && (active === first || !root.contains(active))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   /* Keep the highlighted row on screen when arrowing past the fold. */
   useEffect(() => {
     const el = listRef.current?.children[cursor] as HTMLElement | undefined;
@@ -344,10 +375,12 @@ export function CommandPalette() {
     >
       <div className="absolute inset-0 bg-[hsl(var(--brand-obsidian)/0.82)] backdrop-blur-sm" aria-hidden />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Search this site"
         data-testid="command-palette"
+        onKeyDown={trapTab}
         className="relative w-full max-w-2xl overflow-hidden rounded-xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite))] shadow-2xl"
       >
         <div className="flex items-center gap-3 border-b border-[hsl(var(--brand-iron))] px-4">
