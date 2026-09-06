@@ -353,6 +353,30 @@
   font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
   font-size: 1.05rem;
   line-height: 1.75;
+
+  /*
+    A word with nowhere to break may break anyway.
+
+    The reference list at the foot of a post is bare URLs, and a URL is one
+    word as far as line breaking is concerned. On a 375px screen the long
+    ones did not wrap: a single Cisco documentation link measured 1052px of
+    line box inside a 303px list item, ran past the right edge, and was
+    clipped rather than scrollable, so the end of it could not be read or
+    reached. Twelve of the fourteen most-affected posts did it. Some URLs
+    survived only because they happened to contain a hyphen.
+
+    `anywhere` rather than `break-word` for the reason the contact cards
+    needed it: both break the overflowing word, but only `anywhere` also
+    lowers the box's min-content size, so the column cannot be dragged wide
+    by a word it is meant to be breaking. Neither touches a word that fits,
+    so ordinary sentences are unaffected.
+
+    Code blocks are not affected either. `pre` keeps the user agent's
+    `white-space: pre`, which offers no soft wrap opportunities at all, so
+    overflow-wrap has nothing to act on there and a long command still
+    scrolls inside its own box.
+  */
+  overflow-wrap: anywhere;
 }
 
 .cinematic .cinematic-prose > * + * {

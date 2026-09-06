@@ -360,7 +360,19 @@ export function CinematicBlogPost() {
           />
 
           {post.coverCredit && (
-            <p className="absolute bottom-2 right-3 z-10 max-w-[70vw] truncate font-mono-tight text-[9px] uppercase tracking-[0.18em] text-[hsl(var(--brand-ash))] md:right-6 md:text-[10px]">
+            /*
+              Wraps rather than truncates, because the licence is the end of
+              the string and truncation always ate it. "Photo nevil zaveri
+              (thank you for 20+M views:) · CC BY 2.0" needed 408px in a
+              263px box at 375px wide, so a phone showed the photographer and
+              no licence at all, on a CC BY image. Seventeen of the 145
+              credited posts were long enough to lose it.
+
+              Three lines is the ceiling: the title block above reserves 64px
+              of bottom padding, and three lines of this size come to about
+              36px, so the credit cannot grow into the headline.
+            */
+            <p className="absolute bottom-2 right-3 z-10 line-clamp-3 max-w-[80vw] text-right font-mono-tight text-[9px] uppercase leading-[1.35] tracking-[0.18em] text-[hsl(var(--brand-ash))] md:right-6 md:max-w-[60vw] md:text-[10px]">
               Photo{" "}
               <a
                 href={post.coverCredit.sourceUrl}
