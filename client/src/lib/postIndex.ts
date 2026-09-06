@@ -3,7 +3,7 @@
  *
  * Bodies live one file per post in client/src/content/posts and load on
  * demand, so a reader downloads the article they asked for instead of all
- * 242 of them. Regenerate with script/generatePostIndex.ts.
+ * 244 of them. Regenerate with script/generatePostIndex.ts.
  */
 
 export interface CoverCredit {
@@ -40,6 +40,24 @@ export interface PostMeta {
 }
 
 export const postIndex: PostMeta[] = [
+  {
+    slug: "nist-password-rules-changed",
+    title: "Fifteen Characters, And No Complexity Rules At All",
+    date: "2026-09-06",
+    tags: ["security","cybersecurity","operations"],
+    excerpt: "NIST SP 800-63B revision 4 is final, and most of the password policy your organisation runs on is now forbidden in normative language. Fifteen characters, no composition rules, no periodic rotation, no security questions, and a breach blocklist instead.",
+    coverImage: "/images/blog/nist-password-rules-changed.jpg",
+    wordCount: 1255,
+  },
+  {
+    slug: "what-an-optic-tells-the-switch",
+    title: "What An Optic Tells The Switch About Itself",
+    date: "2026-09-05",
+    tags: ["networking","hardware","operations","homelab"],
+    excerpt: "Every SFP carries a live instrument on a second I2C address: temperature, voltage, laser bias, and the light going out and coming in. Receive power is the most useful number in a fibre plant and almost nobody reads it until something breaks.",
+    coverImage: "/images/blog/what-an-optic-tells-the-switch.jpg",
+    wordCount: 1381,
+  },
   {
     slug: "certificate-lifetimes-are-200-days-now",
     title: "Certificates Are 200 Days Now, And 47 By 2029",
@@ -2397,7 +2415,7 @@ export const postIndex: PostMeta[] = [
     tags: ["security","cybersecurity","operations"],
     excerpt: "A shared secret, a clock, and an HMAC. Six digits comes from a truncation rule in RFC 4226, the drift window is a real cost, and none of it stops a phishing proxy.",
     coverImage: "/images/blog/how-totp-codes-actually-work.jpg",
-    wordCount: 1339,
+    wordCount: 1341,
   },
   {
     slug: "init-scripts-to-systemd-units",
@@ -2417,10 +2435,10 @@ export const postIndex: PostMeta[] = [
  * Pages quote these, and a number that goes stale on a page about
  * not making stale claims would be the worst possible place for one.
  */
-export const CITATION_COUNT = 898;
+export const CITATION_COUNT = 906;
 
 /** Unique cover image attribution and licence URLs. */
 export const ATTRIBUTION_URL_COUNT = 159;
 
 /** Everything script/checkPostLinks.mjs requests: the two sets above, deduplicated. */
-export const CHECKED_URL_COUNT = 1057;
+export const CHECKED_URL_COUNT = 1065;

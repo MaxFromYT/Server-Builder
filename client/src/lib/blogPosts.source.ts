@@ -50,6 +50,377 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "nist-password-rules-changed",
+    title: "Fifteen Characters, And No Complexity Rules At All",
+    date: "2026-09-06",
+    tags: ["security", "cybersecurity", "operations"],
+    excerpt:
+      "NIST SP 800-63B revision 4 is final, and most of the password policy your organisation runs on is now forbidden in normative language. Fifteen characters, no composition rules, no periodic rotation, no security questions, and a breach blocklist instead.",
+    coverImage: "/images/blog/nist-password-rules-changed.jpg",
+    content: `
+## Fifteen characters, and no complexity rules at all
+
+The password advice most organisations run on is a fossil. Eight characters,
+one uppercase, one number, one symbol, changed every ninety days. It has been
+wrong for years, and as of the fourth revision of NIST SP 800-63B it is not
+merely discouraged, most of it is forbidden in normative language.
+
+The revision is final. It was published in August 2025 and it supersedes the
+document nearly every security policy in the country still quotes.
+
+Here is what it actually requires, in its own words.
+
+## The length floor moved, and it moved a long way
+
+> Verifiers and CSPs **SHALL** require passwords that are used as a single
+> factor authentication mechanism to be a minimum of 15 characters in length.
+>
+> SP 800-63B, section 3.1.1.2
+
+Fifteen. Not eight. Eight survives only behind a second factor:
+
+> Verifiers and CSPs **MAY** allow passwords that are only used as part of
+> multi-factor authentication processes to be shorter but **SHALL** require
+> them to be a minimum of eight characters.
+
+And there is a ceiling requirement in the other direction, which exists
+because systems that silently truncate are a real and common failure:
+
+> Verifiers and CSPs **SHOULD** permit a maximum password length of at least
+> 64 characters.
+
+If your login form rejects a 40 character passphrase, that is now
+specifically the thing the standard is telling you not to do.
+
+## Four things you are now told not to do
+
+Each of these is a SHALL NOT, which in this vocabulary is a prohibition, not
+a suggestion.
+
+**Composition rules are out.**
+
+> Verifiers and CSPs **SHALL NOT** impose other composition rules (e.g.,
+> requiring mixtures of different character types) for passwords.
+
+The reasoning is behavioural rather than mathematical. Demanding an uppercase
+and a digit and a symbol does not produce high entropy passwords, it produces
+\`Password1!\`, because people satisfy the rule in the cheapest way available.
+The rule shrinks the search space an attacker has to cover rather than
+expanding it.
+
+**Periodic rotation is out.**
+
+> Verifiers and CSPs **SHALL NOT** require subscribers to change passwords
+> periodically. However, verifiers **SHALL** force a change if there is
+> evidence that the authenticator has been compromised.
+
+Same reasoning. Ninety day rotation produces \`Summer2026!\` followed by
+\`Autumn2026!\`, and it means the password in use is one a person picked in a
+hurry while irritated. Change on evidence of compromise, which is when
+changing it actually accomplishes something.
+
+**Hints are out.**
+
+> Verifiers and CSPs **SHALL NOT** permit the subscriber to store a hint
+> (e.g., a reminder of how the password was created) that is accessible to an
+> unauthenticated claimant.
+
+A hint readable before authentication is a clue handed to whoever asks.
+
+**Knowledge-based authentication is out.**
+
+> Verifiers and CSPs **SHALL NOT** prompt subscribers to use knowledge-based
+> authentication (KBA).
+
+Mother's maiden name, first school, first pet. These are not secrets. They are
+facts, most of them are public, and the ones that are not are guessable from a
+social media profile. Every one of them is also a permanent credential,
+because you cannot change where you went to school.
+
+## The one thing you are told to add
+
+> [Verifiers] **SHALL** compare the prospective secret against a blocklist
+> that contains known commonly used, expected, or compromised passwords.
+
+This is the part that replaces composition rules, and it is a strictly better
+mechanism, because it targets the actual failure. A complexity rule is a
+guess about what makes a password hard to crack. A blocklist is a measurement
+of what attackers actually try.
+
+The practical version is a list of the passwords that have appeared in
+breaches, checked at the moment a password is set. If it is in the list, it
+is already in a wordlist somewhere, and it does not matter how many character
+classes it contains.
+
+Note what the requirement does *not* say: it does not say check it on every
+login, and it does not say check it against an unbounded list. Checking at
+the point of setting is where the user can do something about it.
+
+## SMS is restricted rather than banned
+
+The previous revision's treatment of SMS was famously equivocal. This one is
+clearer about the actual threat:
+
+> Verifiers **SHOULD** consider risk indicators (e.g., device swap, SIM
+> change, number porting, other abnormal behavior) before using the PSTN to
+> deliver an out-of-band authentication secret.
+>
+> section 3.1.3.3
+
+Read the list. Device swap, SIM change, number porting. Those are the steps
+of a SIM swap attack, described in order. The standard is not saying SMS is
+weak in the abstract, it is naming the specific sequence that defeats it and
+telling you to watch for it.
+
+The honest summary is that SMS is better than a password alone and worse than
+anything that binds to the origin. If it is what you have, keep it, and put
+the risk indicators above in front of it.
+
+## What this means for a policy you actually own
+
+If you run authentication for anything, the changes are concrete:
+
+1. **Raise the minimum to 15** where a password stands alone, and allow 8
+   only where a genuine second factor is present.
+2. **Accept at least 64 characters**, and check that nothing in your stack
+   truncates. Test it with a 64 character passphrase, not by reading the code.
+3. **Delete the composition rules.** All of them.
+4. **Delete the expiry policy**, and replace it with a forced reset on
+   evidence of compromise, which means you need to be able to detect that.
+5. **Add a breach blocklist check** at the point a password is set.
+6. **Remove security questions** wherever they are still a recovery path,
+   which is usually where nobody has looked in five years.
+
+Points 3 and 4 are the ones that meet resistance, because removing a control
+feels like weakening security. It is worth having the argument with the
+document open: these are not relaxations, they are corrections, and the
+standard's own reasoning is that the old rules made passwords worse.
+
+## And the thing none of this fixes
+
+A perfect password, 64 characters of high entropy, unique, never reused, in a
+manager, is still typed into whatever page asked for it. If that page is a
+proxy in front of the real one, the password is gone and so is the six digit
+code that followed it.
+
+Length requirements are a defence against guessing, and guessing is not how
+accounts are taken any more. Phishing is. The only authenticator that
+survives a live phishing proxy is one that binds to the origin, and that means
+WebAuthn: the browser will not release a credential registered for your bank
+to a site that is not your bank, and it does not matter how convincing the
+page is, because the check is on the domain rather than on the human.
+
+So: fifteen characters and a blocklist for everything, and hardware backed
+WebAuthn for anything that matters. The first is the standard catching up
+with what we already knew. The second is the part the standard cannot make
+you do.
+
+## References
+
+- [NIST SP 800-63B revision 4: Digital Identity Guidelines, Authentication and Authenticator Management](https://pages.nist.gov/800-63-4/sp800-63b.html)
+- [NIST SP 800-63 revision 4, the full suite](https://pages.nist.gov/800-63-4/)
+- [NIST SP 800-63B-4, the PDF of record](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63b-4.pdf)
+- [W3C Web Authentication Level 3](https://www.w3.org/TR/webauthn-3/)
+- [RFC 2119: Key words for use in RFCs to Indicate Requirement Levels](https://www.rfc-editor.org/rfc/rfc2119.html)
+- [RFC 6238: TOTP, Time-Based One-Time Password Algorithm](https://www.rfc-editor.org/rfc/rfc6238.html)
+`,
+  },
+  {
+    slug: "what-an-optic-tells-the-switch",
+    title: "What An Optic Tells The Switch About Itself",
+    date: "2026-09-05",
+    tags: ["networking", "hardware", "operations", "homelab"],
+    excerpt:
+      "Every SFP carries a live instrument on a second I2C address: temperature, voltage, laser bias, and the light going out and coming in. Receive power is the most useful number in a fibre plant and almost nobody reads it until something breaks.",
+    coverImage: "/images/blog/what-an-optic-tells-the-switch.jpg",
+    content: `
+## The switch is reading the optic's mind
+
+Plug an [SFP+](/blog/sfp-transceivers-explained) into a switch and it knows, within a second, the module's vendor,
+its part number, its serial number, the wavelength it transmits on, how far it
+is rated to reach, how hot it currently is, what voltage its rail is sitting
+at, how much current is going through the laser, how much light is leaving,
+and how much light is arriving.
+
+None of that came over the network. It came over two wires, from an EEPROM
+the size of a grain of rice inside the module, and the whole arrangement is
+described in one document: SFF-8472.
+
+The reason this is worth knowing is that the last figure in the list, how much
+light is arriving, is the single most useful number in a fibre plant, and
+almost nobody looks at it until something has already broken.
+
+## Two addresses on one bus
+
+The module hangs off a two-wire bus, and it answers at two addresses.
+
+The first, A0h, is the identity page. Vendor, part number, serial, date code,
+the transceiver's compliance codes, the nominal bit rate, the wavelength, the
+supported link lengths per fibre type. It is static, written at the factory,
+and it is what a switch reads to decide whether it likes the optic.
+
+The second is where the interesting part lives. SFF-8472 puts it at
+
+> address 1010001X, commonly referred to as A2h, where X can be 1 for a read
+> operation
+
+and that page is not static. It is a live instrument. Byte 96 onward, in the
+A2h page, holds five measurements the module takes of itself, each updated
+continuously:
+
+| Offset | What | Raw unit |
+| --- | --- | --- |
+| 96 | Module temperature | 1/256 °C, signed |
+| 98 | Supply voltage | 100 µV |
+| 100 | Laser bias current | 2 µA |
+| 102 | Transmit optical power | 0.1 µW |
+| 104 | Receive optical power | 0.1 µW |
+
+Those raw units are not something to take on faith. They are exactly the
+divisors \`ethtool\` applies, and you can read them in its source:
+
+\`\`\`c
+#define PRINT_TEMP(string, temp)  ... (double)(temp / 256.)          /* °C  */
+#define PRINT_VCC(string, v)      ... (double)(v / 10000.)           /* V   */
+#define PRINT_BIAS(string, b)     ... (double)(b / 500.)             /* mA  */
+#define PRINT_xX_PWR(string, var) ... (double)((var) / 10000.)       /* mW  */
+\`\`\`
+
+Read that last one carefully. A sixteen bit unsigned value divided by ten
+thousand to get milliwatts means the smallest step is 0.1 microwatts and the
+top of the range is about 6.5 milliwatts. Optical power is reported linearly,
+in watts, and everybody who works with it thinks in dBm, which is why the
+conversion appears in every tool that prints it.
+
+## Why receive power is the number that matters
+
+Every optical link has a budget. The transmitter puts out some amount of
+light, the fibre and every connector and splice in between takes some away,
+and the receiver needs a minimum amount left to recover the signal. The
+difference between what arrives and that minimum is your margin.
+
+A link with two dB of margin and a link with twelve dB of margin both show as
+up. They both pass traffic. They both look identical in every dashboard that
+reports interface state, because interface state is a boolean and margin is
+not.
+
+The two dB link is the one that fails when somebody leans on a patch panel,
+or when a connector picks up dust, or when the run warms up in summer. It was
+always going to fail, and the module has been telling you the whole time, in
+a page most monitoring never reads.
+
+\`\`\`console
+$ ethtool -m enp3s0f0 | grep -E 'power|Temp|bias'
+        Laser bias current                        : 6.520 mA
+        Laser output power                        : 0.5012 mW / -3.00 dBm
+        Receiver signal average optical power     : 0.3311 mW / -4.80 dBm
+        Module temperature                        : 41.20 degrees C
+\`\`\`
+
+Take that receive figure, subtract the receiver's rated sensitivity from the
+A0h page or the datasheet, and you have the margin in decibels. Do it on the
+day you commission the link and write it down, because a single reading tells
+you almost nothing and the same reading six months later tells you everything.
+
+## The alarms the module raises on its own
+
+The module also carries thresholds, high and low, alarm and warning, for every
+one of those five measurements, and it sets a flag when a value crosses one.
+That is forty separate conditions in two bytes:
+
+\`\`\`c
+{ "Laser bias current high alarm",   SFF_A2_ALRM_FLG, (1 << 3) },
+{ "Module temperature high warning", SFF_A2_WARN_FLG, (1 << 7) },
+{ "Laser rx power low alarm",        SFF_A2_ALRM_FLG + 1, (1 << 6) },
+\`\`\`
+
+The thresholds come from the manufacturer, in the module, and they are the
+manufacturer's own opinion about when their part is unhappy. That makes them
+better than a threshold you picked, and it makes "any alarm flag set on any
+optic" a genuinely useful thing to alert on, because it needs no tuning and
+no baseline.
+
+Rising laser bias current at constant output power is the classic one. It
+means the laser is being driven harder to produce the same light, which is
+what a laser does as it ages. It is one of the few pieces of hardware in a
+rack that will tell you it is dying before it dies.
+
+## Calibration, and why two identical optics disagree
+
+There are two flavours of this, and byte 92 of the A0h page says which one
+you have.
+
+**Internally calibrated** modules do the arithmetic themselves and hand you
+values already in the units above. Most modern optics are this.
+
+**Externally calibrated** modules hand you raw ADC counts and a table of slope
+and offset constants, and the host is expected to apply them. \`ethtool\` does:
+
+\`\`\`c
+/* Calibration slope is a number between 0.0 included and 256.0 excluded. */
+#define A2_OFFSET_TO_SLP(offset) \\
+    (id[SFF_A2_BASE + (offset)] + id[SFF_A2_BASE + (offset) + 1] / 256.)
+\`\`\`
+
+Receive power is the exception even then: its calibration is a fourth order
+polynomial with five IEEE-754 coefficients, because a photodiode's response is
+not a straight line.
+
+If you are reading this page yourself rather than through a tool, and you skip
+the calibration bit, an externally calibrated module will give you numbers
+that look plausible and are wrong. That is worse than an error.
+
+## Reading it, on the platforms you actually have
+
+**Linux**, and the reason every figure above is checkable:
+
+\`\`\`console
+$ ethtool -m enp3s0f0            # decoded
+$ ethtool -m enp3s0f0 raw on > optic.bin   # both pages, 512 bytes
+\`\`\`
+
+**[Cisco IOS](/blog/cisco-ios-fundamentals)**: \`show interfaces transceiver detail\` gives you the same five
+values with the thresholds beside them.
+
+**Junos**: \`show interfaces diagnostics optics ge-0/0/0\`.
+
+**MikroTik**: \`/interface ethernet monitor sfp1\` reports the same page, and
+RouterOS is unusually willing to talk to third-party optics, which is a
+separate conversation.
+
+The point of listing them together is that they are all reading the same two
+bytes at the same offset in the same page of the same EEPROM. The vendor
+differences are entirely in the formatting.
+
+## What to actually do with this
+
+**Record receive power at commissioning.** One number per link, on the day it
+went in. Everything useful you can say later is a comparison against it.
+
+**Alert on the module's own flags, not on a threshold you invented.** They are
+per part, set by the people who built it, and they need no tuning.
+
+**Watch bias current against output power.** Rising bias with flat output is
+a laser aging out, and it is one of very few genuinely predictive signals in
+a rack.
+
+**Do not trust a single reading.** Temperature moves optical power. A reading
+taken at 08:00 in January and one taken at 15:00 in July are not the same
+measurement, and the module tells you its temperature precisely so you can
+account for that.
+
+## References
+
+- [SFF-8472: Management Interface for SFP+](https://www.snia.org/technology-communities/sff/specifications) (SNIA SFF specification library)
+- [ethtool source: sfpdiag.c, the SFF-8472 decoder](https://git.kernel.org/pub/scm/network/ethtool/ethtool.git/plain/sfpdiag.c)
+- [ethtool source: sff-common.h, the unit conversions quoted above](https://git.kernel.org/pub/scm/network/ethtool/ethtool.git/plain/sff-common.h)
+- [ethtool(8)](https://man7.org/linux/man-pages/man8/ethtool.8.html)
+- [Linux kernel networking documentation](https://www.kernel.org/doc/html/latest/networking/index.html)
+- [Cisco: show interfaces transceiver](https://www.cisco.com/c/en/us/td/docs/interfaces_modules/transceiver_modules/installation/note/78_15160.html)
+- [Juniper: monitoring optical interfaces](https://www.juniper.net/documentation/us/en/software/junos/interfaces-ethernet/index.html)
+`,
+  },
+  {
     slug: "certificate-lifetimes-are-200-days-now",
     title: "Certificates Are 200 Days Now, And 47 By 2029",
     date: "2026-09-06",
@@ -31485,7 +31856,7 @@ before choosing anything else.
 - [RFC 4226: HOTP, An HMAC-Based One-Time Password Algorithm](https://www.rfc-editor.org/rfc/rfc4226.html)
 - [RFC 2104: HMAC, Keyed-Hashing for Message Authentication](https://www.rfc-editor.org/rfc/rfc2104.html)
 - [RFC 4648: The Base16, Base32, and Base64 Data Encodings](https://www.rfc-editor.org/rfc/rfc4648.html)
-- [NIST SP 800-63B: Digital Identity Guidelines, Authentication](https://pages.nist.gov/800-63-3/sp800-63b.html)
+- [NIST SP 800-63B revision 4: Digital Identity Guidelines, Authentication](https://pages.nist.gov/800-63-4/sp800-63b.html)
 - [W3C Web Authentication Level 3](https://www.w3.org/TR/webauthn-3/)
 - [oathtool(1)](https://man.archlinux.org/man/oathtool.1)
 `,
