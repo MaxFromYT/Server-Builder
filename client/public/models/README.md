@@ -9,7 +9,7 @@ meshes.
 | `unifi-hero-rack.glb` | `/racks/unifi-12u` | 646 KB | 117,068 | 162 |
 | `cisco-enterprise-42u.glb` | `/racks/cisco-enterprise-42u` | 1,112 KB | 253,282 | 343 |
 | `juniper-core-42u.glb` | `/racks/juniper-core-42u` | 1,022 KB | 239,852 | 292 |
-| `mikrotik-isp-24u.glb` | `/racks/mikrotik-isp-24u` | 655 KB | 147,338 | 193 |
+| `mikrotik-isp-24u.glb` | `/racks/mikrotik-isp-24u` | 939 KB | 216,560 | 277 |
 | `dell-compute-42u.glb` | `/racks/dell-compute-42u` | 535 KB | 100,618 | 219 |
 | `storage-42u.glb` | `/racks/storage-dense-42u` | 333 KB | 55,120 | 143 |
 
