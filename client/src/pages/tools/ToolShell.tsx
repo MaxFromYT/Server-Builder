@@ -37,7 +37,7 @@ function NoteParagraph({ para }: { para: NotePara }) {
         if (typeof span === "string") return <span key={i}>{span}</span>;
         if ("code" in span)
           return (
-            <code key={i} className="text-[hsl(var(--brand-cyan))]">
+            <code key={i} className="break-words text-[hsl(var(--brand-cyan))]">
               {span.code}
             </code>
           );

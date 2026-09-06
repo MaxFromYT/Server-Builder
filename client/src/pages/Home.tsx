@@ -224,7 +224,7 @@ export function Home() {
                 </Link>
               </div>
 
-              <div className="mt-6 flex items-center justify-center gap-5 lg:justify-start">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 lg:justify-start">
                 <a
                   href={siteConfig.social.instagram.url}
                   target="_blank"

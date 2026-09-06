@@ -181,6 +181,14 @@ jobs:
       - name: Catalogue counts in page prose
         run: node scripts-ci/check-catalogue-counts.mjs
 
+      # A table wider than a phone is either in its own scroller or it is
+      # clipped, and clipped means the right-hand columns are unreachable with
+      # nothing on screen to say so. Thirteen posts shipped that way. Reads the
+      # built HTML and the built CSS, so it cannot be satisfied by a rule the
+      # bundler drops.
+      - name: Wide content stays reachable
+        run: node scripts-ci/check-wide-content.mjs
+
       # Last because it reads both the source trees and the built HTML.
       - name: Em dashes
         run: node scripts-ci/check-em-dashes.mjs

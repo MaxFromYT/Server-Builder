@@ -70,9 +70,9 @@ export function Contact() {
             <div className="rounded-lg bg-accent p-3">
               <Instagram className="h-5 w-5 text-foreground" />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground">Instagram</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="[overflow-wrap:anywhere] text-sm text-muted-foreground">
                 {siteConfig.social.instagram.handle}
               </div>
             </div>
@@ -89,9 +89,9 @@ export function Contact() {
             <div className="rounded-lg bg-accent p-3">
               <Github className="h-5 w-5 text-foreground" />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground">GitHub</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="[overflow-wrap:anywhere] text-sm text-muted-foreground">
                 {siteConfig.social.github.handle}
               </div>
             </div>
@@ -106,9 +106,9 @@ export function Contact() {
             <div className="rounded-lg bg-accent p-3">
               <Mail className="h-5 w-5 text-foreground" />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground">Email</div>
-              <div className="text-sm text-muted-foreground">{siteConfig.email}</div>
+              <div className="[overflow-wrap:anywhere] text-sm text-muted-foreground">{siteConfig.email}</div>
             </div>
             <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
