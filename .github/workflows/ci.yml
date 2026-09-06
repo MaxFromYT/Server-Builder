@@ -178,6 +178,9 @@ jobs:
       - name: Rack models match their device lists
         run: node scripts-ci/check-rack-models.mjs
 
+      - name: Catalogue counts in page prose
+        run: node scripts-ci/check-catalogue-counts.mjs
+
       # Last because it reads both the source trees and the built HTML.
       - name: Em dashes
         run: node scripts-ci/check-em-dashes.mjs

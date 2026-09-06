@@ -259,10 +259,11 @@ export function CinematicRackBuilder() {
               Build a rack.
             </h1>
             <p className="mt-6 font-mono-tight text-sm leading-relaxed text-[hsl(var(--brand-bone-dim))]">
-              Fifty one rack mountable UniFi devices, in Ubiquiti's own geometry, and an empty
-              frame. Pick something and it lands in the highest free slot that fits it. A 2U will
-              not go into a 1U gap, because a 2U does not go into a 1U gap. What you build is
-              saved in your browser and can be shared as a link.
+              Seventy five rack mountable devices from six vendors, and an empty frame. Fifty
+              are Ubiquiti's own published geometry and the rest were modelled here from
+              photographs and dimensioned drawings. Pick something and it lands in the highest
+              free slot that fits it. A 2U will not go into a 1U gap, because a 2U does not go
+              into a 1U gap. What you build is saved in your browser and can be shared as a link.
             </p>
           </header>
 

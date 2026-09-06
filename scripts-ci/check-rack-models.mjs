@@ -284,16 +284,33 @@ for (const { file, module, groups, scenery } of heroModels()) {
 }
 
 /*
-  Two invariants that hold for every rack, model or not. A rack whose
-  contents add up to more than its frame is a drawing of something that
-  cannot be built, and two devices sharing an id means one of them can
-  never be selected, deep linked, or told apart in the dataset.
+  Three invariants that hold for every rack, model or not.
+
+  A rack whose contents add up to more than its frame is a drawing of
+  something that cannot be built. One that adds up to less has units the
+  elevation draws as nothing and the definition never mentions, which is a
+  different bug and was caught late: mikrotik-9u declared six units in a
+  nine unit frame, so its bottom three were open rack that no device, no
+  blanking panel and no error accounted for, and it turned out the rack had
+  simply never been given a PDU or a UPS. The equivalent check already
+  existed for racks with an authored 3D model and that is exactly why this
+  one slipped: it is the small racks, drawn only as elevations, that nobody
+  counts by hand.
+
+  And two devices sharing an id means one of them can never be selected,
+  deep linked, or told apart in the dataset.
 */
 for (const slug of new Set(DATASET.devices.map((d) => d.rack))) {
   const rows = DATASET.devices.filter((d) => d.rack === slug);
   const used = rows.reduce((n, d) => n + d.u, 0);
   if (used > rows[0].rackUnits) {
     fail(`${slug}: ${used}U of hardware in a ${rows[0].rackUnits}U frame, which is ${used - rows[0].rackUnits}U past the floor`);
+  }
+  if (used < rows[0].rackUnits) {
+    fail(
+      `${slug}: ${used}U declared in a ${rows[0].rackUnits}U frame, leaving ${rows[0].rackUnits - used}U` +
+        ` the elevation draws as open rack and nothing accounts for. Fit something, or cover it with a panel.`,
+    );
   }
   const seen = new Set();
   for (const d of rows) {

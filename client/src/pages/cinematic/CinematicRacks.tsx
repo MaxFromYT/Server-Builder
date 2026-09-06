@@ -181,8 +181,8 @@ export function CinematicRacks() {
       kicker: "Build your own",
       title: "The rack builder",
       blurb:
-        "Fifty one rack mountable UniFi devices and an empty frame. Pick hardware, stack it, and see what the build weighs. Saves in your browser and shares as a link.",
-      stats: ["51 devices", "6U to 42U", "shareable"],
+        "Seventy five rack mountable devices from six vendors and an empty frame. Pick hardware, stack it, and see what the build weighs. Saves in your browser and shares as a link.",
+      stats: ["75 devices", "6U to 42U", "shareable"],
       art: <BuilderMini />,
     },
     {
