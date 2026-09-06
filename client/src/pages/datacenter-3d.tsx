@@ -334,14 +334,24 @@ export function DataCenter3D({
       setIsUnlocked(true);
       return;
     }
-    const savedUnlock = localStorage.getItem("hyperscale_unlocked");
-    if (savedUnlock === "true") setIsUnlocked(true);
+    // Blocked site data throws here rather than returning null, and this is
+    // an effect, so the throw would take the whole console down to a blank
+    // page instead of costing one remembered unlock.
+    try {
+      if (localStorage.getItem("hyperscale_unlocked") === "true") setIsUnlocked(true);
+    } catch {
+      /* Locked again next visit. */
+    }
   }, [isStaticMode]);
 
   const handleUnlock = () => {
     if (isStaticMode) return;
     setIsUnlocked(true);
-    localStorage.setItem("hyperscale_unlocked", "true");
+    try {
+      localStorage.setItem("hyperscale_unlocked", "true");
+    } catch {
+      /* Unlocked for this visit only. */
+    }
   };
 
   const handleSelectRack = (rack: Rack | null) => {

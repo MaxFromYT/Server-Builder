@@ -22,6 +22,38 @@ interface ThemeProviderProps {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/*
+  Storage is reached through these two rather than directly.
+
+  A browser set to block site data does not hand back null, it throws
+  SecurityError on the property access itself. This provider wraps the whole
+  app and reads three keys during its first render, so one unguarded throw
+  took the entire site to a blank page: React had already replaced the
+  prerendered HTML by the time the error reached the root, and there is no
+  boundary above this to catch it. The content was legible until the moment
+  the app booted, and then it was gone.
+
+  Every other store here already wraps its access, five of them with a
+  comment saying why. This one did not.
+*/
+function readStored(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* The preference holds for this page view and is not remembered. */
+  }
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "dark",
@@ -29,29 +61,17 @@ export function ThemeProvider({
   fontScaleKey = "hyperscale-font-scale",
   highContrastKey = "hyperscale-high-contrast",
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(storageKey) as Theme;
-      return stored || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  const [theme, setTheme] = useState<Theme>(
+    () => (readStored(storageKey) as Theme) || defaultTheme,
+  );
   const [fontScale, setFontScaleState] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(fontScaleKey);
-      const parsed = stored ? Number.parseFloat(stored) : NaN;
-      if (!Number.isNaN(parsed)) {
-        return parsed;
-      }
-    }
-    return 1;
+    const stored = readStored(fontScaleKey);
+    const parsed = stored ? Number.parseFloat(stored) : NaN;
+    return Number.isNaN(parsed) ? 1 : parsed;
   });
-  const [highContrast, setHighContrast] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(highContrastKey) === "true";
-    }
-    return false;
-  });
+  const [highContrast, setHighContrast] = useState<boolean>(
+    () => readStored(highContrastKey) === "true",
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -59,9 +79,9 @@ export function ThemeProvider({
     root.classList.add(theme);
     root.classList.toggle("high-contrast", highContrast);
     root.style.setProperty("--font-scale", `${fontScale}`);
-    localStorage.setItem(storageKey, theme);
-    localStorage.setItem(fontScaleKey, `${fontScale}`);
-    localStorage.setItem(highContrastKey, String(highContrast));
+    writeStored(storageKey, theme);
+    writeStored(fontScaleKey, `${fontScale}`);
+    writeStored(highContrastKey, String(highContrast));
   }, [theme, storageKey, fontScaleKey, highContrastKey, fontScale, highContrast]);
 
   const toggleTheme = () => {

@@ -139,6 +139,16 @@ jobs:
       - name: Shared rack builds obey the placement rule
         run: npx tsx scripts-ci/check-rack-decode.ts
 
+      # Storage does not fail by returning null. Where a browser blocks site
+      # data, touching window.localStorage throws, so an unguarded read in a
+      # provider that wraps the whole app does not lose a preference: it
+      # throws through React and leaves a blank page, prerendered content
+      # included. That is what ThemeProvider did. Five files already wrapped
+      # every access and four said why in a comment; eleven accesses in four
+      # others did not. Source-only, so it runs before the build.
+      - name: Storage access is wrapped
+        run: node scripts-ci/check-storage-guards.mjs
+
       # vite build, then the prerenderer over 200+ posts, then the server
       # bundle. The heap bump is for the prerender pass, which holds the whole
       # post index and the rendered HTML for a batch at once.
