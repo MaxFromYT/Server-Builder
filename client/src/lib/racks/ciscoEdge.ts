@@ -210,6 +210,17 @@ export const ciscoEdgeRack: RackDefinition = {
       watts: null,
       url: "https://www.apc.com/us/en/product/SMT1500RM2U/",
     },
+    {
+      id: "BLANK_EDGE",
+      u: 6,
+      vendor: "Generic",
+      model: "Blanking panels",
+      role: "Six units left open for growth, blanked rather than empty. An unblanked gap lets hot exhaust turn back through the front of the rack, so the switch above it breathes its own waste heat.",
+      family: "blank",
+      look: "solid",
+      finish: "dark",
+      watts: null,
+    },
   ],
 
   sources: [

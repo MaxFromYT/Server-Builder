@@ -15,6 +15,10 @@ import { JUNIPER_PARTS, JUNIPER_SCENERY } from "./juniper";
 import { MIKROTIK_PARTS, MIKROTIK_SCENERY } from "./mikrotik";
 import { DELL_PARTS, DELL_SCENERY } from "./dell";
 import { STORAGE_PARTS, STORAGE_SCENERY } from "./storage";
+import { CISCO_EDGE_PARTS, CISCO_EDGE_SCENERY } from "./ciscoEdge";
+import { JUNIPER_MX_PARTS, JUNIPER_MX_SCENERY } from "./juniperMx";
+import { DELL_ROW_PARTS, DELL_ROW_SCENERY } from "./dellRow";
+import { MIKROTIK_CRS_PARTS, MIKROTIK_CRS_SCENERY } from "./mikrotikCrs";
 
 export type { HeroModel, HeroPart } from "./types";
 
@@ -54,6 +58,37 @@ export const HERO_MODELS: Record<string, HeroModel> = {
     parts: CISCO_PARTS,
     scenery: CISCO_SCENERY,
     note: "A full 42U Cisco enterprise rack: access, core, spine, a modular chassis, routers, a firewall and UCS compute.",
+  },
+
+  /*
+    The four racks built only from hardware modelled here. Unlike the six
+    above, whose models were authored as whole racks, these are assembled
+    from the individual device generators, so every panel in them is the
+    same geometry the rack builder loads for that product on its own.
+  */
+  "cisco-edge-16u": {
+    url: "/models/cisco-edge-16u.glb",
+    parts: CISCO_EDGE_PARTS,
+    scenery: CISCO_EDGE_SCENERY,
+    note: "A 16U Cisco enterprise edge: an ASR on the circuit, an ISR 4451-X behind it, a Firepower, a Nexus spine and two Catalyst access switches.",
+  },
+  "juniper-mx-24u": {
+    url: "/models/juniper-mx-24u.glb",
+    parts: JUNIPER_MX_PARTS,
+    scenery: JUNIPER_MX_SCENERY,
+    note: "A 24U Juniper provider edge: an MX240 card chassis, an MX204, a QFX5120 leaf, EX4400 and EX4300 access, and an SRX1500.",
+  },
+  "dell-row-24u": {
+    url: "/models/dell-row-24u.glb",
+    parts: DELL_ROW_PARTS,
+    scenery: DELL_ROW_SCENERY,
+    note: "A 24U Dell row: an 84 bay PowerVault under three generations of PowerEdge, with an S5248F-ON on top of the rack.",
+  },
+  "mikrotik-crs-12u": {
+    url: "/models/mikrotik-crs-12u.glb",
+    parts: MIKROTIK_CRS_PARTS,
+    scenery: MIKROTIK_CRS_SCENERY,
+    note: "A 12U MikroTik stack: five Cloud Router Switches that look alike from a distance and share no geometry at all.",
   },
 };
 
