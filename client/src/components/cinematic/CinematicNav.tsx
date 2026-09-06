@@ -317,6 +317,30 @@ export function CinematicNav() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/*
+              The palette is keyboard first and nobody discovers a keyboard
+              shortcut nobody told them about. This is the telling: it opens
+              the same dialog, and it shows the key so the next time is
+              faster. Hidden below sm, where the shortcut is meaningless and
+              the room is not there.
+            */}
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent("command-palette:open"))
+              }
+              data-testid="button-nav-search"
+              aria-label="Search this site"
+              className="hidden h-9 items-center gap-2 rounded-full border border-[hsl(var(--brand-iron))] px-3 font-mono-tight text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--brand-ash))] transition-colors hover:border-[hsl(var(--brand-signal)/.5)] hover:text-[hsl(var(--brand-bone))] sm:inline-flex"
+            >
+              <span aria-hidden>Search</span>
+              <kbd
+                aria-hidden
+                className="rounded border border-[hsl(var(--brand-iron))] px-1.5 py-0.5 font-techno text-[9px] tracking-[0.12em]"
+              >
+                ⌘K
+              </kbd>
+            </button>
             <motion.div variants={ctaVariants} initial="hidden" animate="visible">
               <Magnetic strength={0.15} radius={120}>
                 <motion.div

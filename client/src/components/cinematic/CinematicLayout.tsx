@@ -3,6 +3,7 @@ import { SmoothScrollProvider } from "@/lib/motion/SmoothScrollProvider";
 import { Preloader } from "./Preloader";
 import { CinematicNav } from "./CinematicNav";
 import { CinematicFooter } from "./CinematicFooter";
+import { CommandPalette } from "./CommandPalette";
 
 interface Props {
   children: ReactNode;
@@ -58,6 +59,12 @@ export function CinematicLayout({
           <Preloader onDone={() => setBootedOnce(true)} />
         )}
         {!hideNav && <CinematicNav />}
+        {/*
+          Outside the nav, because the palette has to work on the pages that
+          hide the nav too, and because it is a dialog over the whole page
+          rather than a piece of the header.
+        */}
+        <CommandPalette />
         <main id="main-content" className="relative">
           {children}
         </main>

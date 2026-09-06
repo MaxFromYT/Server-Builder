@@ -88,7 +88,15 @@ function matches(d: CatalogueDevice, query: string): boolean {
 export function CinematicGear() {
   const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
   const [failed, setFailed] = useState(false);
-  const [query, setQuery] = useState("");
+  /*
+    Seeded from ?q=, so the command palette can send a reader straight to one
+    device rather than to the top of a list of two hundred and forty nine and
+    a suggestion that they look for it.
+  */
+  const [query, setQuery] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("q") ?? "";
+  });
   const [mount, setMount] = useState<string>("all");
   const [group, setGroup] = useState<string>("all");
   /* Which card is showing its model. One at a time: a grid of live canvases
