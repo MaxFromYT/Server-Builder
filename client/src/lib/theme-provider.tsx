@@ -1,6 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type Theme = "dark" | "light";
+export const THEMES = ["dark", "light"] as const;
+export type Theme = (typeof THEMES)[number];
+
+/**
+ * The text sizes the display menu offers.
+ *
+ * Here rather than in the menu so the two cannot drift, and so a stored
+ * scale can be snapped to one of them.
+ */
+export const FONT_SCALES = [1, 1.15, 1.3] as const;
 
 interface ThemeContextType {
   theme: Theme;
@@ -54,6 +63,45 @@ function writeStored(key: string, value: string) {
   }
 }
 
+/*
+  What comes out of storage is validated, not just parsed.
+
+  Each preference is read into the DOM and then written straight back, so a
+  value that should not be there survives every reload. `as Theme` put
+  whatever string it found onto <html>: "banana" is neither .dark nor
+  .light, so the tokens fell through to :root and the site rendered light
+  while claiming to default to dark, and kept doing it.
+
+  A scale is worse, because a number is valid CSS whatever it says.
+  --font-scale moves the rem basis, so a stored 0 or -3 computes to
+  font-size: 0 and the whole page renders at no size at all, with no way
+  back through the UI, because the menu that would fix it has no height
+  either. Measured: 0 and -3 both gave a 0px root and a 0px tall h1, 50 gave
+  an 800px root. Only a non-numeric value was handled, because parseFloat
+  returns NaN for it and NaN was the one case checked.
+
+  Snapped to an offered size rather than clamped to a range, because the menu
+  marks its active row by exact match and a value between two steps would
+  leave nothing selected.
+
+  Nothing writes a bad value today: the display menu is the only writer and
+  it offers three. This is here so that reading does not depend on that
+  staying true.
+*/
+function nearestScale(n: number): number {
+  if (!Number.isFinite(n)) return FONT_SCALES[0];
+  return FONT_SCALES.reduce((best, s) =>
+    Math.abs(s - n) < Math.abs(best - n) ? s : best,
+  );
+}
+
+function readTheme(key: string, fallback: Theme): Theme {
+  const stored = readStored(key);
+  return (THEMES as readonly string[]).includes(stored ?? "")
+    ? (stored as Theme)
+    : fallback;
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "dark",
@@ -61,14 +109,10 @@ export function ThemeProvider({
   fontScaleKey = "hyperscale-font-scale",
   highContrastKey = "hyperscale-high-contrast",
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (readStored(storageKey) as Theme) || defaultTheme,
+  const [theme, setTheme] = useState<Theme>(() => readTheme(storageKey, defaultTheme));
+  const [fontScale, setFontScaleState] = useState<number>(() =>
+    nearestScale(Number.parseFloat(readStored(fontScaleKey) ?? "")),
   );
-  const [fontScale, setFontScaleState] = useState<number>(() => {
-    const stored = readStored(fontScaleKey);
-    const parsed = stored ? Number.parseFloat(stored) : NaN;
-    return Number.isNaN(parsed) ? 1 : parsed;
-  });
   const [highContrast, setHighContrast] = useState<boolean>(
     () => readStored(highContrastKey) === "true",
   );
@@ -88,8 +132,9 @@ export function ThemeProvider({
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
+  /* Snapped here too, so the invariant does not rest on every caller. */
   const setFontScale = (scale: number) => {
-    setFontScaleState(scale);
+    setFontScaleState(nearestScale(scale));
   };
 
   const contextValue = useMemo(

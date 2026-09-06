@@ -1,5 +1,5 @@
 import { Sun, Moon, Type, Contrast } from "lucide-react";
-import { useTheme } from "@/lib/theme-provider";
+import { FONT_SCALES, useTheme } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,11 +25,23 @@ import {
  * reader can tell apart at a glance beat a slider whose middle values all
  * look the same.
  */
-const TEXT_SIZES = [
-  { value: "1", label: "Normal" },
-  { value: "1.15", label: "Large" },
-  { value: "1.3", label: "Larger" },
-] as const;
+
+/*
+  The values come from the provider, which snaps a stored scale to one of
+  them, so the menu cannot offer a size the provider would refuse. The names
+  are copy and live here. A size added to FONT_SCALES appears immediately,
+  labelled by percentage until somebody names it.
+*/
+const SCALE_NAMES: Record<string, string> = {
+  "1": "Normal",
+  "1.15": "Large",
+  "1.3": "Larger",
+};
+
+const TEXT_SIZES = FONT_SCALES.map((scale) => {
+  const value = String(scale);
+  return { value, label: SCALE_NAMES[value] ?? `${Math.round(scale * 100)}%` };
+});
 
 export function DisplayMenu({ testId = "button-display-menu" }: { testId?: string }) {
   const { theme, setTheme, fontScale, setFontScale, highContrast, toggleHighContrast } =
