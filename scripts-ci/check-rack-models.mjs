@@ -40,6 +40,9 @@ const HERO = path.join(RACKS, "heroModels");
 /** One rack unit, in meters. The generators and the renderers share it. */
 const U = 0.04445;
 
+/** How far a device may sit from its slot before it counts as misplaced. */
+const DRIFT_U = 0.45;
+
 const problems = [];
 const fail = (m) => problems.push(m);
 
@@ -142,6 +145,84 @@ function groupExtents(glb) {
   return bounds;
 }
 
+/**
+ * Fit z = intercept + slope * u over a rack's devices, robustly.
+ *
+ * Not least squares. Least squares has a breakdown point of zero: every
+ * point pulls the line by its residual, so a device that has genuinely
+ * moved drags the whole fit toward itself and every innocent device
+ * inherits a share of its error. That is the exact failure mode this check
+ * exists to be immune to, because the fault it looks for is one or two
+ * devices out of place among twenty that are fine.
+ *
+ * Theil-Sen instead: the slope is the median of the pairwise slopes, the
+ * intercept the median of the residuals against it. Both tolerate up to
+ * about a third of the points being wrong. selfTest below holds this
+ * function to that property on the case that matters, so it cannot quietly
+ * be simplified back to a mean.
+ */
+function fitLadder(pts) {
+  const median = (xs) => {
+    const a = [...xs].sort((x, y) => x - y);
+    const m = a.length >> 1;
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  };
+  const slopes = [];
+  for (let i = 0; i < pts.length; i += 1) {
+    for (let j = i + 1; j < pts.length; j += 1) {
+      const du = pts[j].u - pts[i].u;
+      if (Math.abs(du) > 1e-9) slopes.push((pts[j].z - pts[i].z) / du);
+    }
+  }
+  const slope = median(slopes);
+  return { slope, intercept: median(pts.map((p) => p.z - slope * p.u)) };
+}
+
+/** Which devices the fit puts more than the tolerance away from their slot. */
+function drifters(pts) {
+  const { slope, intercept } = fitLadder(pts);
+  return pts.filter((p) => Math.abs((p.z - (intercept + slope * p.u)) / U) > DRIFT_U).map((p) => p.id);
+}
+
+/**
+ * The fit must name the devices that moved, and only those.
+ *
+ * A perfect 21 rung ladder with two rungs exchanged: a real, ordinary
+ * fault, two devices swapped between the generator and the device list.
+ * Theil-Sen reports the two. A least squares fit over the same points
+ * reports sixteen of the twenty one, with the two culprits buried among
+ * fourteen devices that never moved, and it also mismeasures the rack unit
+ * badly enough to raise a second, entirely fictional failure.
+ *
+ * That is not a small difference in output quality. A gate that names
+ * fourteen innocent devices sends whoever reads it into a generator that
+ * was correct, so it is worth a few milliseconds a run to hold the fit to
+ * the property that makes the message trustworthy.
+ */
+function selfTest() {
+  const rungs = Array.from({ length: 21 }, (_, i) => ({ id: `R${i}`, u: i + 0.5, z: 2 - U * (i + 0.5) }));
+  const swapped = rungs.map((r) => ({ ...r }));
+  [swapped[5].z, swapped[16].z] = [swapped[16].z, swapped[5].z];
+
+  const flagged = drifters(swapped);
+  if (flagged.length !== 2 || !flagged.includes("R5") || !flagged.includes("R16")) {
+    fail(
+      `the position fit is not robust: two swapped rungs out of 21 should flag exactly those two,` +
+        ` but it flagged ${flagged.length} (${flagged.join(", ") || "none"}).` +
+        ` A fit that spreads one fault across the innocent devices makes this check's output misleading.`,
+    );
+  }
+  const { slope } = fitLadder(swapped);
+  if (Math.abs(-slope - U) > U * 0.001) {
+    fail(
+      `the position fit is not robust: two swapped rungs moved the measured rack unit to` +
+        ` ${(-slope * 1000).toFixed(2)}mm, which would raise a second failure about a rack that is dimensionally fine.`,
+    );
+  }
+}
+
+selfTest();
+
 let fitted = 0;
 let named = 0;
 
@@ -185,13 +266,7 @@ for (const { file, module, groups, scenery } of heroModels()) {
   if (!module || pts.length < 3) continue;
   fitted += 1;
 
-  const n = pts.length;
-  const mu = pts.reduce((s, p) => s + p.u, 0) / n;
-  const mz = pts.reduce((s, p) => s + p.z, 0) / n;
-  const cov = pts.reduce((s, p) => s + (p.u - mu) * (p.z - mz), 0);
-  const varU = pts.reduce((s, p) => s + (p.u - mu) ** 2, 0);
-  const slope = cov / varU;
-  const intercept = mz - slope * mu;
+  const { slope, intercept } = fitLadder(pts);
 
   if (Math.abs(-slope - U) > U * 0.03) {
     fail(`${path.basename(url)}: a rack unit measures ${(-slope * 1000).toFixed(2)}mm in the model, not ${(U * 1000).toFixed(2)}mm`);
@@ -199,7 +274,7 @@ for (const { file, module, groups, scenery } of heroModels()) {
 
   for (const p of pts) {
     const drift = (p.z - (intercept + slope * p.u)) / U;
-    if (Math.abs(drift) > 0.45) {
+    if (Math.abs(drift) > DRIFT_U) {
       fail(
         `${path.basename(url)}: "${p.id}" sits ${drift.toFixed(2)}U from where the device list puts it` +
           ` (a whole unit of drift is two devices swapped)`,
