@@ -195,7 +195,17 @@ def main() -> int:
                         "triangles": tris,
                         "bytes": out.stat().st_size,
                         "model": f"/models/own/{slug}.glb",
-                        "thumb": f"/models/own/thumbs/{slug}.webp",
+                        # Only claim a thumbnail that exists. Two of these
+                        # deliberately have none: a 45U frame and a 1825mm
+                        # vertical bar render as mostly empty space at card
+                        # size, so a blank image was worse than no image. A
+                        # catalogue that promises a file it does not have is
+                        # a broken picture waiting for whoever displays it.
+                        **(
+                            {"thumb": f"/models/own/thumbs/{slug}.webp"}
+                            if (OUT_DIR / "thumbs" / f"{slug}.webp").exists()
+                            else {}
+                        ),
                         # Where the dimensions came from, so a figure on the
                         # page can always be traced back to a vendor document.
                         "source": dev.source or "",
