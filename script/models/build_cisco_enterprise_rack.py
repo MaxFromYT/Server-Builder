@@ -130,6 +130,65 @@ class CiscoEnterpriseRack(EnterpriseRack):
                                        (0.0142, 0.0060, 0.0082), radius=0.0006, bevel=0.0002, steps=5)
                     self.lens(g, x + 0.0064, z + dz + 0.0046, 'green_led', 0.0007, self.front_y - 0.0150)
 
+    def build_ucs6536(self, z: float, group: str) -> None:
+        """A fabric interconnect: 36 QSFP28, and the L1/L2 pair that clusters it.
+
+        A UCS 5108 has no switching and no management of its own. Its I/O
+        modules are fabric extenders, so the chassis is only ever half of a
+        thing: the other half is a pair of these, which is where UCS Manager
+        runs and where every blade's uplink terminates. The rack drew the
+        chassis without them for a while, which is a domain that cannot come
+        up, and the omission is invisible unless you already know to look.
+
+        The two sockets beside the status block are what the pair is for. L1
+        to L1 and L2 to L2, patched directly between the two units and to
+        nothing else, is the cluster link the pair elects a primary over.
+        They are also the clearest way to tell a fabric interconnect from
+        the spine switch six units up, which has the same 36 cages in the
+        same two rows and no notion of a partner at all.
+
+        Ports are numbered up each column, so the pair at the far left is 1
+        and 2 and the pair at the far right is 35 and 36. That puts the four
+        unified ports, 33 to 36, in the last two columns, under the painted
+        band, which is the only thing on the face that says those four can be
+        Fibre Channel and the other 32 cannot.
+        """
+        g = group
+        self.panel_shell(g, z, 1, 0.495, face='ucs_grey')
+        self.status_cluster(g, -0.209, z, U)
+
+        # L1, L2, then out of band management. The first two are the cluster
+        # heartbeat and are always patched to the other unit, so they carry
+        # the same short blue cable at both ends.
+        for i, x in enumerate((-0.190, -0.172, -0.154)):
+            self.rj45_socket(g, x, z, plugged=True, led=True,
+                             plug_color='blue_cable' if i < 2 else 'clear_plug')
+
+        for col in range(18):
+            x = -0.128 + col * 0.0182
+            for row, dz in enumerate((0.0095, -0.0095)):
+                self.rounded_prism(g, 'nickel', (x, self.front_y - 0.009, z + dz),
+                                   (0.0166, 0.0032, 0.0122), radius=0.0010, bevel=0.0004, steps=5)
+                self.rounded_prism(g, 'black_plastic', (x, self.front_y - 0.0118, z + dz),
+                                   (0.0134, 0.0032, 0.0088), radius=0.0006, bevel=0.0002, steps=5)
+                # Ports 1 to 4 to the blade chassis I/O modules, 5 to 7 to
+                # the three rack servers, 31 and 32 north to the spine. Server
+                # ports take the low numbers and uplinks the high ones, which
+                # is the convention rather than a requirement. The rest of the
+                # face is spare, which is what a real one looks like.
+                if col < 3 or (col == 3 and row == 0) or col == 15:
+                    self.rounded_prism(g, 'steel_plain', (x, self.front_y - 0.0150, z + dz),
+                                       (0.0128, 0.0060, 0.0082), radius=0.0006, bevel=0.0002, steps=5)
+                    self.lens(g, x + 0.0058, z + dz + 0.0046, 'green_led', 0.0007, self.front_y - 0.0150)
+
+        # A painted band between the two rows, spanning the last two columns.
+        # The unified ports are physically the same cage as the other thirty
+        # two and a real one tells them apart with a marking rather than a
+        # different connector, so this is a stripe on the panel and not a
+        # coloured throat: colouring the hole would read as a fitted optic.
+        self.box(g, 'unified_throat', (-0.128 + 16.5 * 0.0182, self.front_y - 0.0062, z),
+                 (0.0182 * 2 + 0.0030, 0.0010, 0.0016))
+
     def build_c9404r(self, z_top: float) -> None:
         """The 6RU modular chassis: horizontal line cards over a power bay.
 
@@ -360,7 +419,8 @@ class CiscoEnterpriseRack(EnterpriseRack):
         self.build_ucs_c240(top - 25 * U)
         self.build_ucs_c220(at(27), 'UCS_C220_A')
         self.build_ucs_c220(at(28), 'UCS_C220_B')
-        self.build_blank(at(29, 2), 2, 'BLANK_LOWER')
+        self.build_ucs6536(at(29), 'UCS_6536_A')
+        self.build_ucs6536(at(30), 'UCS_6536_B')
 
         print('BUILD blanks', flush=True)
         self.build_blank(at(31, 5), 5, 'BLANK_BASE')

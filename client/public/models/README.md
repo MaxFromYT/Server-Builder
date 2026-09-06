@@ -7,7 +7,7 @@ meshes.
 | File | Page | Size | Triangles | Nodes |
 | --- | --- | --- | --- | --- |
 | `unifi-hero-rack.glb` | `/racks/unifi-12u` | 646 KB | 117,068 | 162 |
-| `cisco-enterprise-42u.glb` | `/racks/cisco-enterprise-42u` | 900 KB | 206,880 | 255 |
+| `cisco-enterprise-42u.glb` | `/racks/cisco-enterprise-42u` | 963 KB | 220,678 | 280 |
 | `juniper-core-42u.glb` | `/racks/juniper-core-42u` | 847 KB | 198,134 | 253 |
 | `mikrotik-isp-24u.glb` | `/racks/mikrotik-isp-24u` | 655 KB | 147,338 | 193 |
 | `dell-compute-42u.glb` | `/racks/dell-compute-42u` | 535 KB | 100,618 | 219 |

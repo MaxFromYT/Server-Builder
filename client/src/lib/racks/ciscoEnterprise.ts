@@ -43,6 +43,27 @@ function passive(kind: RackPort["kind"], count: number, label: (n: number) => st
   return Array.from({ length: count }, (_, i): RackPort => ({ kind, label: label(i + 1) }));
 }
 
+/**
+ * The nine ports a fabric interconnect in this rack actually uses.
+ *
+ * Server ports take the low numbers and uplinks the high ones, which is
+ * convention rather than a rule: four to the blade chassis I/O modules,
+ * three to the rack servers under it, and two north to the spine. Ports 33
+ * to 36 are the unified ones, and they are dark because nothing in this
+ * rack speaks Fibre Channel; on a 6536 those four are the only ports that
+ * could.
+ */
+function fabricPorts(): RackPort[] {
+  const linked = new Set([1, 2, 3, 4, 5, 6, 7, 31, 32]);
+  return Array.from({ length: 36 }, (_, i): RackPort => {
+    const n = i + 1;
+    const label = n > 32 ? `Eth1/${n} unified` : `Eth1/${n}`;
+    return linked.has(n)
+      ? { kind: "qsfp", label, led: "blue", activity: activityFor(n) }
+      : { kind: "qsfp", label, led: "off" };
+  });
+}
+
 const ACCENT = {
   access: "#ffa114",
   core: "#ccff00",
@@ -272,7 +293,7 @@ export const ciscoEnterpriseRack: RackDefinition = {
       u: 6,
       vendor: "Cisco",
       model: "UCS 5108 blade server chassis",
-      role: "Six rack units carrying eight half-width blade servers over four hot-swappable supplies, all reachable from the front. A blade chassis is the densest compute in the rack and the least like anything else in it: no network ports on the front at all, just servers and power.",
+      role: "Six rack units carrying eight half-width blade servers over four hot-swappable supplies, all reachable from the front. A blade chassis is the densest compute in the rack and the least like anything else in it: no network ports on the front at all, just servers and power. The ports are round the back, on two fabric extenders, and they go to the pair of fabric interconnects three units down rather than to any switch in this rack.",
       family: "server",
       finish: "dark",
       bays: { count: 8, occupied: 8, label: "half-width blade bays" },
@@ -319,11 +340,32 @@ export const ciscoEnterpriseRack: RackDefinition = {
       accent: ACCENT.compute,
       url: "https://www.cisco.com/c/en/us/products/servers-unified-computing/ucs-c220-m7-rack-server/index.html",
     },
-    blank(
-      "BLANK_LOWER",
-      2,
-      "Two units under the rack servers, reserved for the next compute node and covered until it arrives. Covered rather than open: the block above this breathes hard, and every open unit beside it is a short circuit back to its own intake.",
-    ),
+    {
+      id: "UCS_6536_A",
+      u: 1,
+      vendor: "Cisco",
+      model: "UCS 6536 Fabric Interconnect",
+      role: "The half of the blade chassis that is not in the blade chassis. A UCS 5108 has no switching and no management of its own: its I/O modules are fabric extenders, so every blade's uplink terminates here, and UCS Manager runs here rather than on anything it manages. 36 QSFP28 in one rack unit, of which ports 33 to 36 are unified and can be Fibre Channel instead.",
+      family: "switch",
+      finish: "dark",
+      ports: fabricPorts(),
+      watts: null,
+      accent: ACCENT.compute,
+      url: "https://www.cisco.com/c/en/us/products/collateral/servers-unified-computing/ucs6536-fabric-interconnect-ds.html",
+    },
+    {
+      id: "UCS_6536_B",
+      u: 1,
+      vendor: "Cisco",
+      model: "UCS 6536 Fabric Interconnect",
+      role: "The second of the pair, and identical to the first in every respect including the faceplate. The two are joined by their L1 and L2 ports, directly and to nothing else, and that link is how they elect which one is primary. Deploying one is possible and means the domain has a single point of failure that takes every blade with it.",
+      family: "switch",
+      finish: "dark",
+      ports: fabricPorts(),
+      watts: null,
+      accent: ACCENT.compute,
+      url: "https://www.cisco.com/c/en/us/products/collateral/servers-unified-computing/ucs6536-fabric-interconnect-ds.html",
+    },
     blank(
       "BLANK_BASE",
       5,
