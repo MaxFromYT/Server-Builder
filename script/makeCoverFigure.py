@@ -184,10 +184,104 @@ def residuals(d: ImageDraw.ImageDraw, points: list[tuple[float, float]], top: in
     tracked(d, (right - d.textlength(text, font=f) - 24, H - 120), text, f, ASH, 1.6)
 
 
+def curves(d: ImageDraw.ImageDraw, series: list[tuple[str, list[tuple[float, float]]]],
+           top: int, floor: float, x_label: str, pad: int = 96) -> None:
+    """Two measurements against a shared floor, over a common x axis.
+
+    For a figure whose point is that no value of x satisfies both, the two
+    lines and the floor are the whole argument: a reader needs to see one
+    curve crossing the floor going up exactly where the other crosses it
+    going down, and no x where both are above it.
+
+    Values arrive already computed. Nothing is fitted here.
+    """
+    if not series:
+        return
+    left, right = pad, W - pad
+    # Deeper than the other kinds leave, because this one needs three
+    # separate rows under the plot: the x ticks, the axis caption beside
+    # them, and the legend below both. At 130 all three landed on the same
+    # line and the tick labels sat inside the legend text.
+    space = H - top - 190
+    bottom = top + space
+    xs = [x for _, pts in series for x, _ in pts]
+    ys = [y for _, pts in series for _, y in pts] + [floor]
+    x0, x1 = min(xs), max(xs)
+    y0, y1 = min(ys) * 0.92, max(ys) * 1.06
+    sx = (right - left) / max(1e-9, x1 - x0)
+    sy = space / max(1e-9, y1 - y0)
+    px = lambda x: left + (x - x0) * sx
+    py = lambda y: bottom - (y - y0) * sy
+
+    # The floor, and the band below it that a value must not be in.
+    fy = py(floor)
+    d.rectangle([left, fy, right, bottom], fill=(24, 17, 17))
+    d.line([(left, fy), (right, fy)], fill=SIGNAL, width=2)
+    f = font(19)
+    tracked(d, (left + 10, fy - 30), f"AA FLOOR {floor:g}:1", f, SIGNAL, 1.6)
+
+    # Gridlines on whole ratios, so the reader can read a value off the plot.
+    import math
+    for v in range(math.ceil(y0), int(y1) + 1):
+        if abs(v - floor) < 0.4:
+            continue
+        y = py(v)
+        d.line([(left, y), (right, y)], fill=(30, 33, 36), width=1)
+        tracked(d, (left - 34, y - 11), f"{v}", font(17), ASH, 0)
+
+    # First series solid with hollow rings, second dashed with filled dots, so
+    # the pair reads apart in greyscale and for a colourblind reader.
+    for i, (label, pts) in enumerate(series[:2]):
+        pl = [(px(x), py(y)) for x, y in pts]
+        colour = BONE if i == 0 else SIGNAL
+        if i == 0:
+            d.line(pl, fill=colour, width=3, joint="curve")
+        else:
+            for a, b in zip(pl, pl[1:]):
+                steps = max(2, int(abs(b[0] - a[0]) / 9))
+                for k in range(0, steps, 2):
+                    t0, t1 = k / steps, min(1.0, (k + 1) / steps)
+                    d.line([(a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0),
+                            (a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1)],
+                           fill=colour, width=3)
+        for (x, y) in pl[::max(1, len(pl) // 9)]:
+            if i == 0:
+                d.ellipse([x - 6, y - 6, x + 6, y + 6], outline=colour, width=2, fill=OBSIDIAN)
+            else:
+                d.ellipse([x - 5, y - 5, x + 5, y + 5], fill=colour)
+
+    # x axis ticks at the ends and the middle, which is all this needs, with
+    # the caption for the axis right-aligned on the same row.
+    d.line([(left, bottom), (right, bottom)], fill=IRON, width=1)
+    fx = font(19)
+    # The caption is right-aligned on the tick row, so a tick whose label
+    # would run into it is dropped rather than drawn on top of it. The last
+    # one collided at first and read as "PER 7CENT".
+    caption_left = right
+    if x_label:
+        caption_left = right - d.textlength(x_label.upper(), font=fx) - 4
+        tracked(d, (caption_left, bottom + 14), x_label.upper(), fx, ASH, 1.6)
+    ft = font(18)
+    for v in (x0, (x0 + x1) / 2, x1):
+        tx = px(v) - 14
+        if tx + d.textlength(f"{v:g}", font=ft) > caption_left - 20:
+            continue
+        tracked(d, (tx, bottom + 14), f"{v:g}", ft, ASH, 0)
+
+    fa = font(21)
+    d.ellipse([left, H - 118, left + 14, H - 104], outline=BONE, width=2)
+    x = tracked(d, (left + 26, H - 120), series[0][0].upper(), fa, BONE, 1.6)
+    if len(series) > 1:
+        d.ellipse([x + 30, H - 116, x + 40, H - 106], fill=SIGNAL)
+        tracked(d, (x + 52, H - 120), series[1][0].upper(), fa, SIGNAL, 1.6)
+
+
 def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[str, float, str]],
           footer: str, plate: bool = False, points: list[tuple[float, float]] | None = None,
           tolerance: float = 0.0, labels: tuple[str, str] = ("", ""),
-          clip: float = 0.0) -> Path:
+          clip: float = 0.0,
+          lines: list[tuple[str, list[tuple[float, float]]]] | None = None,
+          floor: float = 0.0, x_label: str = "") -> Path:
     im = Image.new("RGB", (W, H), OBSIDIAN)
     d = ImageDraw.Draw(im)
     grid(d)
@@ -212,6 +306,8 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
         tracked(d, (PLATE_PAD, 176), subtitle.upper(), font(24), ASH, 3.0)
         if kind == "residuals":
             residuals(d, points or [], 250, tolerance, labels, clip, PLATE_PAD)
+        elif kind == "curves":
+            curves(d, lines or [], 250, floor, x_label, PLATE_PAD)
         else:
             bars(d, series, 250, PLATE_PAD)
         d.line([(PLATE_PAD, H - 92), (W - PLATE_PAD, H - 92)], fill=IRON, width=1)
@@ -245,6 +341,8 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
 
     if kind == "residuals":
         residuals(d, points or [], y + 44, tolerance, labels, clip)
+    elif kind == "curves":
+        curves(d, lines or [], y + 44, floor, x_label)
     else:
         bars(d, series, y + 44)
 
@@ -260,7 +358,7 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("slug")
-    ap.add_argument("--kind", default="bars", choices=["bars", "residuals"])
+    ap.add_argument("--kind", default="bars", choices=["bars", "residuals", "curves"])
     ap.add_argument("--title", required=True)
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--footer", default="Figures from the cited sources")
@@ -278,6 +376,11 @@ def main() -> int:
     ap.add_argument("--clip", type=float, default=0.0,
                     help="residuals kind: cap the axis here and caret anything beyond")
     ap.add_argument("--labels", default="first,second")
+    ap.add_argument("--line", action="append", default=[],
+                    help="curves: LABEL:x,y;x,y;... one per series, at most two")
+    ap.add_argument("--floor", type=float, default=0.0,
+                    help="curves: the threshold both series are measured against")
+    ap.add_argument("--x-label", default="", help="curves: what the x axis is")
     a = ap.parse_args()
 
     series = []
@@ -292,8 +395,18 @@ def main() -> int:
         points.append((float(first), float(second)))
     first, _, second = a.labels.partition(",")
 
+    lines = []
+    for raw in a.line:
+        label, _, body = raw.partition(":")
+        pts = []
+        for pair in filter(None, body.split(";")):
+            x, _, y = pair.partition(",")
+            pts.append((float(x), float(y)))
+        lines.append((label, pts))
+
     dst = build(a.slug, a.kind, a.title, a.subtitle, series, a.footer, a.plate,
-                points, a.tolerance, (first, second), a.clip)
+                points, a.tolerance, (first, second), a.clip,
+                lines, a.floor, a.x_label)
     print(dst)
     return 0
 

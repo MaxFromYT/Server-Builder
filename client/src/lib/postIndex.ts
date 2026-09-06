@@ -3,7 +3,7 @@
  *
  * Bodies live one file per post in client/src/content/posts and load on
  * demand, so a reader downloads the article they asked for instead of all
- * 246 of them. Regenerate with script/generatePostIndex.ts.
+ * 247 of them. Regenerate with script/generatePostIndex.ts.
  */
 
 export interface CoverCredit {
@@ -40,6 +40,15 @@ export interface PostMeta {
 }
 
 export const postIndex: PostMeta[] = [
+  {
+    slug: "one-blue-two-jobs",
+    title: "One Blue Cannot Be Both a Button and a Link",
+    date: "2026-09-06",
+    tags: ["engineering","tools","operations"],
+    excerpt: "The brand blue on this site failed WCAG twice at once: 4.11:1 under a button label and 4.29:1 as link text, both just under the 4.5 floor. Nudging the lightness cannot fix it, because the two jobs pull the same knob in opposite directions. A search over thirty three thousand blues returns no colour that does both.",
+    coverImage: "/images/blog/one-blue-two-jobs.jpg",
+    wordCount: 1141,
+  },
   {
     slug: "rack-diagram-that-cannot-be-switched-on",
     title: "The Rack Diagram That Cannot Be Switched On",
@@ -2453,10 +2462,10 @@ export const postIndex: PostMeta[] = [
  * Pages quote these, and a number that goes stale on a page about
  * not making stale claims would be the worst possible place for one.
  */
-export const CITATION_COUNT = 914;
+export const CITATION_COUNT = 920;
 
 /** Unique cover image attribution and licence URLs. */
 export const ATTRIBUTION_URL_COUNT = 159;
 
 /** Everything script/checkPostLinks.mjs requests: the two sets above, deduplicated. */
-export const CHECKED_URL_COUNT = 1073;
+export const CHECKED_URL_COUNT = 1079;

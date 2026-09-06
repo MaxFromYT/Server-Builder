@@ -1,7 +1,7 @@
 /**
  * One box that reaches everything on the site.
  *
- * The archive is 246 articles, 20 tools, 16 rack elevations, 249 hardware
+ * The archive is 247 articles, 20 tools, 16 rack elevations, 249 hardware
  * models, nine competition guides and three dozen other pages, behind a
  * nine item navigation bar. Everything is reachable and almost nothing is
  * findable: knowing the site has a chmod calculator does not tell you it is
@@ -24,7 +24,7 @@
  * lives in the layout every page uses, so anything it imports at the top is
  * in the critical path of the whole site, and the bundler is quite right to
  * put it there. First the post index went in, and the contact form started
- * downloading the titles of 246 articles. Then, with that fixed, the tool
+ * downloading the titles of 247 articles. Then, with that fixed, the tool
  * and rack registries were still static, and the entry closure was 51KB over
  * its budget, because a rack definition carries every device in it.
  *
