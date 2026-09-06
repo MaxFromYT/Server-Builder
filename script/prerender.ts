@@ -14,6 +14,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import { Marked } from "marked";
+import { scrollableTables } from "../client/src/lib/markdownTables";
 import { uniqueHeadingId } from "../client/src/lib/headingSlug";
 import { RACKS, KIND_LABELS, portSummary, publishedWatts, unitsUsed } from "../client/src/lib/racks";
 import { staticEquipmentCatalog } from "../client/src/lib/static-equipment";
@@ -61,6 +62,7 @@ const DIST = path.resolve("dist/public");
 const BATCH = 10; // blog posts per parallel batch
 
 const marked = new Marked({ gfm: true, breaks: true });
+marked.use(scrollableTables);
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

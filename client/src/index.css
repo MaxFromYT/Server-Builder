@@ -449,8 +449,31 @@
   border: 1px solid hsl(var(--brand-iron));
 }
 
+/*
+  A table's own scroller, from the markdownTables extension.
+
+  The table keeps `width: 100%` so it fills the column when it fits, and
+  `min-width: max-content` so it stops shrinking rather than crushing a
+  column to one character per line when it does not. The wrapper takes the
+  overflow, which is the only way the far column is reachable on a phone:
+  the article column is inside an overflow-hidden ancestor, so a table that
+  simply overhangs is clipped and there is nothing to scroll.
+*/
+.cinematic .cinematic-prose .post-table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* A focusable region needs a visible focus ring, and the default one is
+     clipped by the scroller's own overflow, so inset it. */
+  outline-offset: -2px;
+}
+
+.cinematic .cinematic-prose .post-table-scroll:focus-visible {
+  outline: 2px solid hsl(var(--brand-signal));
+}
+
 .cinematic .cinematic-prose table {
   width: 100%;
+  min-width: max-content;
   border-collapse: collapse;
   font-size: 0.95em;
 }

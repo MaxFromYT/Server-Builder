@@ -8,6 +8,7 @@ import {
 } from "@/lib/blogPosts";
 import { useMemo, useEffect, useState } from "react";
 import { marked } from "marked";
+import { scrollableTables } from "@/lib/markdownTables";
 import { ArrowLeft } from "lucide-react";
 import { useSEO } from "@/lib/useSEO";
 import { formatPostDate } from "@/lib/formatDate";
@@ -16,6 +17,7 @@ marked.setOptions({
   gfm: true,
   breaks: true,
 });
+marked.use(scrollableTables);
 
 const SITE_URL = "https://maxdoubin.com";
 

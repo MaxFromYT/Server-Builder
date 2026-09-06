@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { marked } from "marked";
+import { scrollableTables } from "@/lib/markdownTables";
 import { CinematicLayout } from "@/components/cinematic/CinematicLayout";
 import {
   getAllPosts,
@@ -23,6 +24,7 @@ import { useScrollReveal } from "@/lib/motion/useScrollScene";
 import { formatPostDate } from "@/lib/formatDate";
 
 marked.setOptions({ gfm: true, breaks: true });
+marked.use(scrollableTables);
 
 const SITE_URL = "https://maxdoubin.com";
 
