@@ -112,8 +112,28 @@ def device_classes(module_name: str) -> list[type[Device]]:
     return out
 
 
+def previous_counts() -> dict[str, tuple[int, int]]:
+    """Triangle and group counts from the last full run, by slug.
+
+    `--skip-existing` used to write zero for anything it did not rebuild,
+    which is how every one of these devices came to report zero triangles in
+    the shipped catalogue: one convenience run silently blanked the lot, and
+    the rack builder then told readers a Cisco chassis was free. A skipped
+    device is one whose numbers are already known, so the numbers are carried
+    forward rather than invented or zeroed.
+    """
+    if not CATALOGUE.exists():
+        return {}
+    try:
+        old = json.loads(CATALOGUE.read_text())
+    except (OSError, ValueError):
+        return {}
+    return {d["slug"]: (d.get("triangles", 0), 0) for d in old.get("devices", [])}
+
+
 def main() -> int:
     skip_existing = "--skip-existing" in sys.argv
+    carried = previous_counts() if skip_existing else {}
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     CATALOGUE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -151,7 +171,7 @@ def main() -> int:
                     tris = sum(len(g.faces) for g in scene.geometry.values())
                     groups = len(scene.geometry)
                 else:
-                    tris = groups = 0
+                    tris, groups = carried.get(slug, (0, 0))
 
                 entries.append(
                     {

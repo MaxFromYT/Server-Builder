@@ -26,7 +26,7 @@
  * but the browser is never holding more decodes than it can finish.
  */
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * How many models may be in flight at once.
@@ -50,10 +50,26 @@ export interface LoadWindow {
   ready: number;
 }
 
+/**
+ * How long to wait on one device before opening the window anyway.
+ *
+ * Without this the window is a deadlock, which is what the first version of
+ * it shipped: if a device never resolves, `ready` never rises, so the window
+ * never widens and every device behind it never even starts. That turned a
+ * page that used to load most of its models into one that loaded a handful
+ * and stopped, which is worse than the problem it was fixing.
+ *
+ * Eight seconds is longer than a slow model takes on a phone and shorter
+ * than a reader will sit looking at an unchanging number.
+ */
+const STALL_MS = 8000;
+
 export function useLoadWindow(total: number): LoadWindow {
   const limit = useMemo(concurrency, []);
   const done = useRef(new Set<string>());
   const [ready, setReady] = useState(0);
+  /* Extra slots granted because something is taking too long. */
+  const [grace, setGrace] = useState(0);
 
   /*
     Keyed by device rather than counted, because a device can re-render for
@@ -67,5 +83,18 @@ export function useLoadWindow(total: number): LoadWindow {
     setReady(done.current.size);
   }, []);
 
-  return { visible: Math.min(total, ready + limit), markReady, ready };
+  /*
+    Nudge the window open whenever nothing has finished for a while. The
+    timer restarts on every completion, so a rack that is merely slow opens
+    one extra slot at a time rather than all at once, and a rack with a
+    genuinely stuck decode still gets to the end.
+  */
+  const stalled = ready + grace;
+  useEffect(() => {
+    if (ready + grace >= total) return;
+    const t = window.setTimeout(() => setGrace((g) => g + 1), STALL_MS);
+    return () => window.clearTimeout(t);
+  }, [stalled, ready, grace, total]);
+
+  return { visible: Math.min(total, ready + grace + limit), markReady, ready };
 }
