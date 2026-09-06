@@ -52,6 +52,8 @@ export interface Catalogue {
   source: string;
   retrieved: string;
   credit: string;
+  /** How the catalogue was assembled and what it does and does not include. */
+  note?: string;
   count: number;
   devices: CatalogueDevice[];
 }

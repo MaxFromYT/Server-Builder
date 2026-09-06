@@ -81,6 +81,7 @@ const EXACT_ROUTES: Record<string, RouteChunk> = {
   "/links": { load: () => import("@/pages/cinematic/CinematicLinks") },
   "/ncl": { load: () => import("@/pages/cinematic/CinematicNcl") },
   "/racks": { load: () => import("@/pages/cinematic/CinematicRacks") },
+  "/gear": { load: () => import("@/pages/cinematic/CinematicGear") },
   "/now": { load: () => import("@/pages/cinematic/CinematicNow") },
   "/paths": { load: () => import("@/pages/cinematic/CinematicPaths") },
   "/resume": { load: () => import("@/pages/cinematic/CinematicResume") },

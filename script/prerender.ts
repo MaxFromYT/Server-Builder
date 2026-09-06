@@ -64,7 +64,17 @@ const marked = new Marked({ gfm: true, breaks: true });
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function esc(str: string): string {
+/*
+  Escapes, and tolerates a missing value.
+
+  Three entries in the vendor catalogue arrived with a null description and
+  a null SKU, and because this took a plain string it did not produce a page
+  with a gap in it, it took the whole prerender down at the last step with a
+  stack trace pointing at the escaper rather than at the data. A field that
+  is not there should render as nothing.
+*/
+function esc(str: string | null | undefined): string {
+  if (str == null) return "";
   return str
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
@@ -2435,6 +2445,78 @@ ${JSON.stringify({
     });
   }
 
+  /*
+    The hardware catalogue. Two hundred and fifty two vendor models with
+    their measured dimensions, and until this page existed the only ones a
+    crawler could see were the fifty one that mount in a rack. The list is
+    read from the same JSON the page fetches, so the prerendered text cannot
+    drift from what a reader gets.
+  */
+  const catalogueRaw = await readFile(path.join(DIST, "data", "ubiquiti-catalogue.json"), "utf8");
+  const catalogue = JSON.parse(catalogueRaw) as {
+    credit: string;
+    devices: {
+      slug: string;
+      name: string;
+      sku: string;
+      short: string;
+      group: string;
+      mount: string;
+      sizeM: [number, number, number];
+      triangles: number;
+      store: string;
+    }[];
+  };
+  const byGroup = new Map<string, typeof catalogue.devices>();
+  for (const d of catalogue.devices) {
+    const bucket = byGroup.get(d.group);
+    if (bucket) bucket.push(d);
+    else byGroup.set(d.group, [d]);
+  }
+  const gearContent = `
+<main>
+  <h1>Hardware catalogue</h1>
+  <p>Every UniFi model this site can draw, ${catalogue.devices.length} of them, with the dimensions read out of each model's own bounding box rather than copied off a datasheet. ${catalogue.devices.filter((d) => d.mount === "rack").length} mount in a nineteen inch frame; the rest go on a wall, a ceiling or a desk.</p>
+  ${[...byGroup.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(
+      ([group, items]) => `<section>
+  <h2>${esc(group)}</h2>
+  <dl>${items
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((d) => {
+      const [x, y, z] = d.sizeM;
+      const size = `${Math.round(x * 1000)} by ${Math.round(z * 1000)} by ${Math.round(y * 1000)} mm`;
+      return `<dt>${esc(d.name)} (${esc(d.sku)})</dt><dd>${esc(d.short)} Mounts ${esc(d.mount)}. ${size}, ${d.triangles.toLocaleString()} triangles.</dd>`;
+    })
+    .join("\n    ")}</dl>
+</section>`,
+    )
+    .join("\n  ")}
+  <p>${esc(catalogue.credit)}</p>
+  ${backLinks([["/racks", "Rack library"], ["/racks/build", "Rack builder"], ["/data", "Open hardware dataset"]])}
+</main>`;
+
+  await writePage("gear", base, {
+    title: "Hardware Catalogue | Max Doubin",
+    description:
+      "Every UniFi model on this site, measured: switches, access points, cameras, gateways and door hardware, with real dimensions and triangle counts taken from the geometry itself.",
+    canonical: `${SITE_URL}/gear`,
+    rootContent: gearContent,
+    schema: `<script type="application/ld+json">
+${JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Hardware catalogue",
+  description: "Vendor hardware models with measured dimensions.",
+  url: `${SITE_URL}/gear`,
+  numberOfItems: catalogue.devices.length,
+}, null, 2)}
+</script>`,
+  });
+
+
   // ── sitemap ──
   // Generated here rather than hand-maintained. The checked-in sitemap had
   // gone stale, listing 105 URLs with a lastmod months behind the newest
@@ -2509,6 +2591,8 @@ async function writeSitemap(
   for (const rack of RACKS) {
     urls.push({ loc: `${SITE_URL}/racks/${rack.slug}`, lastmod: today, changefreq: "monthly", priority: "0.7" });
   }
+  urls.push({ loc: `${SITE_URL}/gear`, lastmod: today, changefreq: "monthly", priority: "0.6" });
+
 
   // Tools and the competition guides. /flashcards is deliberately absent:
   // it is noindex, and a sitemap should never advertise a page that tells

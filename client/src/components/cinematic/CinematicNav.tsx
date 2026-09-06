@@ -23,6 +23,7 @@ const NAV_LINKS = [
   { label: "Field Notes", href: "/blog" },
   { label: "Tools", href: "/tools" },
   { label: "Racks", href: "/racks" },
+  { label: "Gear", href: "/gear" },
   { label: "Build", href: "/game" },
   { label: "Contact", href: "/contact" },
 ];
