@@ -65,7 +65,7 @@
      expecting every HTML file to be a crawlable page with a canonical.
 */
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 
 const SHELL_CACHE = `maxdoubin-shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `maxdoubin-assets-${CACHE_VERSION}`;
@@ -108,6 +108,16 @@ const MAX_ENTRY_BYTES = 2 * 1024 * 1024;
 
 /** See rule 3. A day is comfortably longer than a reading session. */
 const MAX_STALE_DOCUMENT_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How long to wait for a fresh document before falling back to the cache.
+ *
+ * Only applies when there is a cached copy to fall back to. Long enough that
+ * an ordinary connection always wins the race and the reader gets current
+ * markup; short enough that a stalled request does not leave them looking at
+ * nothing when a usable copy is already on disk.
+ */
+const DOCUMENT_NETWORK_TIMEOUT_MS = 4000;
 
 const FONT_STYLESHEET_ORIGIN = "https://fonts.googleapis.com";
 const FONT_FILE_ORIGIN = "https://fonts.gstatic.com";
@@ -398,15 +408,34 @@ async function documentStrategy(event, request) {
 
   const cached = await cache.match(request);
 
-  if (cached && !isOlderThan(cached, MAX_STALE_DOCUMENT_MS)) {
-    // Hand over the copy we have and refresh it behind the reader's back, so
-    // the next load of this URL is current. One load of staleness, no more.
-    event.waitUntil(revalidate(event, request, cache, SHELL_CACHE));
-    return cached;
-  }
+  /*
+    Network first, and this is the one strategy on the site that must be.
 
+    A document is not just another asset: it is the manifest that names every
+    content-hashed script the page will load. Serving a stale one hands the
+    browser a list of filenames from whenever it was cached, and a deploy
+    since then has replaced those files with differently hashed ones. The
+    server no longer has the old names and the cache may have evicted them,
+    so the lazy imports 404 and the app shows its chunk-load error boundary.
+
+    That is what this used to do. It served any copy under a day old and
+    refreshed behind the reader, which is the right trade for a page whose
+    assets are stable and the wrong one for a site that deploys several times
+    in an afternoon: every reload handed back one more stale manifest, so the
+    error survived reloading and looked like a broken site rather than a
+    cache. Ten deploys in a day made it permanent.
+
+    So the network decides, and the cache is what it should have been all
+    along: the offline answer. The timeout keeps a slow connection from
+    hanging on a document we already have a usable copy of.
+  */
   try {
-    const response = await fromNetwork(event, request);
+    const response = await Promise.race([
+      fromNetwork(event, request),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("slow")), cached ? DOCUMENT_NETWORK_TIMEOUT_MS : 30000),
+      ),
+    ]);
     if (isStorable(response)) {
       event.waitUntil(store(cache, request, response.clone(), SHELL_CACHE));
     }
