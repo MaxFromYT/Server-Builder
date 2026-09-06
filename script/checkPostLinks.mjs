@@ -68,7 +68,21 @@ const CONCURRENCY = 8;
 const PER_HOST_GAP_MS = 900;
 const TIMEOUT_MS = 30_000;
 const RETRY_STATUS = new Set([0, 429, 502, 503, 504]);
-const UA =
+/**
+ * Say who this is.
+ *
+ * This used to claim to be Chrome, on the theory that a browser string gets
+ * past more doors. It does the opposite on the hosts that matter here. A
+ * browser user agent arriving without any of the headers a browser sends
+ * alongside it is a well known bot signature, and w3.org and cisco.com both
+ * answer it with 403 while answering an honest identifier with 200. Two live
+ * W3C specifications were being reported as broken links on that basis.
+ *
+ * So: an honest identifier first, and the browser string only as a fallback
+ * for a host that refuses it, because a few do go the other way.
+ */
+const UA = "maxdoubin.com-linkcheck/1.0 (+https://maxdoubin.com; citation checker)";
+const UA_FALLBACK =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
@@ -133,7 +147,7 @@ function throttled(url, run) {
   return next;
 }
 
-async function statusOf(url) {
+async function statusOf(url, agent = UA) {
   let last = 0;
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const controller = new AbortController();
@@ -143,7 +157,7 @@ async function statusOf(url) {
       const res = await fetch(url, {
         redirect: "follow",
         signal: controller.signal,
-        headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,application/pdf,*/*" },
+        headers: { "user-agent": agent, accept: "text/html,application/xhtml+xml,application/pdf,*/*" },
       });
       status = res.status;
       // Drain so the socket can be reused rather than left half open.
@@ -161,6 +175,13 @@ async function statusOf(url) {
     await new Promise((r) => setTimeout(r, (attempt + 1) * 8000));
   }
   return last;
+}
+
+/** Honest identifier first, browser string only for a host that refuses it. */
+async function statusOfEither(url) {
+  const status = await statusOf(url);
+  if (status !== 403 && status !== 401) return status;
+  return statusOf(url, UA_FALLBACK);
 }
 
 /**
@@ -227,7 +248,7 @@ async function main() {
     while (cursor < urls.length) {
       const url = urls[cursor];
       cursor += 1;
-      const status = await throttled(url, () => statusOf(url));
+      const status = await throttled(url, () => statusOfEither(url));
       const host = safeHost(url);
       const ok = status >= 200 && status < 300;
       const verdict = ok
@@ -253,7 +274,7 @@ async function main() {
     }
     for (const entry of suspect) {
       await new Promise((r) => setTimeout(r, 4000));
-      const status = await statusOf(entry.url);
+      const status = await statusOfEither(entry.url);
       entry.status = status;
       if (status >= 200 && status < 300) {
         entry.verdict = "OK";

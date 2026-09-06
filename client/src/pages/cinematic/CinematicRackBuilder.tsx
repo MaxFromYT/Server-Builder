@@ -282,9 +282,18 @@ export function CinematicRackBuilder() {
             ))}
           </dl>
 
+          {/*
+            min-w-0 on the columns, because a grid item's default min-width is
+            auto, which means a track refuses to shrink below the widest
+            unbreakable thing inside it. One long device name in the palette
+            was pushing the single mobile column to 381px inside a 342px
+            container, so the search box and the filter chips ran fifteen
+            pixels off the right of a phone with no way to scroll to them: the
+            page itself did not overflow, only the content did.
+          */}
           <div className="mt-8 grid gap-6 xl:grid-cols-[300px_1fr_290px]">
             {/* Palette */}
-            <aside className="flex flex-col gap-3">
+            <aside className="flex min-w-0 flex-col gap-3">
               <div className="font-techno text-[10px] uppercase tracking-[0.4em] text-[hsl(var(--brand-ash))]">
                 · Hardware
               </div>
@@ -387,7 +396,7 @@ export function CinematicRackBuilder() {
             </aside>
 
             {/* The rack */}
-            <div className="flex flex-col overflow-hidden rounded-lg border border-[hsl(var(--brand-iron)/0.6)] bg-[hsl(var(--brand-void))]">
+            <div className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-[hsl(var(--brand-iron)/0.6)] bg-[hsl(var(--brand-void))]">
               <div className="relative aspect-[4/5] w-full sm:aspect-[4/3] xl:aspect-[3/4]">
                 {catalogue ? (
                   <Suspense
@@ -443,7 +452,7 @@ export function CinematicRackBuilder() {
             </div>
 
             {/* Elevation */}
-            <aside className="flex flex-col gap-3">
+            <aside className="flex min-w-0 flex-col gap-3">
               <div className="flex items-baseline justify-between">
                 <div className="font-techno text-[10px] uppercase tracking-[0.4em] text-[hsl(var(--brand-ash))]">
                   · Elevation
@@ -455,7 +464,7 @@ export function CinematicRackBuilder() {
                       setPlacements([]);
                       setSelected(null);
                     }}
-                    className="font-mono-tight text-[10px] uppercase tracking-[0.15em] text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-signal))]"
+                    className="inline-flex min-h-[24px] items-center font-mono-tight text-[10px] uppercase tracking-[0.15em] text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-signal))]"
                   >
                     Empty it
                   </button>
@@ -477,7 +486,7 @@ export function CinematicRackBuilder() {
                           type="button"
                           onClick={() => setSelected(on ? null : p.id)}
                           aria-pressed={on}
-                          className="min-w-0 flex-1 text-left"
+                          className="flex min-h-[24px] min-w-0 flex-1 items-center text-left"
                         >
                           <span className="flex items-baseline gap-2">
                             <span className="font-mono-tight text-[10px] tabular-nums text-[hsl(var(--brand-ash))]">
@@ -497,12 +506,21 @@ export function CinematicRackBuilder() {
                         <span className="shrink-0 font-mono-tight text-[10px] text-[hsl(var(--brand-ash))]">
                           {unitsOf(d)}U
                         </span>
+                        {/*
+                          Six by six, not the glyph's own size.
+
+                          These were 19 by 21 CSS pixels, which is under the
+                          24 by 24 that WCAG 2.2 asks of a target and, more to
+                          the point, too small to hit reliably with a thumb
+                          while three of them sit side by side. The arrows
+                          have not changed size; the box around them has.
+                        */}
                         <span className="flex shrink-0 gap-0.5">
                           <button
                             type="button"
                             onClick={() => nudge(p.id, -1)}
                             aria-label={`Move ${d.name} up`}
-                            className="rounded px-1.5 py-0.5 font-mono-tight text-[11px] text-[hsl(var(--brand-ash))] transition-colors hover:bg-[hsl(var(--brand-iron)/0.5)] hover:text-[hsl(var(--brand-bone))]"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded font-mono-tight text-[11px] text-[hsl(var(--brand-ash))] transition-colors hover:bg-[hsl(var(--brand-iron)/0.5)] hover:text-[hsl(var(--brand-bone))]"
                           >
                             ▲
                           </button>
@@ -510,7 +528,7 @@ export function CinematicRackBuilder() {
                             type="button"
                             onClick={() => nudge(p.id, 1)}
                             aria-label={`Move ${d.name} down`}
-                            className="rounded px-1.5 py-0.5 font-mono-tight text-[11px] text-[hsl(var(--brand-ash))] transition-colors hover:bg-[hsl(var(--brand-iron)/0.5)] hover:text-[hsl(var(--brand-bone))]"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded font-mono-tight text-[11px] text-[hsl(var(--brand-ash))] transition-colors hover:bg-[hsl(var(--brand-iron)/0.5)] hover:text-[hsl(var(--brand-bone))]"
                           >
                             ▼
                           </button>
@@ -518,7 +536,7 @@ export function CinematicRackBuilder() {
                             type="button"
                             onClick={() => remove(p.id)}
                             aria-label={`Remove ${d.name}`}
-                            className="rounded px-1.5 py-0.5 font-mono-tight text-[11px] text-[hsl(var(--brand-ash))] transition-colors hover:bg-[hsl(0_60%_40%/0.35)] hover:text-[hsl(var(--brand-bone))]"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded font-mono-tight text-[11px] text-[hsl(var(--brand-ash))] transition-colors hover:bg-[hsl(0_60%_40%/0.35)] hover:text-[hsl(var(--brand-bone))]"
                           >
                             ✕
                           </button>

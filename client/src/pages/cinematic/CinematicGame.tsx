@@ -263,7 +263,7 @@ function GameBriefing({
               <Link
                 href="/"
                 data-testid="link-briefing-home"
-                className="text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-bone))]"
+                className="inline-flex min-h-[24px] items-center text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-bone))]"
               >
                 ← Portfolio
               </Link>
@@ -320,7 +320,7 @@ function GameBriefing({
               type="button"
               onClick={() => setShown(false)}
               data-testid="button-collapse-briefing"
-              className="font-mono-tight text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-bone))]"
+              className="inline-flex min-h-[24px] items-center font-mono-tight text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-bone))]"
             >
               Hide briefing →
             </button>

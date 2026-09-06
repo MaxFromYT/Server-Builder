@@ -164,7 +164,10 @@ export function CinematicRackDetail() {
         <div className="mx-auto max-w-[1200px]">
           <header className="max-w-3xl">
             <nav aria-label="Breadcrumb" className="font-techno text-[10px] uppercase tracking-[0.4em] text-[hsl(var(--brand-ash))]">
-              <Link href="/racks" className="transition-colors hover:text-[hsl(var(--brand-signal))]">
+              <Link
+                href="/racks"
+                className="inline-flex min-h-[24px] items-center transition-colors hover:text-[hsl(var(--brand-signal))]"
+              >
                 Rack Library
               </Link>
               <span aria-hidden="true"> / </span>
@@ -309,11 +312,18 @@ export function CinematicRackDetail() {
                   <ul className="mt-3 space-y-2">
                     {rack.sources.map((s) => (
                       <li key={s.url} className="font-mono-tight text-[13px] leading-relaxed">
+                        {/*
+                          inline-flex with a minimum height rather than the
+                          text's own 15 pixels. WCAG 2.2 exempts a link inside
+                          a sentence, and these are not: they are a list of
+                          separate targets, one per row, and on a phone the
+                          rows were close enough together to hit the wrong one.
+                        */}
                         <a
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[hsl(var(--brand-signal))] underline-offset-4 hover:underline"
+                          className="inline-flex min-h-[24px] items-center text-[hsl(var(--brand-signal))] underline-offset-4 hover:underline"
                         >
                           {s.label}
                           <span className="sr-only"> (opens in a new tab)</span>

@@ -379,7 +379,7 @@ export function CinematicGear() {
                                   href={d.store}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="mt-2 font-mono-tight text-[10px] uppercase tracking-[0.24em] text-[hsl(var(--brand-signal))] hover:underline"
+                                  className="mt-2 inline-flex min-h-[24px] items-center font-mono-tight text-[10px] uppercase tracking-[0.24em] text-[hsl(var(--brand-signal))] hover:underline"
                                 >
                                   Vendor page →
                                 </a>
@@ -403,7 +403,10 @@ export function CinematicGear() {
                   </p>
                 ) : null}
                 <p className="mt-4 font-mono-tight text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--brand-ash))]">
-                  <Link href="/data" className="text-[hsl(var(--brand-signal))] hover:underline">
+                  <Link
+                    href="/data"
+                    className="inline-flex min-h-[24px] items-center text-[hsl(var(--brand-signal))] hover:underline"
+                  >
                     The same figures as a dataset
                   </Link>
                 </p>
