@@ -50,6 +50,741 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "certificate-lifetimes-are-200-days-now",
+    title: "Certificates Are 200 Days Now, And 47 By 2029",
+    date: "2026-09-06",
+    tags: ["security", "cybersecurity", "operations", "networking"],
+    excerpt:
+      "The first step of the CA/Browser Forum reduction landed in March and nobody seems to have noticed. The normative text says 199 SHOULD and 200 MUST, the validation reuse window drops to ten days by 2029, and DNSSEC became mandatory for domain control validation on the same date.",
+    coverImage: "/images/blog/certificate-lifetimes-are-200-days-now.jpg",
+    content: `
+## It already happened
+
+A lot of writing about the certificate lifetime reduction is still in the
+future tense. It is not. The first step landed on 15 March 2026, and every
+publicly trusted TLS certificate issued since then has a maximum validity of
+200 days.
+
+If you renew annually, the renewal you did in February was the last one-year
+certificate you will ever buy for a public name, and the one you do next is
+good for a bit over six months.
+
+## The schedule, from the document that binds
+
+This is not a vendor's roadmap. It is the CA/Browser Forum Baseline
+Requirements, section 6.3.2, which is what every publicly trusted CA is
+audited against. The table there reads:
+
+| Issued on or after | Issued before | Maximum validity |
+| --- | --- | --- |
+|  | 2026-03-15 | 398 days |
+| 2026-03-15 | 2027-03-15 | **200 days** |
+| 2027-03-15 | 2029-03-15 | 100 days |
+| 2029-03-15 |  | 47 days |
+
+The prose either side of that table has a detail the table does not, and it is
+the one that will catch an automation pipeline out. Each step is written twice:
+
+> Subscriber Certificates issued on or after 2026-03-15 and before 2027-03-15
+> SHOULD NOT have a Validity Period greater than 199 days and MUST NOT have a
+> Validity Period greater than 200 days.
+
+199 SHOULD, 200 MUST. The reason is arithmetic, and the BRs spell it out: a day
+is 86,400 seconds, and "any amount of time greater than this, including
+fractional seconds and/or leap seconds, shall represent an additional day". Ask
+for exactly the maximum and a rounding you did not think about turns a 200 day
+certificate into a 201 day certificate, which is a misissuance. So the
+requirements tell you, in normative language, not to ask for the maximum.
+
+If you have a script with \`--days 200\` in it, change it to 199. If you have one
+with 398 in it, it stopped working in March.
+
+## What changes about how you run things
+
+The validity number is the headline and it is not the interesting part. The
+interesting part is what a 47 day certificate does to an organisation's
+assumptions.
+
+**Renewal stops being an event.** At 398 days it is something a person does,
+badly, once a year, from a calendar reminder that may or may not still point at
+someone who works there. At 200 days it is twice a year and the same person
+usually still exists. At 47 days it is roughly eight times a year, and at that
+frequency a manual process is not a process, it is a queue of outages waiting
+for a holiday.
+
+**Your inventory becomes the constraint.** Automating renewal for the
+certificates you know about is easy. The ones that take a site down are the
+ones nobody listed: the appliance a vendor installed in 2019, the internal
+tool on a public name, the load balancer somebody configured by hand. Those
+survive an annual cycle because a year is long enough for the person who
+remembers to still be there. They do not survive eight cycles a year.
+
+**Certificate Transparency is your inventory.** This is the practical
+suggestion worth acting on today. Every publicly trusted certificate is logged,
+the logs are public, and you can query them for your own domains. A CT search
+for your organisation's names will find certificates you did not know existed,
+because it lists what was issued rather than what you remember deploying. It is
+the only inventory method that does not depend on already knowing.
+
+## The other half of the ballot
+
+Validity got the attention. The reuse periods for domain validation changed
+alongside it and will bite sooner in some setups:
+
+| From | Domain and IP validation reuse |
+| --- | --- |
+| 2026-03-15 | 200 days |
+| 2027-03-15 | 100 days |
+| 2029-03-15 | **10 days** |
+
+That last row is the one to plan for. Ten days means a CA cannot lean on a
+validation you passed last quarter: you prove control of the name again, very
+nearly every time you issue. Any workflow where domain validation is a
+one-off performed by a different team, at a different time, with a DNS change
+raised as a ticket, stops working. It has to become part of issuance, which in
+practice means ACME.
+
+## And a change that is not about time at all
+
+Two other requirements took effect on the same date and got almost no
+coverage, both about DNSSEC:
+
+> DNSSEC validation back to the IANA DNSSEC root trust anchor MUST be performed
+> on all DNS queries associated with the validation of domain authorization or
+> control by the Primary Network Perspective.
+
+with a companion clause for CAA lookups, and a third saying CAs "MUST NOT use
+local policy to disable DNSSEC validation" on those queries.
+
+Read that from the subscriber's side. If your zone is signed and your signing
+is broken, in a way that resolvers with validation disabled would happily
+ignore, your CA is now required to notice. A SERVFAIL from a DNSSEC failure
+"MUST NOT be treated as permission to issue". A zone that has been quietly
+misconfigured for two years and works fine for everyone will fail validation
+the next time you need a certificate, which at 47 days is next month.
+
+If you sign your zones, test them now, while a failure is an inconvenience
+rather than an outage.
+
+## What to actually do
+
+In rough order of how much grief each one saves:
+
+1. **Find out what you have.** Query Certificate Transparency for your domains
+   before you do anything else. You cannot automate renewal for a certificate
+   you do not know about, and the ones you do not know about are the ones that
+   will page you.
+2. **Get ACME in front of everything you can.** It is not the only way to
+   automate this, but it is the one with the widest client support, and the
+   10 day validation reuse period in 2029 assumes something like it.
+3. **Fix the \`--days\` constants.** 199, not 200. The BRs specifically tell you
+   not to ask for the ceiling and explain why.
+4. **Check the things ACME cannot reach.** Appliances with a web UI and no API,
+   embedded management controllers, anything where the certificate is uploaded
+   by hand. These are the real work and the timeline for them is 2029, which
+   sounds distant and is two renewal cycles of procurement.
+5. **Validate your DNSSEC** if your zones are signed.
+6. **Alert on age, not on expiry.** An alert that fires seven days before
+   expiry was reasonable at 398 days. At 47, seven days is fifteen percent of
+   the certificate's life, and the useful signal is "this should have renewed
+   by now and did not", which fires much earlier and points at the automation
+   rather than at the clock.
+
+The direction here is not really about certificates. It is that a compromised
+key stays useful for exactly as long as the certificate naming it stays valid,
+revocation has never worked reliably at internet scale, and shortening the
+window is the mitigation that does not depend on revocation working. Every
+step in the table is that argument winning again.
+
+## References
+
+- [CA/Browser Forum Baseline Requirements for TLS Server Certificates](https://raw.githubusercontent.com/cabforum/servercert/main/docs/BR.md) (section 6.3.2 for validity, 4.2.1 for validation data reuse, 1.2.2 for the schedule of relevant dates)
+- [Ballot SC081v3: Introduce Schedule of Reducing Validity and Data Reuse Periods](https://cabforum.org/2025/04/11/ballot-sc081v3-introduce-schedule-of-reducing-validity-and-data-reuse-periods/)
+- [RFC 8555: Automatic Certificate Management Environment (ACME)](https://www.rfc-editor.org/rfc/rfc8555.html)
+- [RFC 8657: CAA Record Extensions for Account URI and ACME Method Binding](https://www.rfc-editor.org/rfc/rfc8657.html)
+- [RFC 6962: Certificate Transparency](https://www.rfc-editor.org/rfc/rfc6962.html)
+- [RFC 8659: DNS Certification Authority Authorization (CAA) Resource Record](https://www.rfc-editor.org/rfc/rfc8659.html)
+- [RFC 4033: DNS Security Introduction and Requirements](https://www.rfc-editor.org/rfc/rfc4033.html)
+`,
+  },
+  {
+    slug: "post-quantum-tls-handshake-bytes",
+    title: "What Post-Quantum Cost The TLS Handshake",
+    date: "2026-09-05",
+    tags: ["security", "networking", "cybersecurity"],
+    excerpt:
+      "A client key share went from 32 bytes to 1,216. RFC 10024 says exactly where they go, the ML-KEM half comes first despite the name, and the reason this took years is that a great deal of equipment assumed a ClientHello fits in one packet.",
+    coverImage: "/images/blog/post-quantum-tls-handshake-bytes.jpg",
+    content: `
+## The first message got thirty eight times bigger
+
+For most of TLS 1.3's life the client's key share was thirty two bytes. That is
+an X25519 public key, and thirty two bytes is small enough that you never had
+to think about it: the ClientHello fitted in one packet, it had always fitted
+in one packet, and a great deal of network equipment quietly came to depend on
+that.
+
+It is 1,216 bytes now, on any connection your browser negotiates with
+X25519MLKEM768. That is the number RFC 10024 gives, published in August 2026
+on the standards track, and it is worth sitting with for a second, because
+almost nothing else about the handshake changed and this one field grew by a
+factor of thirty eight.
+
+## Where the bytes go
+
+RFC 10024 defines two hybrid groups. The one that matters in practice is
+X25519MLKEM768, code point 4588 in the IANA TLS Supported Groups registry.
+The client sends:
+
+\`\`\`text
+client key_share  =  ML-KEM-768 encapsulation key  ‖  X25519 share
+                     1184 bytes                       32 bytes
+                  =  1216 bytes
+\`\`\`
+
+and the server answers with:
+
+\`\`\`text
+server key_share  =  ML-KEM-768 ciphertext  ‖  X25519 share
+                     1088 bytes                32 bytes
+                  =  1120 bytes
+\`\`\`
+
+The 1184 and 1088 are FIPS 203's numbers for ML-KEM-768, not choices anyone
+made here. The shared secret is the concatenation of the two secrets, thirty
+two bytes each, sixty four bytes total, fed into the key schedule in place of
+the ECDHE output.
+
+One detail catches people out, and the RFC is candid about it: the ML-KEM part
+comes **first**, before the X25519 part, which is the opposite of what the name
+X25519MLKEM768 suggests. The specification says outright that this "does not
+adhere to the naming convention" and keeps it for historical reasons. If you
+are parsing these by hand, that ordering is the bug you are about to write.
+
+## Why both, and not just the new one
+
+The obvious question is why a connection carries an elliptic curve share at
+all if the point is to survive a quantum computer. The answer is that ML-KEM is
+young. It was standardised in 2024 and the cryptanalysis that would find a
+flaw in it, if there is one, has had about two years to run. X25519 has had
+twenty.
+
+So a hybrid derives its secret from both, and an attacker has to break both to
+recover it. RFC 9954, published a month earlier as Informational, is the
+document that lays out that reasoning and the security properties a hybrid has
+to preserve. Reading them in the other order, 9954 then 10024, is the right
+way round: one is why, the other is exactly what.
+
+There is a second reason, less discussed and just as real. Harvest now, decrypt
+later is not a hypothetical for anything with a long confidentiality life. A
+session recorded today and broken in fifteen years is still a breach if what
+crossed the wire was a medical record. The hybrid costs a kilobyte now against
+a risk that only compounds.
+
+## The part that breaks
+
+Here is where a kilobyte in a handshake stops being a rounding error.
+
+Cloudflare wrote up what happened when Chrome first ran this as an experiment,
+and the failure mode was not slowness, it was connections that did not
+complete at all. Middleboxes, load balancers and TLS-terminating proxies had
+been written on the assumption that a ClientHello arrives in one packet,
+because for twenty years it always had. Feed them one that spans two and some
+of them simply stop. Their measurements found breakage clustering around 10kB
+and 30kB, thresholds that correspond to nothing in the protocol and everything
+in somebody's buffer.
+
+This is protocol ossification, and it is the most useful thing to take away
+from the whole exercise. Nothing in TLS ever said the ClientHello fitted in a
+packet. It just did, for long enough that the assumption calcified into
+equipment, and the standard could not be extended until that equipment was
+either fixed or routed around.
+
+## What to actually check
+
+If you run anything that terminates or inspects TLS, three things are worth
+your time.
+
+**Does your ClientHello still fit?** With a 1,216 byte key share plus SNI, ALPN,
+the extension block and the record header, you are comfortably over a 1500 byte
+Ethernet MTU once a second key share is offered alongside the hybrid, which
+clients do while they are hedging. Over TCP that means two segments before the
+server has said anything, and if your path MTU is smaller than you think, more
+than two.
+
+**Does your library actually have it?** OpenSSL 3.5 shipped ML-KEM and ML-DSA
+natively, with no provider plug-in. That is the line in the sand: before it,
+post-quantum meant oqs-provider and a build; after it, it is a group name in a
+config file.
+
+**Are you inspecting traffic you can no longer inspect?** A middlebox with a
+hardcoded list of supported groups will negotiate a downgrade to a classical
+group, and it will do it silently. The handshake succeeds, the connection
+works, and the post-quantum protection you think you deployed is not there.
+The only way to know is to look at what was actually negotiated, not at what
+was offered.
+
+## The version that is not solved
+
+Key agreement is the easy half, and it is the half that is done. The other
+half is authentication, and it is not.
+
+A key exchange only has to resist an attacker who is recording today and
+computing later, so a hybrid key agreement fixes it today. A signature has to
+resist an attacker at the moment it is verified, which means certificates do
+not have the same urgency, and that is fortunate, because ML-DSA signatures
+and public keys are far larger than ECDSA's and a certificate chain contains
+several of each. Nobody has yet made a chain of those fit gracefully into a
+handshake that is already spilling out of one packet.
+
+So the honest summary of where this stands: your browser's key agreement is
+already post-quantum on most of the internet's large properties, your
+certificates are not, and the reason is arithmetic about bytes rather than
+anything about cryptography.
+
+## References
+
+- [RFC 10024: Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3](https://www.rfc-editor.org/rfc/rfc10024.html)
+- [RFC 9954: Terminology and Design Considerations for Hybrid Key Exchange](https://www.rfc-editor.org/rfc/rfc9954.html)
+- [NIST FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf)
+- [IANA TLS Supported Groups registry](https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml)
+- [Cloudflare: The state of the post-quantum Internet](https://blog.cloudflare.com/pq-2024/)
+- [OpenSSL 3.5 release notes](https://openssl-library.org/news/openssl-3.5-notes/)
+- [RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc8446.html)
+`,
+  },
+  {
+    slug: "service-worker-served-a-stale-document",
+    title: "A Service Worker That Served Yesterday's Map Of The Site",
+    date: "2026-09-04",
+    tags: ["operations", "engineering", "homelab"],
+    excerpt:
+      "Every fix deployed correctly and the site stayed broken, because the readers reporting it were being served a day old index.html naming bundles that had been deleted. Includes the test that reproduces it, and the control that fails.",
+    coverImage: "/images/blog/service-worker-served-a-stale-document.jpg",
+    content: `
+## Every fix worked, and the site stayed broken
+
+For about a week this site had a bug I could not reproduce and could not stop
+hearing about. The rack pages would load partway and stall. I would find a
+cause, fix it, deploy it, check the deployed files with curl, confirm the fix
+was live, and be told it was still broken. Then I would find another cause.
+
+Three of those causes were real, and fixing them changed nothing, because none
+of them was the reason the page in front of the reader was broken. The reason
+was that the reader was not running any of the code I kept deploying.
+
+## What a document actually is
+
+A modern single page application's HTML is not the page. It is a manifest. It
+is a short file whose entire job is to name the JavaScript and CSS bundles that
+are the page:
+
+\`\`\`html
+<script type="module" src="/assets/index-D8kR2p.js"></script>
+<link rel="stylesheet" href="/assets/index-9fLm0x.css">
+\`\`\`
+
+Those hashes are content hashes. Change one line of source and the bundle gets
+a new name, the old name stops existing, and the new HTML points at the new
+name. That is the whole cache-busting scheme and it is a good one: assets can
+be cached forever precisely because their names change when their contents do.
+
+It works on exactly one condition. The document has to be current. A document
+is a map of which files exist, and an old map is not a slightly worse map, it
+is a map of a place that has been demolished.
+
+## The cache policy that did it
+
+The service worker had this shape, and if you have written one you have
+probably written this shape:
+
+\`\`\`js
+// Documents: serve from cache if the copy is fresh enough,
+// and revalidate in the background.
+if (cached && !isOlderThan(cached, 24 * 60 * 60 * 1000)) {
+  event.waitUntil(revalidate(request));
+  return cached;
+}
+\`\`\`
+
+Stale-while-revalidate. It is the standard recommendation, it makes repeat
+visits instant, and for a document on a site that deploys often it is a
+loaded gun.
+
+Read what it does on the third day of a busy week. A reader visited on Monday
+and the worker cached Monday's document. I deployed on Tuesday, twice on
+Wednesday. Cloudflare has long since dropped Monday's bundles. On Thursday the
+reader opens the site, the worker checks its copy, decides eighteen hours old
+is fresh enough, and serves Monday's manifest. The browser dutifully requests
+\`/assets/index-D8kR2p.js\`, which has not existed since Tuesday, and gets a 404.
+
+What the reader sees depends on where the missing chunk was. If it was the
+entry bundle, a blank page. If it was a lazily loaded route, that route throws
+and the error boundary catches it. If it was one model in a set of ten, the
+progress readout stops at ninety percent and stays there forever.
+
+That last one is what I spent a week chasing.
+
+## The bit that makes it vicious
+
+The natural thing to do with a broken page is reload it. Reloading requests
+the document again, which the service worker answers from the same cache, so
+you get the same broken document. And because the entry is revalidated in the
+background, a reload that happens to be served by the *old* worker can write
+another copy of a stale document back into the cache.
+
+So the user-facing symptom is a page that is broken, stays broken when you
+reload it, and is fine on any device that has never visited before. Which is
+every device I was testing on, because I was testing in a fresh browser
+against a fresh deployment, where there is no cached document at all and the
+network is the only source. My testing was structurally incapable of seeing
+the bug.
+
+## The fix, which is four lines
+
+Documents go network-first. Not stale-while-revalidate, not
+cache-first-with-a-freshness-window. Network first, with the cache as the
+offline fallback it was always meant to be:
+
+\`\`\`js
+const DOCUMENT_NETWORK_TIMEOUT_MS = 4000;
+
+try {
+  const response = await Promise.race([
+    fromNetwork(event, request),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("slow")), cached ? DOCUMENT_NETWORK_TIMEOUT_MS : 30000),
+    ),
+  ]);
+  if (isStorable(response)) {
+    event.waitUntil(store(cache, request, response.clone(), SHELL_CACHE));
+  }
+  return response;
+} catch {
+  // Only now, and only because there is nothing better.
+  if (cached) return cached;
+  ...
+}
+\`\`\`
+
+The timeout is the part worth explaining. Network-first with no timeout means
+a reader on a bad connection waits out the full request before getting the
+cached copy, which is worse than what we had. Four seconds is long enough that
+a normal request wins and short enough that a stalled one does not hold the
+page hostage, and the race only applies when there is a cached copy to fall
+back to. With nothing cached there is nothing to fall back to, so it waits the
+full thirty.
+
+The assets keep their old policy, and should. Their names are content hashes.
+A cached \`index-D8kR2p.js\` is byte-identical to the one on the server or it
+does not exist. Cache-first is not just safe there, it is the entire reason
+for hashing the names.
+
+## Getting the old worker out
+
+Deploying the fix does not fix anybody, which is the second thing that
+surprised me. The old worker is still installed and still controlling open
+tabs, and a page controlled by the old worker gets the old worker's cache
+policy, including for the request that would fetch the new worker's document.
+
+Two things move it along. The cache version string is in every cache name, so
+bumping it means \`activate\` deletes every cache that is not on the new list:
+
+\`\`\`js
+const CACHE_VERSION = "v3";                 // was v2
+const SHELL_CACHE  = \`maxdoubin-shell-\${CACHE_VERSION}\`;
+const ASSET_CACHE  = \`maxdoubin-assets-\${CACHE_VERSION}\`;
+\`\`\`
+
+And the reader has to close the tab. Not reload it: close it. A service worker
+update installs in the background and then waits, because taking over from a
+running worker mid-session can leave a page half-served by each. It activates
+when the last client controlling it goes away. \`skipWaiting()\` shortcuts that
+and I did not use it, because it trades this problem for a page whose already
+loaded chunks and newly fetched chunks come from different builds.
+
+## Testing it, which took longer than fixing it
+
+I had already claimed three times that something was fixed and been wrong, so
+this one needed a test rather than an assertion. The test had to answer one
+question: does the worker serve a stale document, yes or no.
+
+\`\`\`text
+1. serve the real production build the way Pages serves it
+2. open /racks/wired, wait for navigator.serviceWorker.controller
+3. write a poisoned document into the shell cache: a valid page whose
+   <script> names /assets/index-GONEFOREVER.js
+4. reload
+5. did the poison come back?
+\`\`\`
+
+Two things made this harder than it reads.
+
+The first is that a service worker needs a secure context, and the site's own
+registration code unregisters the worker on localhost so that development is
+not fighting a cache. So the test runs against a hosts-file entry with
+Chromium launched with \`--unsafely-treat-insecure-origin-as-secure\` pointed at
+it. My first attempt skipped this, found no controller, no cache and no
+failure, and looked exactly like a pass. It was not a pass, it was a test that
+had not run.
+
+The second is that a test only means something if it can fail. So I ran the
+whole thing again with the old stale-first worker in place:
+
+\`\`\`text
+with the fix (v3, network-first)
+  4. after reload: title="The wired UniFi rack" | stale script present: false
+     PASS: network won, poison ignored
+  5. canvas present: true | page errors: none
+
+control (v2, stale-first), same test
+  4. after reload: title="STALE" | stale script present: true
+     FAIL: served the poisoned document
+  5. canvas present: false
+\`\`\`
+
+The control failing is the whole value of the exercise. Without it I have a
+green check mark and no evidence it is measuring anything. With it I know the
+test reproduces the exact reported symptom under the old code and does not
+under the new.
+
+## What I would tell myself a week earlier
+
+**A document is a manifest, not a page.** Caching it stale means serving a list
+of files that may not exist. There is no freshness window short enough to make
+that safe on a site that deploys more than once a day.
+
+**Verifying a deployment is not verifying a delivery.** Every \`curl\` I ran
+against the origin was correct and none of it was evidence, because the bug
+lived between the origin and the reader. Fetching a file proves the file is
+there. It does not prove that is the file anybody gets.
+
+**A bug you cannot reproduce may be a bug about state you do not have.** A
+fresh browser is a browser with no cache, no worker and no history, and if the
+bug is in accumulated state then a fresh browser is the one client guaranteed
+not to have it. Reproducing it meant deliberately constructing the state:
+install the worker, poison the cache, then reload.
+
+**Fix the delivery before you fix anything else.** The three earlier causes
+were all real, and one of them, a load window that deadlocked, was worse than
+what it replaced. But shipping them was pointless while the readers reporting
+the problem were running a build from Monday. Until the document is current,
+nothing else you deploy has happened.
+
+## References
+
+- [MDN: Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
+- [W3C Service Workers specification: the activation algorithm](https://www.w3.org/TR/service-workers/#activation-algorithm)
+- [MDN: Cache](https://developer.mozilla.org/en-US/docs/Web/API/Cache)
+- [Google Web Fundamentals: The Offline Cookbook](https://web.dev/articles/offline-cookbook)
+- [Vite: static asset handling and content hashing](https://vite.dev/guide/assets)
+- [Cloudflare Pages: build output and caching](https://developers.cloudflare.com/pages/configuration/serving-pages/)
+`,
+  },
+  {
+    slug: "why-models-stall-at-eighty-three-percent",
+    title: "Eighty Three Percent, Forever",
+    date: "2026-09-03",
+    tags: ["engineering", "operations", "hardware"],
+    excerpt:
+      "Ten glTF files are ten downloads and thirty six image decodes, and past some number of simultaneous decodes a phone finishes neither. Two wrong diagnoses, a sliding window that deadlocked, and the stall timer that fixed it.",
+    coverImage: "/images/blog/why-models-stall-at-eighty-three-percent.jpg",
+    content: `
+## Eighty three percent, forever
+
+The rack pages on this site load ten glTF files, one per device, and draw them
+into one scene. On a desktop this is unremarkable. On an iPhone the progress
+readout would climb to something like "38 of 46 models, 83%" and then stop.
+Not slow down. Stop. Ten minutes later it still said 83%.
+
+The interesting part of this bug is that the requests did not fail. There was
+no error, no timeout, no rejected promise, nothing in the console. Eight
+models were simply in a state of having been asked for and never answered,
+and the code waiting on them waited for the rest of the session.
+
+## Two wrong answers first
+
+I want to record the wrong turns, because both were plausible and one of them
+produced a real improvement that fixed nothing.
+
+**Wrong answer one: the transcoder.** Each \`GLTFLoader\` was being handed its
+own \`KTX2Loader\`, so ten models meant ten Basis transcoders, each with its own
+WebAssembly instance and worker pool. That is genuinely wasteful and I fixed
+it, sharing one transcoder across every loader. It could not have been the
+cause, and I should have known that before writing the fix: these models
+carry no KTX2 at all. Their textures are \`EXT_texture_webp\`. The transcoder I
+was so pleased to have deduplicated was never being invoked.
+
+**Wrong answer two: the Dell page works, so it must be about count.** One page
+on the site shows a single Dell rack as one large model and it never stalled.
+I read that as "one request is fine, ten requests are not" and started
+thinking about connection limits. That is the wrong reading of the same clue,
+and I made it twice. The Dell page works not because it makes one request
+instead of ten, but because being one model means **its textures decode
+alone**.
+
+That second sentence is the whole bug.
+
+## What is actually happening
+
+Textures in these files are embedded, not external. So ten models is not ten
+downloads. It is ten downloads and roughly thirty six image decodes, all
+handed to the browser inside the same tick, because all ten loaders start at
+once and each one hits its images at about the same moment.
+
+Which decode path those thirty six images take depends on the browser, and
+three.js chooses it from the user agent. This is the actual line, from
+\`GLTFLoader.js\`:
+
+\`\`\`js
+if ( typeof createImageBitmap === 'undefined'
+     || ( isSafari && safariVersion < 17 )
+     || ( isFirefox && firefoxVersion < 98 ) ) {
+  this.textureLoader = new TextureLoader( this.options.manager );
+} else {
+  this.textureLoader = new ImageBitmapLoader( this.options.manager );
+}
+\`\`\`
+
+So an older iPhone decodes through an \`HTMLImageElement\` pointed at a blob URL,
+and a current one goes through \`createImageBitmap\` on a worker. I want to be
+careful here, because I got this wrong the first time I wrote it up and
+asserted the \`<img>\` path as the mechanism on all of iOS. It is not: Safari 17
+and later takes the other branch.
+
+What I can state from measurement is narrower, and it is enough:
+
+- The stall is real, reproducible on the reporter's device, and always in the
+  same shape. Some subset of models never resolves.
+- Nothing fails. No rejected promise, no \`error\` event, no console output, no
+  network entry in a failed state.
+- Capping how many models load at once removes it entirely, and the cap that
+  works is small: two on a phone.
+
+What I am inferring, and cannot prove from here, is why: that thirty six
+simultaneous decodes exceed what the engine will finish on a memory
+constrained device, and that whichever path it is on, the work is abandoned
+without the abandonment being reported. Both paths have the same failure
+shape from the caller's side, which is a promise or an event that never
+arrives.
+
+That distinction matters for what you do about it. If the mechanism were a
+specific decode path I could route around it. Because it is concurrency
+pressure, the fix is a limit, and the limit is right whichever branch a given
+phone takes.
+
+## The fix that made it worse
+
+The obvious response is to stop asking for everything at once, so I put the
+devices behind a sliding window. Mount the first few, and each one that
+finishes lets the next one start.
+
+\`\`\`ts
+// The first version. Do not ship this.
+return { visible: Math.min(total, ready + limit), markReady };
+\`\`\`
+
+Read that carefully with the bug in mind. \`ready\` only rises when a model
+resolves. The bug is that a model sometimes never resolves. So one stuck decode
+means \`ready\` stops rising, the window never widens, and every device behind
+it never even starts.
+
+I turned a page that loaded most of its models and stopped into a page that
+loaded four and stopped. The report I got back was "stuck at 81 percent,
+21 of 26", which is a *worse* number than the one I was trying to fix. Any
+bounded queue needs a way out of a slot that never returns, and I had built
+one without.
+
+## The fix that worked
+
+A stall timer. If nothing has completed for a while, open one more slot
+anyway:
+
+\`\`\`ts
+const STALL_MS = 8000;
+
+const stalled = ready + grace;
+useEffect(() => {
+  if (ready + grace >= total) return;
+  const t = window.setTimeout(() => setGrace((g) => g + 1), STALL_MS);
+  return () => window.clearTimeout(t);
+}, [stalled, ready, grace, total]);
+
+return { visible: Math.min(total, ready + grace + limit), markReady, ready };
+\`\`\`
+
+Three details in there matter.
+
+**The timer restarts on every completion**, because the effect depends on
+\`ready + grace\`. A rack that is merely slow opens one extra slot at a time
+rather than all of them at once, so the window degrades towards unbounded
+instead of jumping there.
+
+**Completion is keyed, not counted.** A device can re-render for reasons that
+have nothing to do with loading, a selection change or a dim toggle, and
+counting those would widen the window early and put us straight back into the
+original problem.
+
+\`\`\`ts
+const markReady = useCallback((key: string) => {
+  if (done.current.has(key)) return;
+  done.current.add(key);
+  setReady(done.current.size);
+}, []);
+\`\`\`
+
+**The width depends on the device.** A coarse pointer is the nearest thing to a
+reliable "this is a phone" signal that does not involve parsing a user agent,
+and phones are where this breaks:
+
+\`\`\`ts
+function concurrency(): number {
+  if (typeof window === "undefined" || !window.matchMedia) return 3;
+  return window.matchMedia("(pointer: coarse)").matches ? 2 : 4;
+}
+\`\`\`
+
+Total bytes are unchanged. The rack still fills in visibly, device by device,
+which if anything reads better than everything appearing at once. The browser
+is simply never holding more decodes than it can finish.
+
+## What generalises
+
+**A silent failure needs a timeout, not better error handling.** There was no
+error to handle. Any queue whose slots are freed by a callback needs an escape
+hatch for the callback that never arrives, and it is worth writing that on the
+first version rather than the third.
+
+**Count the work, not the requests.** Ten files sounds like ten units of work.
+It was ten downloads plus thirty six decodes, and the decodes were the
+constraint. Whatever your concurrency limit is written in terms of, check that
+it is the thing that actually runs out.
+
+**A clue that fits two theories has told you nothing.** "The single model page
+works" was compatible with a connection limit and with a decode limit, and I
+picked the first one twice without asking what would distinguish them. The
+distinguishing test was cheap: load ten copies of the same tiny model, versus
+one model with ten textures. I could have run it on day one.
+
+**Deduplicating something wasteful is not the same as fixing something broken.**
+Sharing one transcoder was a real improvement to code that should have been
+written that way. It was also, on these files, a change to a code path that
+never executes. Two improvements landing in the same week does not make one of
+them the cause of the other's symptom, and saying it did was the actual
+mistake.
+
+## References
+
+- [three.js GLTFLoader](https://threejs.org/docs/#examples/en/loaders/GLTFLoader)
+- [three.js source: how GLTFLoader picks its texture loader](https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/loaders/GLTFLoader.js)
+- [MDN: createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/Window/createImageBitmap)
+- [MDN: HTMLImageElement.decode](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decode)
+- [glTF extension: EXT_texture_webp](https://raw.githubusercontent.com/KhronosGroup/glTF/main/extensions/2.0/Vendor/EXT_texture_webp/README.md)
+- [MDN: matchMedia and the pointer media feature](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/pointer)
+- [MDN: ImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap)
+`,
+  },
+  {
     slug: "snmp-versus-streaming-telemetry",
     title: "SNMP Polling Versus Streaming Telemetry",
     date: "2026-05-09",

@@ -3,7 +3,7 @@
  *
  * Bodies live one file per post in client/src/content/posts and load on
  * demand, so a reader downloads the article they asked for instead of all
- * 238 of them. Regenerate with script/generatePostIndex.ts.
+ * 242 of them. Regenerate with script/generatePostIndex.ts.
  */
 
 export interface CoverCredit {
@@ -40,6 +40,42 @@ export interface PostMeta {
 }
 
 export const postIndex: PostMeta[] = [
+  {
+    slug: "certificate-lifetimes-are-200-days-now",
+    title: "Certificates Are 200 Days Now, And 47 By 2029",
+    date: "2026-09-06",
+    tags: ["security","cybersecurity","operations","networking"],
+    excerpt: "The first step of the CA/Browser Forum reduction landed in March and nobody seems to have noticed. The normative text says 199 SHOULD and 200 MUST, the validation reuse window drops to ten days by 2029, and DNSSEC became mandatory for domain control validation on the same date.",
+    coverImage: "/images/blog/certificate-lifetimes-are-200-days-now.jpg",
+    wordCount: 1302,
+  },
+  {
+    slug: "post-quantum-tls-handshake-bytes",
+    title: "What Post-Quantum Cost The TLS Handshake",
+    date: "2026-09-05",
+    tags: ["security","networking","cybersecurity"],
+    excerpt: "A client key share went from 32 bytes to 1,216. RFC 10024 says exactly where they go, the ML-KEM half comes first despite the name, and the reason this took years is that a great deal of equipment assumed a ClientHello fits in one packet.",
+    coverImage: "/images/blog/post-quantum-tls-handshake-bytes.jpg",
+    wordCount: 1091,
+  },
+  {
+    slug: "service-worker-served-a-stale-document",
+    title: "A Service Worker That Served Yesterday's Map Of The Site",
+    date: "2026-09-04",
+    tags: ["operations","engineering","homelab"],
+    excerpt: "Every fix deployed correctly and the site stayed broken, because the readers reporting it were being served a day old index.html naming bundles that had been deleted. Includes the test that reproduces it, and the control that fails.",
+    coverImage: "/images/blog/service-worker-served-a-stale-document.jpg",
+    wordCount: 1603,
+  },
+  {
+    slug: "why-models-stall-at-eighty-three-percent",
+    title: "Eighty Three Percent, Forever",
+    date: "2026-09-03",
+    tags: ["engineering","operations","hardware"],
+    excerpt: "Ten glTF files are ten downloads and thirty six image decodes, and past some number of simultaneous decodes a phone finishes neither. Two wrong diagnoses, a sliding window that deadlocked, and the stall timer that fixed it.",
+    coverImage: "/images/blog/why-models-stall-at-eighty-three-percent.jpg",
+    wordCount: 1402,
+  },
   {
     slug: "snmp-versus-streaming-telemetry",
     title: "SNMP Polling Versus Streaming Telemetry",
@@ -2381,10 +2417,10 @@ export const postIndex: PostMeta[] = [
  * Pages quote these, and a number that goes stale on a page about
  * not making stale claims would be the worst possible place for one.
  */
-export const CITATION_COUNT = 872;
+export const CITATION_COUNT = 898;
 
 /** Unique cover image attribution and licence URLs. */
 export const ATTRIBUTION_URL_COUNT = 159;
 
 /** Everything script/checkPostLinks.mjs requests: the two sets above, deduplicated. */
-export const CHECKED_URL_COUNT = 1031;
+export const CHECKED_URL_COUNT = 1057;

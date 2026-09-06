@@ -113,7 +113,7 @@ def bars(d: ImageDraw.ImageDraw, series: list[tuple[str, float, str]], top: int)
 
 
 def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[str, float, str]],
-          footer: str) -> Path:
+          footer: str, plate: bool = False) -> Path:
     im = Image.new("RGB", (W, H), OBSIDIAN)
     d = ImageDraw.Draw(im)
     grid(d)
@@ -121,6 +121,21 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
     # Signal rule and eyebrow, matching the page headers.
     d.rectangle([96, 96, 96 + 64, 99], fill=SIGNAL)
     tracked(d, (96, 124), "MAXDOUBIN.COM", font(19), ASH, 5.0)
+
+    if plate:
+        # No headline. The article page lays its own title over this image,
+        # and a cover that carries a second one gives you two titles in the
+        # same rectangle, which is what the first version of these did.
+        tracked(d, (96, 176), subtitle.upper(), font(24), ASH, 3.0)
+        bars(d, series, 250)
+        d.line([(96, H - 92), (W - 96, H - 92)], fill=IRON, width=1)
+        tracked(d, (96, H - 70), footer.upper(), font(18), ASH, 2.4)
+        # Pull the whole thing back so white text laid over it stays legible.
+        im = Image.blend(im, Image.new("RGB", (W, H), OBSIDIAN), 0.55)
+        OUT.mkdir(parents=True, exist_ok=True)
+        dst = OUT / f"{slug}.jpg"
+        im.save(dst, "JPEG", quality=88, optimize=True, progressive=True)
+        return dst
 
     f = font(66, bold=True)
     # Wrap the title to the panel width rather than letting it run off.
@@ -161,6 +176,12 @@ def main() -> int:
     ap.add_argument("--title", required=True)
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--footer", default="Figures from the cited sources")
+    ap.add_argument(
+        "--plate",
+        action="store_true",
+        help="Backdrop mode: no headline, and the whole figure pulled back so "
+             "the page's own title reads over it. Use for blog covers.",
+    )
     ap.add_argument("--series", action="append", default=[],
                     help='"label=value,unit", repeatable')
     a = ap.parse_args()
@@ -171,7 +192,7 @@ def main() -> int:
         value, _, unit = rest.partition(",")
         series.append((label, float(value), unit))
 
-    dst = build(a.slug, a.kind, a.title, a.subtitle, series, a.footer)
+    dst = build(a.slug, a.kind, a.title, a.subtitle, series, a.footer, a.plate)
     print(dst)
     return 0
 

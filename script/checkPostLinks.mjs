@@ -54,6 +54,18 @@ const BLOCKS_ROBOTS = new Set([
 ]);
 
 const CONCURRENCY = 8;
+/**
+ * Minimum gap between two requests to the same host, and a hard limit of one
+ * in flight per host.
+ *
+ * Concurrency was global, so eight workers pulling from one alphabetically
+ * sorted list hit the same host eight times at once, because citations to the
+ * same host sort next to each other. w3.org answered that burst with a status
+ * the retry set does not cover, and two live specifications were reported as
+ * broken links on a run where every other check passed. Retrying harder does
+ * not fix that. Not making the burst does.
+ */
+const PER_HOST_GAP_MS = 900;
 const TIMEOUT_MS = 30_000;
 const RETRY_STATUS = new Set([0, 429, 502, 503, 504]);
 const UA =
@@ -96,6 +108,29 @@ function countChar(text, char) {
   let n = 0;
   for (const c of text) if (c === char) n += 1;
   return n;
+}
+
+/**
+ * One request at a time per host, spaced out.
+ *
+ * Each host gets a promise chain. A new request for that host waits on the
+ * previous one, then waits out the remainder of the gap. Different hosts are
+ * untouched by this and still run at full concurrency, which is where the
+ * throughput was anyway.
+ */
+const hostQueue = new Map();
+
+function throttled(url, run) {
+  const host = safeHost(url);
+  const prior = hostQueue.get(host) ?? Promise.resolve();
+  const next = prior.then(async () => {
+    const out = await run();
+    await new Promise((r) => setTimeout(r, PER_HOST_GAP_MS));
+    return out;
+  });
+  // Keep the chain alive past a rejection, and do not retain every result.
+  hostQueue.set(host, next.then(() => undefined, () => undefined));
+  return next;
 }
 
 async function statusOf(url) {
@@ -192,7 +227,7 @@ async function main() {
     while (cursor < urls.length) {
       const url = urls[cursor];
       cursor += 1;
-      const status = await statusOf(url);
+      const status = await throttled(url, () => statusOf(url));
       const host = safeHost(url);
       const ok = status >= 200 && status < 300;
       const verdict = ok
