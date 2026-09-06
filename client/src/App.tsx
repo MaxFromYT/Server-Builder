@@ -22,13 +22,41 @@ import { CinematicHome } from "@/pages/cinematic/CinematicHome";
 import { SiteLoader } from "@/components/ui/site-loader";
 
 /**
- * Chunk loading is fragile right after a deploy: the browser may still be
- * holding a stale HTML reference while the bundler has already swapped out
- * the hashed chunk paths, which makes the first dynamic import fail with a
- * generic "Loading chunk X failed" error. We retry transparently a few
- * times with short backoff before surfacing any error, so the user never
- * has to click "reload" on cold load.
+ * Retry a route chunk, and then, if it is hopeless, get a fresh document.
+ *
+ * Chunk loading is fragile right after a deploy: the browser can be holding
+ * an HTML document that names hashed chunk paths the bundler has already
+ * replaced, and the first dynamic import fails.
+ *
+ * THE RETRY LOOP DID NOT RETRY. It was written correctly, four attempts with
+ * backoff, and it made exactly one network request, because a native dynamic
+ * import is not an ordinary fetch. The browser keeps a module map keyed by
+ * specifier, a failure is recorded in it, and every later `import()` of the
+ * same specifier is handed the same rejected promise without going near the
+ * network. Measured rather than assumed: failing only the first request of
+ * five still produced one request and an error page, when a real retry would
+ * have succeeded on the second.
+ *
+ * So a retry has to ask for a different specifier. The browser puts the URL
+ * it could not fetch in the error message, and re-importing that URL with a
+ * query appended is a new key in the module map and a real request.
+ *
+ * AND IF THAT STILL FAILS, the problem is not the network, it is the
+ * document: this page is a list of files that no longer exist, and no amount
+ * of asking for them again will help. One reload fetches a current document,
+ * which is the actual cure, and it is what the error screen was asking the
+ * reader to do by hand. It happens once per session, guarded, because an
+ * automatic reload that can loop is worse than any error page.
  */
+const RELOADED_KEY = "chunk-reload-attempted";
+
+/** The URL out of "Failed to fetch dynamically imported module: <url>". */
+function failedChunkUrl(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error);
+  const match = message.match(/https?:\/\/[^\s)'"]+\.m?js(\?[^\s)'"]*)?/);
+  return match ? match[0] : null;
+}
+
 function lazyWithRetry<T extends ComponentType<any>>(
   loader: () => Promise<{ default: T }>,
   retries = 3,
@@ -38,7 +66,15 @@ function lazyWithRetry<T extends ComponentType<any>>(
     let lastError: unknown;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
-        return await loader();
+        if (attempt === 0) return await loader();
+        /*
+          A fresh specifier, or the module map just hands back the same
+          rejection. Nothing else about the request changes.
+        */
+        const url = failedChunkUrl(lastError);
+        if (!url) return await loader();
+        const bust = `${url}${url.includes("?") ? "&" : "?"}retry=${attempt}`;
+        return (await import(/* @vite-ignore */ bust)) as { default: T };
       } catch (error) {
         lastError = error;
         if (attempt === retries) break;
@@ -47,6 +83,25 @@ function lazyWithRetry<T extends ComponentType<any>>(
         );
       }
     }
+
+    /*
+      Out of retries. If this document is stale, one reload replaces it with
+      a current one; if it is not, the reload changes nothing and the error
+      screen appears on the far side, which is where it belongs.
+    */
+    let alreadyReloaded = true;
+    try {
+      alreadyReloaded = sessionStorage.getItem(RELOADED_KEY) === "1";
+      if (!alreadyReloaded) sessionStorage.setItem(RELOADED_KEY, "1");
+    } catch {
+      /* No storage means no guard, and no guard means no automatic reload. */
+    }
+    if (!alreadyReloaded && typeof location !== "undefined") {
+      location.reload();
+      /* Never settles; the reload takes the page out from under it. */
+      await new Promise(() => {});
+    }
+
     throw lastError;
   });
 }
