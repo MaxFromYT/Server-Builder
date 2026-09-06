@@ -24,6 +24,9 @@ interface Props {
   disableSmoothScroll?: boolean;
 }
 
+/** Marks that the boot sequence has already played in this tab. */
+const BOOTED_KEY = "cinematic-booted";
+
 export function CinematicLayout({
   children,
   skipPreloader = false,
@@ -31,7 +34,38 @@ export function CinematicLayout({
   hideNav = false,
   disableSmoothScroll = false,
 }: Props) {
-  const [bootedOnce, setBootedOnce] = useState(false);
+  /*
+    Once per visit, not once per page.
+
+    This was component state, and every route mounts its own layout, so
+    clicking a link in the navigation replayed the whole boot sequence over
+    a page the reader had already asked for: measured at 5.8 seconds going
+    from /tools to /racks, 2.6 to /gear, 2.2 to /blog. A first impression
+    that plays again every time you click something is not a first
+    impression, it is an interstitial.
+
+    sessionStorage rather than a module level flag, so it also survives a
+    reload of the same tab, and rather than localStorage, so a visitor
+    coming back tomorrow still gets the entrance the site was designed
+    around. Wrapped, because storage throws outright in some privacy modes
+    and a loading screen is not worth a blank page.
+  */
+  const [bootedOnce, setBootedOnce] = useState(() => {
+    try {
+      return sessionStorage.getItem(BOOTED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const markBooted = () => {
+    setBootedOnce(true);
+    try {
+      sessionStorage.setItem(BOOTED_KEY, "1");
+    } catch {
+      /* Then it plays again next navigation, which is the old behaviour. */
+    }
+  };
 
   useEffect(() => {
     document.documentElement.classList.add("cinematic-active");
@@ -56,7 +90,7 @@ export function CinematicLayout({
           Skip to content
         </a>
         {!skipPreloader && !bootedOnce && (
-          <Preloader onDone={() => setBootedOnce(true)} />
+          <Preloader onDone={markBooted} />
         )}
         {!hideNav && <CinematicNav />}
         {/*
