@@ -401,24 +401,28 @@ export function CinematicContact() {
 
                             {/* Submit button: ElasticButton + PulseGlow */}
                             <PulseGlow className="rounded-full">
+                              {/*
+                                One button, not two. This used to wrap a real
+                                submit button inside ElasticButton's own
+                                button, which is invalid HTML: the keyboard
+                                lands on one control where the markup claims
+                                two, and assistive technology reads the pair
+                                as one confused element.
+                              */}
                               <ElasticButton
+                                type="submit"
+                                data-testid="button-send-message"
                                 className="group inline-flex h-11 items-center gap-3 rounded-full border border-[hsl(var(--brand-signal))] bg-[hsl(var(--brand-signal))] px-6 font-mono-tight text-[11px] uppercase tracking-[0.28em] text-[hsl(var(--brand-obsidian))]"
                               >
-                                <button
-                                  type="submit"
-                                  data-testid="button-send-message"
-                                  className="inline-flex h-full w-full items-center gap-3"
+                                <span className="h-[6px] w-[6px] rounded-full bg-[hsl(var(--brand-obsidian))]" />
+                                Transmit
+                                <motion.span
+                                  className="inline-block"
+                                  whileHover={{ x: 4 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 15 }}
                                 >
-                                  <span className="h-[6px] w-[6px] rounded-full bg-[hsl(var(--brand-obsidian))]" />
-                                  Transmit
-                                  <motion.span
-                                    className="inline-block"
-                                    whileHover={{ x: 4 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                                  >
-                                    →
-                                  </motion.span>
-                                </button>
+                                  →
+                                </motion.span>
                               </ElasticButton>
                             </PulseGlow>
                           </motion.div>

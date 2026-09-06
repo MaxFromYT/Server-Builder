@@ -17,7 +17,7 @@ import {
   type Transition,
   type MotionValue,
 } from "framer-motion";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type RefObject, type ReactNode } from "react";
+import { createContext, forwardRef, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type RefObject, type ReactNode } from "react";
 
 // ─────────────────────────────────────────────────────────
 // TRANSITION PRESETS
@@ -345,20 +345,39 @@ interface StaggerGroupProps {
   once?: boolean;
 }
 
-export function StaggerGroup({
-  children,
-  className,
-  staggerDelay = 0.08,
-  delayChildren = 0.1,
-  threshold = 0.15,
-  once = true,
-}: StaggerGroupProps) {
+/**
+ * Forwards its ref, for the same reason StaggerItem does.
+ *
+ * This one already needed a ref of its own to know when it enters the
+ * viewport, so the forwarded one cannot simply replace it: both have to
+ * land on the same node, which is what the callback below is for.
+ */
+export const StaggerGroup = forwardRef<HTMLDivElement, StaggerGroupProps>(function StaggerGroup(
+  {
+    children,
+    className,
+    staggerDelay = 0.08,
+    delayChildren = 0.1,
+    threshold = 0.15,
+    once = true,
+  },
+  forwarded,
+) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useClampedInView(ref, threshold, once);
 
+  const setRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      (ref as MutableRefObject<HTMLDivElement | null>).current = node;
+      if (typeof forwarded === "function") forwarded(node);
+      else if (forwarded) (forwarded as MutableRefObject<HTMLDivElement | null>).current = node;
+    },
+    [forwarded],
+  );
+
   return (
     <motion.div
-      ref={ref}
+      ref={setRef}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={{
@@ -373,7 +392,7 @@ export function StaggerGroup({
       {children}
     </motion.div>
   );
-}
+});
 
 interface StaggerItemProps {
   children: ReactNode;
@@ -383,19 +402,32 @@ interface StaggerItemProps {
   style?: CSSProperties;
 }
 
-export function StaggerItem({
-  children,
-  variants = fadeUp,
-  transition = easeOutExpo,
-  className,
-  style,
-}: StaggerItemProps) {
+/**
+ * Forwards its ref, because framer-motion needs to measure it.
+ *
+ * An AnimatePresence in popLayout mode wraps each child in PopChild, which
+ * takes the child's size before removing it so the surrounding layout does
+ * not jump. It does that through a ref, and a plain function component
+ * cannot be given one: React warns, the ref is silently null, and the
+ * measurement it was for never happens. That is why the blog and projects
+ * lists warned on every render.
+ */
+export const StaggerItem = forwardRef<HTMLDivElement, StaggerItemProps>(function StaggerItem(
+  { children, variants = fadeUp, transition = easeOutExpo, className, style },
+  ref,
+) {
   return (
-    <motion.div variants={variants} transition={transition} className={className} style={style}>
+    <motion.div
+      ref={ref}
+      variants={variants}
+      transition={transition}
+      className={className}
+      style={style}
+    >
       {children}
     </motion.div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────
 // TEXT REVEAL (Character-by-character)
@@ -1098,6 +1130,18 @@ interface ElasticButtonProps {
   onClick?: () => void;
   href?: string;
   as?: "button" | "a";
+  /**
+   * Button behaviour, when this is a button.
+   *
+   * Worth having rather than nesting a real button inside this one, which
+   * is what the contact form did: a button inside a button is invalid HTML,
+   * and browsers recover from it differently. Keyboard users get one focus
+   * stop where there appear to be two controls, and a screen reader reads
+   * the pair as a single confused element.
+   */
+  type?: "button" | "submit" | "reset";
+  /** Passed through so a test can find the control that actually submits. */
+  "data-testid"?: string;
 }
 
 export function ElasticButton({
@@ -1106,6 +1150,8 @@ export function ElasticButton({
   onClick,
   href,
   as: Tag = "button",
+  type,
+  "data-testid": testId,
 }: ElasticButtonProps) {
   const MotionTag = Tag === "a" ? motion.a : motion.button;
 
@@ -1114,6 +1160,8 @@ export function ElasticButton({
       <MotionTag
         href={href}
         onClick={onClick}
+        type={Tag === "button" ? type : undefined}
+        data-testid={testId}
         className={className}
         whileHover={{
           scale: 1.05,
