@@ -37,7 +37,7 @@ export function CinematicBlogPost() {
    * The body arrives separately from the metadata.
    *
    * Every article used to be inlined in one module, so opening a single
-   * post downloaded all 236. Now each body is its own chunk. It is usually
+   * post downloaded all 246. Now each body is its own chunk. It is usually
    * already cached (a reader who navigated here from the listing, or came
    * back to a post they read), which is why the initial state checks first
    * instead of always starting empty and flashing a skeleton.
@@ -66,7 +66,7 @@ export function CinematicBlogPost() {
    * Onward links.
    *
    * A post used to end with a single "all field notes" link, so every one
-   * of 236 pages was a dead end: nothing to read next, and nothing linking
+   * of 246 pages was a dead end: nothing to read next, and nothing linking
    * posts to each other for a crawler to follow. Neighbours come from the
    * date ordering; what to read next is scored in `relatedPosts`, which
    * explains at length why shared tags alone were not enough.
@@ -419,7 +419,7 @@ export function CinematicBlogPost() {
                 Tags point at their topic hub where one exists.
 
                 Every pill used to link to /blog, the unfiltered index, so the
-                26 hubs had no inbound link from the 236 posts that belong to
+                26 hubs had no inbound link from the posts that belong to
                 them: the most obvious way in, clicking the subject you are
                 already reading about, went to a list of everything instead.
                 Tags with too few posts to earn a hub keep going to the index,

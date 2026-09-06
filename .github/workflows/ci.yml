@@ -188,6 +188,14 @@ jobs:
       - name: Catalogue counts in page prose
         run: node scripts-ci/check-catalogue-counts.mjs
 
+      # The same failure as above with a different number. A count typed into
+      # prose has nothing linking it to the thing it counts, so it is right on
+      # the day and drifts with every article published: the archive reached
+      # 246 posts while the colophon said 236 twice, the roadmap said 236 and
+      # the ask page said 236. Source-only, but it sits here beside its twin.
+      - name: Archive size in page prose
+        run: node scripts-ci/check-stated-counts.mjs
+
       # A table wider than a phone is either in its own scroller or it is
       # clipped, and clipped means the right-hand columns are unreachable with
       # nothing on screen to say so. Thirteen posts shipped that way. Reads the

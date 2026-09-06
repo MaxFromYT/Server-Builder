@@ -367,7 +367,7 @@ export function CinematicAsk() {
               >
                 The archive
               </Link>{" "}
-              holds 236 posts, and there is a new one most days.
+              holds 246 posts, and there is a new one most days.
             </p>
           </section>
         </div>
