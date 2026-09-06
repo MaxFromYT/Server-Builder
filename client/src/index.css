@@ -873,9 +873,27 @@ html.lenis-smooth {
     @apply border-border;
   }
 
+  /*
+    The text-size preference has to move the rem basis, and that is html.
+    Applied to body it scaled almost nothing: Tailwind writes every size in
+    rem, so at --font-scale 1.4 an unclassed paragraph went from 16px to
+    22.4px while text-sm stayed at 14px and text-3xl stayed at 30px. The
+    preference made the page inconsistent rather than larger.
+
+    A percentage rather than a pixel value, so a reader who has raised their
+    browser's default font size keeps it and this multiplies theirs. The
+    16px it used to hardcode on body overrode that default for every piece
+    of text with no size class of its own.
+
+    At the default scale of 1 this resolves to exactly the browser default,
+    so nothing moves for anyone who has not asked for it.
+  */
+  html {
+    font-size: calc(100% * var(--font-scale));
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    font-size: calc(16px * var(--font-scale));
   }
 
   /* Keyboard-only focus ring. Cinematic pages get signal-green, */

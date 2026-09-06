@@ -137,7 +137,7 @@ export function ToolPanel({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite)/0.6)] p-6 backdrop-blur-sm ${className}`}
+      className={`min-w-0 rounded-2xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite)/0.6)] p-6 backdrop-blur-sm ${className}`}
     >
       {title ? (
         <h2 className="mb-4 font-mono-tight text-[10px] uppercase tracking-[0.32em] text-[hsl(var(--brand-ash))]">

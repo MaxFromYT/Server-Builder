@@ -64,7 +64,7 @@ export function Contact() {
             href={siteConfig.social.instagram.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-6 transition-colors hover:border-border hover:bg-card"
+            className="group flex min-w-0 items-center gap-3 rounded-xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card sm:gap-4 sm:p-6"
             data-testid="link-contact-instagram"
           >
             <div className="rounded-lg bg-accent p-3">
@@ -83,7 +83,7 @@ export function Contact() {
             href={siteConfig.social.github.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-6 transition-colors hover:border-border hover:bg-card"
+            className="group flex min-w-0 items-center gap-3 rounded-xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card sm:gap-4 sm:p-6"
             data-testid="link-contact-github"
           >
             <div className="rounded-lg bg-accent p-3">
@@ -100,7 +100,7 @@ export function Contact() {
 
           <a
             href={`mailto:${siteConfig.email}`}
-            className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-6 transition-colors hover:border-border hover:bg-card"
+            className="group flex min-w-0 items-center gap-3 rounded-xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card sm:gap-4 sm:p-6"
             data-testid="link-contact-email"
           >
             <div className="rounded-lg bg-accent p-3">
