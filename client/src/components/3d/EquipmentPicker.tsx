@@ -362,7 +362,13 @@ export function EquipmentPicker({
               </p>
             )}
           </div>
-          <Button size="icon" variant="ghost" onClick={onClose} data-testid="button-close-picker">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onClose}
+            data-testid="button-close-picker"
+            aria-label="Close the equipment picker"
+          >
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -575,6 +581,12 @@ export function EquipmentPicker({
                             event.stopPropagation();
                             toggleFavorite(equipment.id);
                           }}
+                          aria-pressed={isFavorite}
+                          aria-label={
+                            isFavorite
+                              ? `Remove ${equipment.name} from favorites`
+                              : `Add ${equipment.name} to favorites`
+                          }
                         >
                           <Star className={`w-4 h-4 ${isFavorite ? "text-yellow-400" : ""}`} />
                         </Button>
