@@ -13,9 +13,9 @@ python3 build_cisco_enterprise_rack.py
 ```
 
 Each writes an uncompressed GLB one directory up: 12.9 MB for the UniFi
-rack, 17.6 MB for the Cisco one. Neither of those ships. Compress with
+rack, 19.0 MB for the Cisco one. Neither of those ships. Compress with
 the command in `client/public/models/README.md`, which takes them to
-about 650 KB and 965 KB.
+about 650 KB and 1.2 MB.
 
 ## The build is reproducible, and check it that way
 
