@@ -24,11 +24,20 @@
  * card follows it.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { CinematicLayout } from "@/components/cinematic/CinematicLayout";
 import { useSEO } from "@/lib/useSEO";
 import type { Catalogue, CatalogueDevice } from "@/lib/rackBuilder";
+
+/*
+  Loaded only when somebody opens a device. The catalogue is 112MB of
+  geometry and three.js is most of a megabyte on its own, so browsing the
+  grid should cost thumbnails and nothing else.
+*/
+const DeviceViewer = lazy(() =>
+  import("@/components/racks/DeviceViewer").then((m) => ({ default: m.DeviceViewer })),
+);
 
 const SITE_URL = "https://maxdoubin.com";
 
@@ -82,6 +91,9 @@ export function CinematicGear() {
   const [query, setQuery] = useState("");
   const [mount, setMount] = useState<string>("all");
   const [group, setGroup] = useState<string>("all");
+  /* Which card is showing its model. One at a time: a grid of live canvases
+     is a grid of WebGL contexts, and browsers cap those at around sixteen. */
+  const [open, setOpen] = useState<string | null>(null);
 
   useSEO({
     title: "Hardware catalogue | Max Doubin",
@@ -187,7 +199,8 @@ export function CinematicGear() {
               off a datasheet, so they describe the geometry your browser will actually load.
               Triangle counts and file sizes are real for the same reason. Each thumbnail is
               rendered from the model with its background cut away, which is why they are not
-              all the same shape: the card follows the hardware.
+              all the same shape: the card follows the hardware. Click any of them to load the
+              model itself and turn it around.
             </p>
           </header>
 
@@ -321,21 +334,48 @@ export function CinematicGear() {
                             data-testid={`gear-card-${d.slug}`}
                             className="flex h-full flex-col overflow-hidden rounded-xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite)/0.5)] transition-colors hover:border-[hsl(var(--brand-signal))]"
                           >
-                            <div className="flex h-40 items-center justify-center bg-[hsl(var(--brand-obsidian)/0.55)] p-4">
-                              {d.thumb ? (
-                                <img
-                                  src={d.thumb}
-                                  alt={`${d.name}, rendered from the model`}
-                                  loading="lazy"
-                                  decoding="async"
-                                  className="max-h-full max-w-full object-contain"
-                                />
-                              ) : (
-                                <span className="font-mono-tight text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--brand-ash))]">
-                                  No render
-                                </span>
-                              )}
-                            </div>
+                            {open === d.slug ? (
+                              <Suspense
+                                fallback={
+                                  <div className="flex h-40 items-center justify-center bg-[hsl(var(--brand-obsidian)/0.55)] font-mono-tight text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--brand-ash))]">
+                                    Loading the model...
+                                  </div>
+                                }
+                              >
+                                <DeviceViewer url={d.model} up={d.up} mount={d.mount} label={d.sku ?? d.name} />
+                              </Suspense>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setOpen(d.slug)}
+                                aria-label={`Open the 3D model of ${d.name}`}
+                                data-testid={`open-model-${d.slug}`}
+                                className="group flex h-40 w-full items-center justify-center bg-[hsl(var(--brand-obsidian)/0.55)] p-4 transition-colors hover:bg-[hsl(var(--brand-obsidian)/0.8)]"
+                              >
+                                {d.thumb ? (
+                                  <img
+                                    src={d.thumb}
+                                    alt={`${d.name}, rendered from the model`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <span className="font-mono-tight text-[10px] uppercase tracking-[0.28em] text-[hsl(var(--brand-ash))]">
+                                    No render
+                                  </span>
+                                )}
+                              </button>
+                            )}
+                            {open === d.slug ? (
+                              <button
+                                type="button"
+                                onClick={() => setOpen(null)}
+                                className="border-b border-[hsl(var(--brand-iron))] px-4 py-2 text-left font-mono-tight text-[10px] uppercase tracking-[0.24em] text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-bone))]"
+                              >
+                                Close the model
+                              </button>
+                            ) : null}
 
                             <div className="flex flex-1 flex-col gap-2 p-4">
                               <div className="flex items-baseline justify-between gap-3">
