@@ -18,15 +18,21 @@
  * somewhere you already have in mind. Searching for what you do not is what
  * the archive page is for, and the palette links to it.
  *
- * WHAT IT COSTS. The post index is metadata only, no bodies, and the tool
- * and rack registries are already in the bundle for the navigation. The one
- * thing fetched is the hardware catalogue, and only on first open, because
- * that is 140KB of JSON and most readers never press the key.
+ * WHAT IT COSTS on a page where nobody opens it: nothing beyond this file.
+ *
+ * That took a correction. The first version imported the post index at the
+ * top, and because this component lives in the layout that every page uses,
+ * the bundler quite correctly put all 149KB of post metadata into the
+ * critical path of every page on the site. The contact page was downloading
+ * the titles of 242 articles. Both of the heavy sources are pulled in on
+ * first open now: the post index by dynamic import, the hardware catalogue
+ * by fetch. The tool and rack registries stay static, because the navigation
+ * already brings those in and they are small.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { postIndex } from "@/lib/postIndex";
+import type { PostMeta } from "@/lib/postIndex";
 import { TOOLS } from "@/lib/toolsRegistry";
 import { RACKS } from "@/lib/racks";
 
@@ -127,6 +133,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const [gear, setGear] = useState<GearItem[] | null>(null);
+  const [posts, setPosts] = useState<PostMeta[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   /* Where focus was, so closing puts it back rather than on the body. */
@@ -165,7 +172,22 @@ export function CommandPalette() {
     };
   }, []);
 
-  /* The catalogue is 140KB and most readers never open this, so: on demand. */
+  /* Both heavy sources, on first open. See the note at the top of the file. */
+  useEffect(() => {
+    if (!open || posts) return;
+    let live = true;
+    import("@/lib/postIndex")
+      .then((m) => {
+        if (live) setPosts(m.postIndex);
+      })
+      .catch(() => {
+        /* Articles are then absent from results; everything else still works. */
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, posts]);
+
   useEffect(() => {
     if (!open || gear) return;
     let live = true;
@@ -221,7 +243,7 @@ export function CommandPalette() {
         terms: r.devices.map((d) => `${d.vendor} ${d.model}`).join(" "),
       });
     }
-    for (const p of postIndex) {
+    for (const p of posts ?? []) {
       if (p.draft) continue;
       out.push({
         kind: "Article",
@@ -241,7 +263,7 @@ export function CommandPalette() {
       });
     }
     return out;
-  }, [gear]);
+  }, [gear, posts]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -248,9 +248,17 @@ export function CinematicRacks() {
 
           <section className="mt-14">
             <div className="flex items-baseline gap-4">
-              <div className="font-techno text-[10px] uppercase tracking-[0.4em] text-[hsl(var(--brand-signal))]">
+              {/*
+                A heading, not a styled div. It reads as the section's title
+                and it labels the cards below it, and while it was a div the
+                document outline went straight from the page h1 to the h3 on
+                each card with nothing in between: a screen reader listing the
+                headings saw a level skipped and no name for the group. The
+                type is unchanged.
+              */}
+              <h2 className="font-techno text-[10px] uppercase tracking-[0.4em] text-[hsl(var(--brand-signal))]">
                 · In 3D · Vendor geometry
-              </div>
+              </h2>
               <div className="h-px flex-1 bg-[hsl(var(--brand-iron))]" />
             </div>
             <p className="mt-4 max-w-3xl font-mono-tight text-[13px] leading-relaxed text-[hsl(var(--brand-ash))]">

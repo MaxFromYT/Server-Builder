@@ -461,12 +461,34 @@ export function CinematicGear() {
               </footer>
             </>
           ) : failed ? null : (
-            <p
-              role="status"
-              className="mt-12 font-mono-tight text-sm text-[hsl(var(--brand-ash))]"
-            >
-              Loading the catalogue...
-            </p>
+            /*
+              Hold the page's height open while the catalogue is in flight.
+
+              The list arrives by fetch, so the first paint was a header and
+              one line of text, which put the footer squarely in the viewport.
+              Two hundred and forty nine cards then landed above it and shoved
+              it off the bottom of the screen: a 0.25 layout shift, and the
+              single worst number anywhere on the site. Reserving a screen of
+              height means the footer starts below the fold, and a shift of
+              something nobody could see does not count and, more to the
+              point, is not one.
+
+              The skeleton is the same shape as the cards that replace it, so
+              what settles into place is what was already there.
+            */
+            <div className="mt-12 min-h-screen">
+              <p role="status" className="font-mono-tight text-sm text-[hsl(var(--brand-ash))]">
+                Loading the catalogue...
+              </p>
+              <ul aria-hidden className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <li
+                    key={i}
+                    className="h-[19rem] animate-pulse rounded-xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite)/0.35)]"
+                  />
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>
