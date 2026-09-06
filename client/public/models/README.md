@@ -11,7 +11,7 @@ meshes.
 | `juniper-core-42u.glb` | `/racks/juniper-core-42u` | 1,022 KB | 239,852 | 292 |
 | `mikrotik-isp-24u.glb` | `/racks/mikrotik-isp-24u` | 939 KB | 216,560 | 277 |
 | `dell-compute-42u.glb` | `/racks/dell-compute-42u` | 739 KB | 153,388 | 264 |
-| `storage-42u.glb` | `/racks/storage-dense-42u` | 333 KB | 55,120 | 143 |
+| `storage-42u.glb` | `/racks/storage-dense-42u` | 436 KB | 78,900 | 173 |
 
 ## Where they came from
 
