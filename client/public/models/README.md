@@ -27,7 +27,7 @@ MikroTik's port numbers are silkscreened in their own typeface.
 | `juniper-mx-24u.glb` | `/racks/juniper-mx-24u` | 920 KB | 192,326 | 280 |
 | `dell-row-24u.glb` | `/racks/dell-row-24u` | 755 KB | 109,272 | 259 |
 | `cisco-edge-16u.glb` | `/racks/cisco-edge-16u` | 736 KB | 136,110 | 225 |
-| `mikrotik-crs-12u.glb` | `/racks/mikrotik-crs-12u` | 471 KB | 60,302 | 170 |
+| `mikrotik-crs-12u.glb` | `/racks/mikrotik-crs-12u` | 496 KB | 64,580 | 173 |
 
 The composer draws products from that library and, separately, the frame
 furniture that is not a product: patch panels, cable managers, blanking

@@ -38,7 +38,7 @@ from pathlib import Path
 sys.path.insert(0, "script/models")
 sys.path.insert(0, "script/models/devices")
 
-from _device import Device  # noqa: E402
+from _device import U, Device  # noqa: E402
 from build_enterprise_base import EnterpriseRack, export_glb  # noqa: E402
 
 # Where the uncompressed builds land. Defaults to the shipped models
@@ -184,6 +184,20 @@ class ModelledRack(EnterpriseRack):
                 self.nema_outlet(group, x, z + dz, 0.030, 0.026, plugged=(i < per // 2))
         self.screen(group, 'pdu', 0.196, z, 0.030, 0.024)
 
+    def build_rack_ups(self, z: float, u: int, group: str) -> None:
+        """A line interactive UPS: a status panel, some lamps, and a lot of vent.
+
+        Deep and heavy, which is why it is always at the bottom, and drawn
+        deeper than anything else here because the depth is the batteries.
+        """
+        self.panel_shell(group, z, u, 0.440, face=self.inset_material)
+        self.screen(group, 'ups', -0.156, z, 0.056, 0.042)
+        for i in range(3):
+            self.lens(group, -0.096 + i * 0.014, z, 'green_led', 0.0020)
+        self.perforations(group, 0.070, z, 0.220, u * U * 0.42, 30, max(4, u * 3))
+        self.rounded_prism(group, 'drive_handle', (0.204, self.front_y - 0.0064, z),
+                           (0.022, 0.0044, u * U * 0.34), radius=0.0012, bevel=0.0005, steps=5)
+
     def build_console_panel(self, z: float, group: str, ports: int = 16) -> None:
         """Out of band access: one serial port per device, on its own network.
 
@@ -239,10 +253,21 @@ class ModelledRack(EnterpriseRack):
             self.build_rack_pdu(z, u, spec["id"], outlets=int(spec.get("ports") or 8))
         elif family == "server" and "console" in model:
             self.build_console_panel(z, spec["id"], ports=max(1, int(spec.get("ports") or 16) - 1))
+        elif family == "ups":
+            self.build_rack_ups(z, u, spec["id"])
         elif "cable manager" in model:
             self.build_cable_manager(z, spec["id"])
-        else:
+        elif family == "blank":
             self.build_blank(z, u, spec["id"], vented="vented" in model)
+        else:
+            # Falling back to a blanking panel for anything unrecognised is
+            # how a UPS got drawn as a sheet of steel: the rack looked full,
+            # the name check passed because the node group was there, and
+            # nothing said the picture was wrong. An unknown family is drawn
+            # as a panel because a hole is worse, but it says so.
+            print(f"    no furniture builder for {spec['id']} (family {family!r}),"
+                  f" drawing {u}U of blanking panel")
+            self.build_blank(z, u, spec["id"])
 
 
 def build(slug: str, index: dict[str, tuple[str, type[Device]]]) -> None:
