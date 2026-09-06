@@ -1,7 +1,7 @@
 {
  "source": "Modelled by hand from vendor photographs and dimensioned drawings.",
  "note": "Geometry is original work. The dimensions it was built to are the vendors' published figures, cited per device.",
- "generated": "2026-08-30",
+ "generated": "2026-09-06",
  "count": 27,
  "totalBytes": 32214972,
  "devices": [
@@ -21,7 +21,7 @@
     0.0874,
     0.457
    ],
-   "triangles": 0,
+   "triangles": 4918,
    "bytes": 967840,
    "model": "/models/own/smt1500rm2u.glb",
    "thumb": "/models/own/thumbs/smt1500rm2u.webp",
@@ -46,7 +46,7 @@
     2.1336,
     0.381
    ],
-   "triangles": 0,
+   "triangles": 17738,
    "bytes": 360028,
    "model": "/models/own/cpi-55053.glb",
    "thumb": "/models/own/thumbs/cpi-55053.webp",
@@ -71,7 +71,7 @@
     1.8257,
     0.07
    ],
-   "triangles": 0,
+   "triangles": 5854,
    "bytes": 164476,
    "model": "/models/own/cpi-ea3020.glb",
    "thumb": "/models/own/thumbs/cpi-ea3020.webp",
@@ -96,7 +96,7 @@
     0.043,
     0.4615
    ],
-   "triangles": 0,
+   "triangles": 11642,
    "bytes": 1111472,
    "model": "/models/own/asr1001x.glb",
    "thumb": "/models/own/thumbs/asr1001x.webp",
@@ -121,7 +121,7 @@
     0.043,
     0.33
    ],
-   "triangles": 0,
+   "triangles": 10934,
    "bytes": 1089480,
    "model": "/models/own/c9200l-24t-4g.glb",
    "thumb": "/models/own/thumbs/c9200l-24t-4g.webp",
@@ -146,7 +146,7 @@
     0.043,
     0.445
    ],
-   "triangles": 0,
+   "triangles": 16174,
    "bytes": 1197012,
    "model": "/models/own/c9300-48p.glb",
    "thumb": "/models/own/thumbs/c9300-48p.webp",
@@ -171,7 +171,7 @@
     0.043,
     0.508
    ],
-   "triangles": 0,
+   "triangles": 13034,
    "bytes": 1143196,
    "model": "/models/own/firepower-2140.glb",
    "thumb": "/models/own/thumbs/firepower-2140.webp",
@@ -196,7 +196,7 @@
     0.043,
     0.4381
    ],
-   "triangles": 0,
+   "triangles": 53574,
    "bytes": 1848408,
    "model": "/models/own/isr4331.glb",
    "thumb": "/models/own/thumbs/isr4331.webp",
@@ -221,7 +221,7 @@
     0.0874,
     0.4699
    ],
-   "triangles": 0,
+   "triangles": 122686,
    "bytes": 3487364,
    "model": "/models/own/isr4451x.glb",
    "thumb": "/models/own/thumbs/isr4451x.webp",
@@ -246,7 +246,7 @@
     0.043,
     0.559
    ],
-   "triangles": 0,
+   "triangles": 16930,
    "bytes": 1206812,
    "model": "/models/own/nexus-9336c.glb",
    "thumb": "/models/own/thumbs/nexus-9336c.webp",
@@ -271,7 +271,7 @@
     0.043,
     0.7007
    ],
-   "triangles": 0,
+   "triangles": 12726,
    "bytes": 1103404,
    "model": "/models/own/r660.glb",
    "thumb": "/models/own/thumbs/r660.webp",
@@ -296,7 +296,7 @@
     0.0874,
     0.7007
    ],
-   "triangles": 0,
+   "triangles": 23666,
    "bytes": 1285900,
    "model": "/models/own/r760.glb",
    "thumb": "/models/own/thumbs/r760.webp",
@@ -321,7 +321,7 @@
     0.0874,
     0.837
    ],
-   "triangles": 0,
+   "triangles": 12038,
    "bytes": 1135420,
    "model": "/models/own/r760xd2.glb",
    "thumb": "/models/own/thumbs/r760xd2.webp",
@@ -346,7 +346,7 @@
     0.043,
     0.46
    ],
-   "triangles": 0,
+   "triangles": 10714,
    "bytes": 1085116,
    "model": "/models/own/s5248f-on.glb",
    "thumb": "/models/own/thumbs/s5248f-on.webp",
@@ -371,7 +371,7 @@
     0.2208,
     0.92
    ],
-   "triangles": 0,
+   "triangles": 6130,
    "bytes": 1205924,
    "model": "/models/own/me4084.glb",
    "thumb": "/models/own/thumbs/me4084.webp",
@@ -396,7 +396,7 @@
     0.043,
     0.521
    ],
-   "triangles": 0,
+   "triangles": 18806,
    "bytes": 1256452,
    "model": "/models/own/ex4300-48t.glb",
    "thumb": "/models/own/thumbs/ex4300-48t.webp",
@@ -421,7 +421,7 @@
     0.043,
     0.394
    ],
-   "triangles": 0,
+   "triangles": 11106,
    "bytes": 1122072,
    "model": "/models/own/ex4400-48p.glb",
    "thumb": "/models/own/thumbs/ex4400-48p.webp",
@@ -446,7 +446,7 @@
     0.043,
     0.559
    ],
-   "triangles": 0,
+   "triangles": 6490,
    "bytes": 1023556,
    "model": "/models/own/mx204.glb",
    "thumb": "/models/own/thumbs/mx204.webp",
@@ -471,7 +471,7 @@
     0.2208,
     0.705
    ],
-   "triangles": 0,
+   "triangles": 32706,
    "bytes": 1668236,
    "model": "/models/own/mx240.glb",
    "thumb": "/models/own/thumbs/mx240.webp",
@@ -496,7 +496,7 @@
     0.043,
     0.518
    ],
-   "triangles": 0,
+   "triangles": 17226,
    "bytes": 1191256,
    "model": "/models/own/qfx5120-48y.glb",
    "thumb": "/models/own/thumbs/qfx5120-48y.webp",
@@ -521,7 +521,7 @@
     0.043,
     0.427
    ],
-   "triangles": 0,
+   "triangles": 18522,
    "bytes": 1254956,
    "model": "/models/own/srx1500.glb",
    "thumb": "/models/own/thumbs/srx1500.webp",
@@ -546,7 +546,7 @@
     0.043,
     0.183
    ],
-   "triangles": 0,
+   "triangles": 7066,
    "bytes": 1030348,
    "model": "/models/own/crs312-4c-8xg.glb",
    "thumb": "/models/own/thumbs/crs312-4c-8xg.webp",
@@ -571,7 +571,7 @@
     0.043,
     0.224
    ],
-   "triangles": 0,
+   "triangles": 5722,
    "bytes": 999288,
    "model": "/models/own/crs317-16s.glb",
    "thumb": "/models/own/thumbs/crs317-16s.webp",
@@ -596,7 +596,7 @@
     0.043,
     0.144
    ],
-   "triangles": 0,
+   "triangles": 3698,
    "bytes": 963048,
    "model": "/models/own/crs326-24g-2s.glb",
    "thumb": "/models/own/thumbs/crs326-24g-2s.webp",
@@ -621,7 +621,7 @@
     0.043,
     0.2
    ],
-   "triangles": 0,
+   "triangles": 8638,
    "bytes": 1071820,
    "model": "/models/own/crs326-24s-2q.glb",
    "thumb": "/models/own/thumbs/crs326-24s-2q.webp",
@@ -646,7 +646,7 @@
     0.043,
     0.21
    ],
-   "triangles": 0,
+   "triangles": 13998,
    "bytes": 1155948,
    "model": "/models/own/crs354-48g.glb",
    "thumb": "/models/own/thumbs/crs354-48g.webp",
@@ -671,7 +671,7 @@
     0.0874,
     0.286
    ],
-   "triangles": 0,
+   "triangles": 10154,
    "bytes": 1086140,
    "model": "/models/own/usp-pdu-pro.glb",
    "thumb": "/models/own/thumbs/usp-pdu-pro.webp",
