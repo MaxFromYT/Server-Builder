@@ -3,7 +3,7 @@
  *
  * Bodies live one file per post in client/src/content/posts and load on
  * demand, so a reader downloads the article they asked for instead of all
- * 244 of them. Regenerate with script/generatePostIndex.ts.
+ * 245 of them. Regenerate with script/generatePostIndex.ts.
  */
 
 export interface CoverCredit {
@@ -40,6 +40,15 @@ export interface PostMeta {
 }
 
 export const postIndex: PostMeta[] = [
+  {
+    slug: "ci-gate-blamed-fourteen-innocents",
+    title: "The CI Gate That Blamed Fourteen Innocent Devices",
+    date: "2026-09-06",
+    tags: ["operations","tools","servers"],
+    excerpt: "A check that compares a 3D rack model against its device list named sixteen devices as misplaced when two had moved, and reported the rack unit as 37mm instead of 44.45mm. Both statements were arithmetically correct and both were about the fit rather than the rack. What least squares does to a drift check, and what a median does instead.",
+    coverImage: "/images/blog/ci-gate-blamed-fourteen-innocents.jpg",
+    wordCount: 1661,
+  },
   {
     slug: "nist-password-rules-changed",
     title: "Fifteen Characters, And No Complexity Rules At All",
@@ -2435,10 +2444,10 @@ export const postIndex: PostMeta[] = [
  * Pages quote these, and a number that goes stale on a page about
  * not making stale claims would be the worst possible place for one.
  */
-export const CITATION_COUNT = 906;
+export const CITATION_COUNT = 912;
 
 /** Unique cover image attribution and licence URLs. */
 export const ATTRIBUTION_URL_COUNT = 159;
 
 /** Everything script/checkPostLinks.mjs requests: the two sets above, deduplicated. */
-export const CHECKED_URL_COUNT = 1065;
+export const CHECKED_URL_COUNT = 1071;

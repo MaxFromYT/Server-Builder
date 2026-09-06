@@ -38,6 +38,11 @@ ASH = (137, 140, 145)
 BONE = (238, 235, 228)
 SIGNAL = (196, 255, 0)
 
+#: Left and right inset for plate covers. The article hero crops this
+#: image's sides to fill its own aspect, so anything nearer the edge than
+#: this is not guaranteed to survive.
+PLATE_PAD = 240
+
 #: Font hunt, because a container may have any of these and none is certain.
 FONT_DIRS = [
     "/usr/share/fonts/truetype/dejavu",
@@ -112,24 +117,104 @@ def bars(d: ImageDraw.ImageDraw, series: list[tuple[str, float, str]], top: int)
         y += bar_h + gap
 
 
+def residuals(d: ImageDraw.ImageDraw, points: list[tuple[float, float]], top: int,
+              tolerance: float, labels: tuple[str, str], clip: float = 0.0,
+              pad: int = 96) -> None:
+    """Two residual series against a shared tolerance band.
+
+    For a figure whose point is which of two methods blames the wrong thing,
+    the residual per item is the whole story and the fitted lines are not:
+    what a reader needs to see is how many dots fall outside the band, not
+    what gradient put them there.
+
+    Values arrive already computed by the caller. Nothing is fitted here.
+    """
+    if not points:
+        return
+    left, right = pad, W - pad
+    space = H - top - 130
+    mid = top + space // 2
+    # Scale to `clip` rather than to the largest value when one is given. The
+    # figure exists to show the small residuals, and a single item eleven
+    # units out flattens every other dot onto the axis if it sets the scale.
+    peak = clip or (max(max(abs(a), abs(b)) for a, b in points) or 1)
+    scale = (space / 2 - 30) / peak
+
+    def place(v):
+        """Screen y for a residual, and whether it had to be clipped."""
+        return mid - max(-peak, min(peak, v)) * scale, abs(v) > peak
+
+    def marker(x, v):
+        """A caret at the edge, so a clipped point is never mistaken for one
+        that merely sits high."""
+        y = mid - (peak if v > 0 else -peak) * scale
+        dy = -14 if v > 0 else 14
+        d.polygon([(x - 8, y + dy), (x + 8, y + dy), (x, y + dy + dy // 2)], fill=SIGNAL)
+
+    # The band a value has to leave before the check calls it misplaced.
+    band = tolerance * scale
+    d.rectangle([left, mid - band, right, mid + band], fill=(17, 20, 17))
+    d.line([(left, mid - band), (right, mid - band)], fill=IRON, width=1)
+    d.line([(left, mid + band), (right, mid + band)], fill=IRON, width=1)
+    d.line([(left, mid), (right, mid)], fill=(38, 41, 44), width=1)
+
+    step = (right - left) / max(1, len(points) - 1)
+    for i, (a, b) in enumerate(points):
+        x = left + i * step
+        # First series as a hollow ring, second as a filled dot, so the two
+        # read apart in a greyscale print and for a colourblind reader.
+        ya, ca = place(a)
+        d.line([(x, mid), (x, ya)], fill=(46, 49, 52), width=1)
+        d.ellipse([x - 7, ya - 7, x + 7, ya + 7], outline=BONE, width=2)
+        yb, cb = place(b)
+        d.ellipse([x - 5, yb - 5, x + 5, yb + 5], fill=SIGNAL)
+        if ca or cb:
+            marker(x, a if ca else b)
+
+    fa = font(21)
+    d.ellipse([left, H - 118, left + 14, H - 104], outline=BONE, width=2)
+    x = tracked(d, (left + 26, H - 120), labels[0].upper(), fa, BONE, 1.6)
+    d.ellipse([x + 30, H - 116, x + 40, H - 106], fill=SIGNAL)
+    tracked(d, (x + 52, H - 120), labels[1].upper(), fa, SIGNAL, 1.6)
+    f = font(19)
+    text = f"BAND: {tolerance:g}U TOLERANCE"
+    if clip:
+        text += f"   AXIS CLIPPED AT {clip:g}U"
+    tracked(d, (right - d.textlength(text, font=f) - 24, H - 120), text, f, ASH, 1.6)
+
+
 def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[str, float, str]],
-          footer: str, plate: bool = False) -> Path:
+          footer: str, plate: bool = False, points: list[tuple[float, float]] | None = None,
+          tolerance: float = 0.0, labels: tuple[str, str] = ("", ""),
+          clip: float = 0.0) -> Path:
     im = Image.new("RGB", (W, H), OBSIDIAN)
     d = ImageDraw.Draw(im)
     grid(d)
 
-    # Signal rule and eyebrow, matching the page headers.
-    d.rectangle([96, 96, 96 + 64, 99], fill=SIGNAL)
-    tracked(d, (96, 124), "MAXDOUBIN.COM", font(19), ASH, 5.0)
+    if not plate:
+        # Signal rule and eyebrow, matching the page headers.
+        d.rectangle([96, 96, 96 + 64, 99], fill=SIGNAL)
+        tracked(d, (96, 124), "MAXDOUBIN.COM", font(19), ASH, 5.0)
 
     if plate:
         # No headline. The article page lays its own title over this image,
         # and a cover that carries a second one gives you two titles in the
         # same rectangle, which is what the first version of these did.
-        tracked(d, (96, 176), subtitle.upper(), font(24), ASH, 3.0)
-        bars(d, series, 250)
-        d.line([(96, H - 92), (W - 96, H - 92)], fill=IRON, width=1)
-        tracked(d, (96, H - 70), footer.upper(), font(18), ASH, 2.4)
+        #
+        # Everything is inset well past the 96px margin the standalone
+        # figure uses, because the article hero crops the sides of this
+        # image to fill its own aspect: at 96 the legend and the eyebrow
+        # both lose their first few characters and the cover reads as
+        # broken rather than as cropped.
+        d.rectangle([PLATE_PAD, 96, PLATE_PAD + 64, 99], fill=SIGNAL)
+        tracked(d, (PLATE_PAD, 124), "MAXDOUBIN.COM", font(19), ASH, 5.0)
+        tracked(d, (PLATE_PAD, 176), subtitle.upper(), font(24), ASH, 3.0)
+        if kind == "residuals":
+            residuals(d, points or [], 250, tolerance, labels, clip, PLATE_PAD)
+        else:
+            bars(d, series, 250)
+        d.line([(PLATE_PAD, H - 92), (W - PLATE_PAD, H - 92)], fill=IRON, width=1)
+        tracked(d, (PLATE_PAD, H - 70), footer.upper(), font(18), ASH, 2.4)
         # Pull the whole thing back so white text laid over it stays legible.
         im = Image.blend(im, Image.new("RGB", (W, H), OBSIDIAN), 0.55)
         OUT.mkdir(parents=True, exist_ok=True)
@@ -157,7 +242,9 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
         d.text((96, y + 8), subtitle, font=font(27), fill=ASH)
         y += 56
 
-    if kind == "bars":
+    if kind == "residuals":
+        residuals(d, points or [], y + 44, tolerance, labels, clip)
+    else:
         bars(d, series, y + 44)
 
     d.line([(96, H - 92), (W - 96, H - 92)], fill=IRON, width=1)
@@ -172,7 +259,7 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("slug")
-    ap.add_argument("--kind", default="bars", choices=["bars"])
+    ap.add_argument("--kind", default="bars", choices=["bars", "residuals"])
     ap.add_argument("--title", required=True)
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--footer", default="Figures from the cited sources")
@@ -184,6 +271,12 @@ def main() -> int:
     )
     ap.add_argument("--series", action="append", default=[],
                     help='"label=value,unit", repeatable')
+    ap.add_argument("--points", default="",
+                    help='residuals kind: "a:b,a:b,..." one pair per item, already computed')
+    ap.add_argument("--tolerance", type=float, default=0.0)
+    ap.add_argument("--clip", type=float, default=0.0,
+                    help="residuals kind: cap the axis here and caret anything beyond")
+    ap.add_argument("--labels", default="first,second")
     a = ap.parse_args()
 
     series = []
@@ -192,7 +285,14 @@ def main() -> int:
         value, _, unit = rest.partition(",")
         series.append((label, float(value), unit))
 
-    dst = build(a.slug, a.kind, a.title, a.subtitle, series, a.footer, a.plate)
+    points = []
+    for raw in filter(None, a.points.split(",")):
+        first, _, second = raw.partition(":")
+        points.append((float(first), float(second)))
+    first, _, second = a.labels.partition(",")
+
+    dst = build(a.slug, a.kind, a.title, a.subtitle, series, a.footer, a.plate,
+                points, a.tolerance, (first, second), a.clip)
     print(dst)
     return 0
 
