@@ -1289,25 +1289,35 @@ html.lenis-smooth {
   a paper copy is still usable, and no orphaned headings.
 */
 @media print {
-  :root,
-  .cinematic {
+  /*
+    Scoped to .cinematic to begin with, which left the legacy pages out. In
+    the dark theme /legacy/blog printed 154 elements still painting a dark
+    background and 225 still writing light grey text, and Chrome does not
+    print background colours unless the reader turns them on, so the usual
+    result was not a black page: it was hsl(210 5% 72%) text on white paper.
+
+    The reset is on everything now. Nothing on this site depends on a printed
+    background to be legible, so dropping all of them and forcing black text
+    is right for both layouts.
+  */
+  :root {
     background: #fff !important;
     color: #000 !important;
   }
 
   /* Chrome, the ambient layers, and anything interactive. */
   .cinematic-grain::before,
-  .cinematic nav,
-  .cinematic footer,
-  .cinematic canvas,
+  nav,
+  footer,
+  canvas,
   [data-testid="link-skip-to-content"],
   [data-print-hide] {
     display: none !important;
   }
 
-  .cinematic *,
-  .cinematic *::before,
-  .cinematic *::after {
+  body *,
+  body *::before,
+  body *::after {
     background: transparent !important;
     color: #000 !important;
     box-shadow: none !important;
@@ -1317,7 +1327,7 @@ html.lenis-smooth {
     transition: none !important;
   }
 
-  .cinematic main {
+  main {
     padding: 0 !important;
   }
 
