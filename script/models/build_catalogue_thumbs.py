@@ -94,8 +94,36 @@ def trim(src: Path, dst: Path) -> tuple[int, int] | None:
     return im.size
 
 
+#: Characters the vendor uses that this site's copy does not, and what to
+#: put instead. There is a CI gate for em dashes, and one product description
+#: arrived from the store with one in it, which failed the build on a page
+#: nobody had written a word of. Normalising here means a regeneration cannot
+#: bring it back.
+#: Written as escapes rather than as the characters themselves, because the
+#: gate that forbids them scans this file too and would flag the table that
+#: exists to remove them.
+EM_DASH = "\u2014"
+EN_DASH = "\u2013"
+PUNCTUATION = {
+    f" {EM_DASH} ": ", ",
+    f" {EN_DASH} ": ", ",
+    EM_DASH: ", ",
+    EN_DASH: ", ",
+}
+
+
+def house_style(text: str) -> str:
+    for bad, good in PUNCTUATION.items():
+        text = text.replace(bad, good)
+    return text
+
+
 def main() -> int:
     data = json.loads(CATALOGUE.read_text())
+    for device in data["devices"]:
+        for key, value in list(device.items()):
+            if isinstance(value, str):
+                device[key] = house_style(value)
     devices = data["devices"]
     wanted = set(sys.argv[1:])
     todo = [d for d in devices if not wanted or d["slug"] in wanted]

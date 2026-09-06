@@ -1,7 +1,7 @@
 
 ## The first message got thirty eight times bigger
 
-For most of TLS 1.3's life the client's key share was thirty two bytes. That is
+For most of [TLS 1.3](/blog/tls-modern-encryption)'s life the client's key share was thirty two bytes. That is
 an X25519 public key, and thirty two bytes is small enough that you never had
 to think about it: the ClientHello fitted in one packet, it had always fitted
 in one packet, and a great deal of network equipment quietly came to depend on

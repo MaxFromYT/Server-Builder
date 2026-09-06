@@ -88,7 +88,7 @@ practice means ACME.
 ## And a change that is not about time at all
 
 Two other requirements took effect on the same date and got almost no
-coverage, both about DNSSEC:
+coverage, both about [DNSSEC](/blog/dns-security-dnssec):
 
 > DNSSEC validation back to the IANA DNSSEC root trust anchor MUST be performed
 > on all DNS queries associated with the validation of domain authorization or

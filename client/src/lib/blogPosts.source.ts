@@ -147,7 +147,7 @@ practice means ACME.
 ## And a change that is not about time at all
 
 Two other requirements took effect on the same date and got almost no
-coverage, both about DNSSEC:
+coverage, both about [DNSSEC](/blog/dns-security-dnssec):
 
 > DNSSEC validation back to the IANA DNSSEC root trust anchor MUST be performed
 > on all DNS queries associated with the validation of domain authorization or
@@ -218,7 +218,7 @@ step in the table is that argument winning again.
     content: `
 ## The first message got thirty eight times bigger
 
-For most of TLS 1.3's life the client's key share was thirty two bytes. That is
+For most of [TLS 1.3](/blog/tls-modern-encryption)'s life the client's key share was thirty two bytes. That is
 an X25519 public key, and thirty two bytes is small enough that you never had
 to think about it: the ClientHello fitted in one packet, it had always fitted
 in one packet, and a great deal of network equipment quietly came to depend on

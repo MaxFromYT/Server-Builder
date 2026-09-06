@@ -20,21 +20,25 @@
  *
  * WHAT IT COSTS on a page where nobody opens it: nothing beyond this file.
  *
- * That took a correction. The first version imported the post index at the
- * top, and because this component lives in the layout that every page uses,
- * the bundler quite correctly put all 149KB of post metadata into the
- * critical path of every page on the site. The contact page was downloading
- * the titles of 242 articles. Both of the heavy sources are pulled in on
- * first open now: the post index by dynamic import, the hardware catalogue
- * by fetch. The tool and rack registries stay static, because the navigation
- * already brings those in and they are small.
+ * That took two corrections and both were the same mistake. This component
+ * lives in the layout every page uses, so anything it imports at the top is
+ * in the critical path of the whole site, and the bundler is quite right to
+ * put it there. First the post index went in, and the contact form started
+ * downloading the titles of 242 articles. Then, with that fixed, the tool
+ * and rack registries were still static, and the entry closure was 51KB over
+ * its budget, because a rack definition carries every device in it.
+ *
+ * So everything the palette searches is now loaded when it is first opened,
+ * and nothing before: the registries and the post index by dynamic import,
+ * the hardware catalogue by fetch. A reader who never presses the key pays
+ * for this file and nothing else.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import type { PostMeta } from "@/lib/postIndex";
-import { TOOLS } from "@/lib/toolsRegistry";
-import { RACKS } from "@/lib/racks";
+import type { ToolEntry } from "@/lib/toolsRegistry";
+import type { RackDefinition } from "@/lib/rackTypes";
 
 /** One thing you can go to. */
 interface Entry {
@@ -134,6 +138,8 @@ export function CommandPalette() {
   const [cursor, setCursor] = useState(0);
   const [gear, setGear] = useState<GearItem[] | null>(null);
   const [posts, setPosts] = useState<PostMeta[] | null>(null);
+  const [tools, setTools] = useState<ToolEntry[] | null>(null);
+  const [racks, setRacks] = useState<RackDefinition[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   /* Where focus was, so closing puts it back rather than on the body. */
@@ -172,16 +178,23 @@ export function CommandPalette() {
     };
   }, []);
 
-  /* Both heavy sources, on first open. See the note at the top of the file. */
+  /* Everything it searches, on first open. See the note at the top. */
   useEffect(() => {
     if (!open || posts) return;
     let live = true;
-    import("@/lib/postIndex")
-      .then((m) => {
-        if (live) setPosts(m.postIndex);
+    Promise.all([
+      import("@/lib/postIndex"),
+      import("@/lib/toolsRegistry"),
+      import("@/lib/racks"),
+    ])
+      .then(([p, t, r]) => {
+        if (!live) return;
+        setPosts(p.postIndex);
+        setTools(t.TOOLS);
+        setRacks(r.RACKS);
       })
       .catch(() => {
-        /* Articles are then absent from results; everything else still works. */
+        /* Those sections are then absent; pages and hardware still work. */
       });
     return () => {
       live = false;
@@ -225,7 +238,7 @@ export function CommandPalette() {
 
   const entries = useMemo<Entry[]>(() => {
     const out: Entry[] = [...PAGES];
-    for (const t of TOOLS) {
+    for (const t of tools ?? []) {
       out.push({
         kind: "Tool",
         title: t.name,
@@ -234,7 +247,7 @@ export function CommandPalette() {
         terms: t.keywords.join(" "),
       });
     }
-    for (const r of RACKS) {
+    for (const r of racks ?? []) {
       out.push({
         kind: "Rack",
         title: r.name,
@@ -263,7 +276,7 @@ export function CommandPalette() {
       });
     }
     return out;
-  }, [gear, posts]);
+  }, [gear, posts, tools, racks]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
