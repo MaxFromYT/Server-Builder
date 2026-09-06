@@ -64,11 +64,22 @@ const RECENTS_STORAGE_KEY = "equipment-picker-recents";
 const MAX_RECENTS = 8;
 const ROW_HEIGHT = 140;
 
-const getStoredIds = (key: string) => {
+const getStoredIds = (key: string): string[] => {
   if (typeof window === "undefined") return [];
   try {
     const stored = window.localStorage.getItem(key);
-    return stored ? (JSON.parse(stored) as string[]) : [];
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    /*
+      The cast this replaced sat inside the try and the use of the value sat
+      outside it, so the guard covered the wrong thing. A stored object
+      parses fine, gets called a string[], and reaches new Set(favoriteIds)
+      during render, where a non-iterable throws and takes the picker with
+      it. Checking the shape here is what the try was meant to be doing.
+    */
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === "string")
+      : [];
   } catch {
     return [];
   }
