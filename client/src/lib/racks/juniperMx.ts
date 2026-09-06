@@ -180,6 +180,17 @@ export const juniperMxRack: RackDefinition = {
       watts: null,
       url: "https://www.apc.com/us/en/product/SMT1500RM2U/",
     },
+    {
+      id: "BLANK_MX",
+      u: 12,
+      vendor: "Generic",
+      model: "Blanking panels",
+      role: "Half the frame, deliberately. A provider edge is built with room for the next line card chassis, and the space is blanked rather than left open so the airflow through the cabinet stays front to back.",
+      family: "blank",
+      look: "solid",
+      finish: "dark",
+      watts: null,
+    },
   ],
 
   sources: [

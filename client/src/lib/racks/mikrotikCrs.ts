@@ -173,6 +173,17 @@ export const mikrotikCrsRack: RackDefinition = {
       watts: null,
       url: "https://store.ui.com/us/en/products/usp-pdu-pro",
     },
+    {
+      id: "BLANK_CRS",
+      u: 5,
+      vendor: "Generic",
+      model: "Blanking panels",
+      role: "Five units blanked below the distribution unit, which is where the next switch goes.",
+      family: "blank",
+      look: "solid",
+      finish: "dark",
+      watts: null,
+    },
   ],
 
   sources: [

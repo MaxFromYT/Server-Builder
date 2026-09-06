@@ -144,6 +144,17 @@ export const dellRowRack: RackDefinition = {
       watts: null,
       url: "https://www.apc.com/us/en/product/SMT1500RM2U/",
     },
+    {
+      id: "BLANK_ROW",
+      u: 11,
+      vendor: "Generic",
+      model: "Blanking panels",
+      role: "Eleven units blanked. A storage row leaves room for the next shelf, and an open unit in front of eighty four spinning disks is a recirculation path rather than a gap.",
+      family: "blank",
+      look: "solid",
+      finish: "dark",
+      watts: null,
+    },
   ],
 
   sources: [
