@@ -51,15 +51,15 @@
   #                             REQUIRED, and it is a known, accepted cost, not
   #                             an oversight. script/prerender.ts writes a
   #                             <script type="application/ld+json"> block into
-  #                             every one of the ~240 static pages, and
+  #                             every one of the static pages, and
   #                             client/index.html carries three more. CSP
   #                             treats those as inline scripts even though
   #                             ld+json is data the parser never executes.
   #                             Removing 'unsafe-inline' means either a nonce
   #                             (needs a per-request server; this deploys as
-  #                             static files) or a sha256 hash per block (240
-  #                             hashes, regenerated on every content edit, in a
-  #                             header with a 2000 character ceiling). Neither
+  #                             static files) or a sha256 hash per block (one
+  #                             per page, regenerated on every content edit, in
+  #                             a header with a 2000 character ceiling). Neither
   #                             fits. Note that 'unsafe-inline' here permits
   #                             inline <script> only; there is no 'unsafe-eval',
   #                             so eval and new Function stay blocked, and no
