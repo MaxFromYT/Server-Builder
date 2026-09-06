@@ -133,12 +133,19 @@ class CiscoEnterpriseRack(EnterpriseRack):
     def build_ucs6536(self, z: float, group: str) -> None:
         """A fabric interconnect: 36 QSFP28, and the L1/L2 pair that clusters it.
 
-        A UCS 5108 has no switching and no management of its own. Its I/O
-        modules are fabric extenders, so the chassis is only ever half of a
-        thing: the other half is a pair of these, which is where UCS Manager
-        runs and where every blade's uplink terminates. The rack drew the
-        chassis without them for a while, which is a domain that cannot come
-        up, and the omission is invisible unless you already know to look.
+        A UCS 5108 has a passive midplane and no embedded switch. Cisco's
+        own datasheet puts it plainly: the chassis "has no need for
+        independent management". Its two I/O bays take fabric extenders,
+        which is to say the chassis is only ever half of a thing, and the
+        other half is a pair of these, where UCS Manager runs and where
+        every blade's uplink terminates.
+
+        The exception is worth knowing, because it is the reason "a 5108
+        cannot run alone" is too strong: those same I/O bays will take a
+        6324 instead, which is a fabric interconnect small enough to live
+        in the chassis, and that configuration needs nothing outside it.
+        This rack has neither, which is the actual fault, and drawing the
+        pair is the ordinary way to fix it rather than the only way.
 
         The two sockets beside the status block are what the pair is for. L1
         to L1 and L2 to L2, patched directly between the two units and to

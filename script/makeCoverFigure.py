@@ -88,13 +88,14 @@ def grid(d: ImageDraw.ImageDraw) -> None:
         d.line([(0, y), (W, y)], fill=(15, 17, 19), width=1)
 
 
-def bars(d: ImageDraw.ImageDraw, series: list[tuple[str, float, str]], top: int) -> None:
+def bars(d: ImageDraw.ImageDraw, series: list[tuple[str, float, str]], top: int,
+         pad: int = 96) -> None:
     """Horizontal bars, longest scaled to the width. The value is the point,
     so it is printed at full size and the bar is the supporting evidence."""
     if not series:
         return
     peak = max(v for _, v, _ in series) or 1
-    left, right = 96, W - 96
+    left, right = pad, W - pad
     room = right - left
     gap = 30
     space = H - top - 120
@@ -212,7 +213,7 @@ def build(slug: str, kind: str, title: str, subtitle: str, series: list[tuple[st
         if kind == "residuals":
             residuals(d, points or [], 250, tolerance, labels, clip, PLATE_PAD)
         else:
-            bars(d, series, 250)
+            bars(d, series, 250, PLATE_PAD)
         d.line([(PLATE_PAD, H - 92), (W - PLATE_PAD, H - 92)], fill=IRON, width=1)
         tracked(d, (PLATE_PAD, H - 70), footer.upper(), font(18), ASH, 2.4)
         # Pull the whole thing back so white text laid over it stays legible.

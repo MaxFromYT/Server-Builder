@@ -356,7 +356,7 @@ export const ciscoEnterpriseRack: RackDefinition = {
       u: 1,
       vendor: "Cisco",
       model: "UCS 6536 Fabric Interconnect",
-      role: "The half of the blade chassis that is not in the blade chassis. A UCS 5108 has no switching and no management of its own: its I/O modules are fabric extenders, so every blade's uplink terminates here, and UCS Manager runs here rather than on anything it manages. 36 QSFP28 in one rack unit, of which ports 33 to 36 are unified and can be Fibre Channel instead.",
+      role: "The half of the blade chassis that is not in the blade chassis. A UCS 5108 has a passive midplane and no embedded switch, and Cisco's datasheet says it has no need for independent management, so its I/O bays take fabric extenders and every blade's uplink terminates out here where UCS Manager runs. Those bays will also take a 6324, a fabric interconnect small enough to sit inside the chassis, which is the one configuration that needs nothing outside it. 36 QSFP28 in one rack unit, of which ports 33 to 36 are unified and can be Fibre Channel instead.",
       family: "switch",
       finish: "dark",
       ports: fabricPorts(),

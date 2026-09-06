@@ -3,7 +3,7 @@
  *
  * Bodies live one file per post in client/src/content/posts and load on
  * demand, so a reader downloads the article they asked for instead of all
- * 245 of them. Regenerate with script/generatePostIndex.ts.
+ * 246 of them. Regenerate with script/generatePostIndex.ts.
  */
 
 export interface CoverCredit {
@@ -40,6 +40,15 @@ export interface PostMeta {
 }
 
 export const postIndex: PostMeta[] = [
+  {
+    slug: "rack-diagram-that-cannot-be-switched-on",
+    title: "The Rack Diagram That Cannot Be Switched On",
+    date: "2026-09-06",
+    tags: ["servers","hardware","operations"],
+    excerpt: "Auditing sixteen rack elevations found five that held a UPS and nothing to distribute power with, a blade chassis with no fabric interconnect behind it, a tape library with no host, and eight servers with nowhere to land a management port. None of it was a typo. Every one was a device missing because it is the kind of device nobody puts in a diagram.",
+    coverImage: "/images/blog/rack-diagram-that-cannot-be-switched-on.jpg",
+    wordCount: 1375,
+  },
   {
     slug: "ci-gate-blamed-fourteen-innocents",
     title: "The CI Gate That Blamed Fourteen Innocent Devices",
@@ -2444,10 +2453,10 @@ export const postIndex: PostMeta[] = [
  * Pages quote these, and a number that goes stale on a page about
  * not making stale claims would be the worst possible place for one.
  */
-export const CITATION_COUNT = 912;
+export const CITATION_COUNT = 914;
 
 /** Unique cover image attribution and licence URLs. */
 export const ATTRIBUTION_URL_COUNT = 159;
 
 /** Everything script/checkPostLinks.mjs requests: the two sets above, deduplicated. */
-export const CHECKED_URL_COUNT = 1071;
+export const CHECKED_URL_COUNT = 1073;
