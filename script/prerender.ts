@@ -908,7 +908,7 @@ ${JSON.stringify({
       dir: "racks/build",
       title: "Rack builder | Max Doubin",
       description:
-        "Build a rack from fifty one real UniFi devices in 3D. Pick hardware, stack it, see what it weighs in rack units and megabytes, and share the build as a link.",
+        "Build a rack from 75 real rack mountable devices across six vendors in 3D. Pick hardware, stack it, see what it weighs in rack units and megabytes, and share the build as a link.",
       canonical: `${SITE_URL}/racks/build`,
     },
     {
@@ -1528,8 +1528,8 @@ const wiredRackContent = `
 
 const rackBuilderContent = `
   <h1>Build a rack</h1>
-  <p>Fifty one rack mountable UniFi devices, in Ubiquiti's own geometry, and
-  an empty frame. Pick something and it lands in the highest free slot that
+  <p>Seventy five rack mountable devices from six vendors, fifty of them in
+  Ubiquiti's own published geometry, and an empty frame. Pick something and it lands in the highest free slot that
   fits it. A 2U will not go into a 1U gap, because a 2U does not go into a 1U
   gap. What you build is saved in your browser and can be shared as a link.</p>
   <h2>A rack is a list of occupied units, not a list of devices</h2>
@@ -2450,7 +2450,7 @@ ${JSON.stringify({
   /*
     The hardware catalogue. Two hundred and fifty two vendor models with
     their measured dimensions, and until this page existed the only ones a
-    crawler could see were the fifty one that mount in a rack. The list is
+    crawler could see were the ones that mount in a rack. The list is
     read from the same JSON the page fetches, so the prerendered text cannot
     drift from what a reader gets.
   */

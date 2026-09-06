@@ -78,6 +78,29 @@ const claims = [
     what: "the builder card's device count",
     text: `"${mountable.length} devices"`,
   },
+  /*
+    The prerenderer says it too, and it was missed the first time round.
+    /racks/build is mostly a WebGL canvas, so the prose a crawler is given is
+    hand written here rather than rendered from the component, and it still
+    claimed fifty one UniFi devices long after the palette became seventy
+    five across six vendors. The meta description is the copy a search result
+    shows, so that number was the site's public claim about itself.
+  */
+  {
+    file: "script/prerender.ts",
+    what: "the rack builder's meta description",
+    text: `${mountable.length} real rack mountable devices across ${spell(vendors.size)} vendors`,
+  },
+  {
+    file: "script/prerender.ts",
+    what: "the prose the crawler gets for the rack builder",
+    text: `${cap(spell(mountable.length))} rack mountable devices from ${spell(vendors.size)} vendors`,
+  },
+  {
+    file: "script/prerender.ts",
+    what: "how many of the prerendered palette are vendor exports",
+    text: `${spell(ubiquitiOwnGeometry)} of them in\n  Ubiquiti's own published geometry`,
+  },
 ];
 
 for (const claim of claims) {
@@ -103,5 +126,5 @@ if (problems.length) {
 }
 console.log(
   `OK  the builder palette is ${mountable.length} devices from ${vendors.size} vendors,` +
-    ` and both pages that advertise it say so.`,
+    ` and the ${new Set(claims.map((c) => c.file)).size} files that advertise it agree.`,
 );
