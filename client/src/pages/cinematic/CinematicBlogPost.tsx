@@ -359,8 +359,12 @@ export function CinematicBlogPost() {
                 1.99:1. Not a rounding error, an unreadable headline.
 
                 The stops below lift the middle of the gradient, which is
-                where the words are, and keep the band between them light so
-                the photograph still reads as a photograph.
+                where the words are, and keep the band above them light so
+                the photograph still reads as a photograph. The ramp starts
+                at 26% rather than lower because a phone is the constraint:
+                at 375px the headline wraps to more lines and pushes the
+                breadcrumb above it further up the hero, where it measured
+                3.58:1 against a gradient tuned on a desktop.
 
                 The navigation has the same problem over this image and it
                 is not solved here, because it cannot be. Its inactive links
@@ -371,7 +375,7 @@ export function CinematicBlogPost() {
                 instead.
               */
               background:
-                "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.55) 0%, hsl(var(--brand-obsidian) / 0.26) 28%, hsl(var(--brand-obsidian) / 0.74) 44%, hsl(var(--brand-obsidian) / 0.88) 58%, hsl(var(--brand-obsidian) / 0.94) 78%, hsl(var(--brand-obsidian)) 100%)",
+                "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.55) 0%, hsl(var(--brand-obsidian) / 0.32) 26%, hsl(var(--brand-obsidian) / 0.78) 40%, hsl(var(--brand-obsidian) / 0.90) 56%, hsl(var(--brand-obsidian) / 0.94) 78%, hsl(var(--brand-obsidian)) 100%)",
             }}
           />
           <div
