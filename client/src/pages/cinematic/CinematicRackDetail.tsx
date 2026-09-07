@@ -298,7 +298,7 @@ export function CinematicRackDetail() {
                         <button
                           type="button"
                           onClick={() => select(d.id)}
-                          className="group flex w-full items-baseline justify-between gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[hsl(220_10%_9%)]"
+                          className="group flex w-full items-baseline justify-between gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[hsl(var(--brand-graphite))]"
                         >
                           <span className="font-mono-tight text-[13px] text-[hsl(var(--brand-bone-dim))] transition-colors group-hover:text-[hsl(var(--brand-bone))]">
                             {d.vendor === "Generic" ? d.model : `${d.vendor} ${d.model}`}

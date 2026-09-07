@@ -274,10 +274,10 @@ export function CinematicRacks() {
                 <Link
                   key={f.href}
                   href={f.href}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-[hsl(var(--brand-iron))] bg-[hsl(220_10%_6%)] transition-colors hover:border-[hsl(var(--brand-signal))] focus-visible:border-[hsl(var(--brand-signal))]"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite))] transition-colors hover:border-[hsl(var(--brand-signal))] focus-visible:border-[hsl(var(--brand-signal))]"
                   data-testid={`link-featured-${f.slug}`}
                 >
-                  <div className="aspect-[22/15] border-b border-[hsl(var(--brand-iron)/0.7)] bg-[hsl(220_12%_4%)] p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.015]">
+                  <div className="aspect-[22/15] border-b border-[hsl(var(--brand-iron)/0.7)] bg-[hsl(var(--brand-void))] p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.015]">
                     {f.art}
                   </div>
                   <div className="flex flex-1 flex-col p-5">
@@ -315,7 +315,7 @@ export function CinematicRacks() {
                 <Link
                   key={rack.slug}
                   href={`/racks/${rack.slug}`}
-                  className="group rounded-2xl border border-[hsl(var(--brand-iron))] bg-[hsl(220_10%_6%)] p-5 transition-colors hover:border-[hsl(var(--brand-signal))] focus-visible:border-[hsl(var(--brand-signal))]"
+                  className="group rounded-2xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite))] p-5 transition-colors hover:border-[hsl(var(--brand-signal))] focus-visible:border-[hsl(var(--brand-signal))]"
                   data-testid={`link-rack-${rack.slug}`}
                 >
                   <div className="mx-auto max-w-[300px] transition-transform duration-300 motion-safe:group-hover:scale-[1.02]">
