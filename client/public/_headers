@@ -167,10 +167,18 @@
 # Crawler directives.
 #
 # X-Robots-Tag is the only way to say noindex for a route with no prerendered
-# document of its own: these are served as the app shell, which carries the
-# home page's meta tags, so without this a crawler reads /noc as a duplicate
-# of the home page. robots.txt Disallow would be weaker, since a disallowed
-# URL with inbound links can still be listed by URL alone.
+# document of its own: those are served as the app shell, which carries the
+# home page's meta tags, so without this a crawler reads the URL as a
+# duplicate of the home page. robots.txt Disallow would be weaker, since a
+# disallowed URL with inbound links can still be listed by URL alone.
+#
+# The five simulator dashboards no longer rest on that argument. They are
+# prerendered with their own canonical and their own meta noindex, and the
+# header below stays as a second signal that does not depend on a crawler
+# reading the document. What it must never again be is the only signal:
+# paired with the shell's canonical to the home page, a noindex on a
+# different URL is the combination Google warns can transfer the noindex to
+# the canonical target. Search Console reported those URLs as soft 404s.
 #
 # None of the /* rules above set X-Robots-Tag, so nothing is joined here.
 # ---------------------------------------------------------------------------

@@ -45,15 +45,26 @@
 # page points at the apex, which is what actually keeps Google consolidating
 # the two hosts, and it is doing that job today.
 
-# The simulator's internal dashboards. Canvas-driven, nothing meaningful to
-# prerender, and noindex in _headers so crawl budget goes to the writing.
-# /game itself IS prerendered now: it is one of the most distinctive things
-# here and deserves a real shot at ranking.
-/noc             /             200
-/network         /             200
-/floor           /             200
-/incidents       /             200
-/build           /             200
+# The simulator's internal dashboards used to be rewritten here, on the
+# reasoning that they are canvas-driven with nothing meaningful to prerender
+# and are noindex in _headers anyway. Both halves were true and the conclusion
+# was still wrong.
+#
+# A 200 rewrite to / does not serve an empty page, it serves the home page.
+# A crawler asking for /noc got the home page's title, the home page's h1 and
+# a rel=canonical pointing at the home page. Google calls serving the home
+# page in place of a page of its own a soft 404, and Search Console duly
+# reported soft 404s on this site. The noindex did not prevent that; it made
+# it sharper, because a noindex on a URL whose canonical points at a different
+# URL is the one pairing Google warns can transfer the noindex to the
+# canonical target, and the target was the home page.
+#
+# They are prerendered now, each with its own title, its own canonical and
+# noindex on the page. A rule here would be dead weight: Pages serves the
+# prerendered file and never reaches it.
+#
+# /game was already prerendered: it is one of the most distinctive things here
+# and deserves a real shot at ranking.
 
 # The pre-redesign site, kept reachable for old inbound links.
 /legacy          /             200
