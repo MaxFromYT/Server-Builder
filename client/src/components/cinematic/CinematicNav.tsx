@@ -100,6 +100,11 @@ const mobileItemVariants = {
  *   a hero the inactive links take --brand-bone and the bar takes a gradient
  *   of its own that fades out by its own height.
  *
+ *   The plate holds almost to the bottom of the bar rather than fading from
+ *   the middle. The wordmark's box is 30px tall against the links' 16, so it
+ *   reached into the faded part and measured 2.16:1 while the links beside
+ *   it measured 9.19:1. Same bar, same colour, different height.
+ *
  *   Scoped rather than global because it is a real change in appearance and
  *   only two pages need it: a post and /projects. Everywhere else the nav
  *   sits on the page's own ground and already measures clean.
@@ -229,7 +234,7 @@ export function CinematicNav({ overHero = false }: { overHero?: boolean }) {
             : "transparent",
           backgroundImage:
             !scrolled && !open && overHero
-              ? "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.92) 0%, hsl(var(--brand-obsidian) / 0.55) 62%, transparent 100%)"
+              ? "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.95) 0%, hsl(var(--brand-obsidian) / 0.93) 84%, hsl(var(--brand-obsidian) / 0.55) 95%, transparent 100%)"
               : "none",
         }}
       >

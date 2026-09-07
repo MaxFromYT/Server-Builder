@@ -371,7 +371,7 @@ export function CinematicBlogPost() {
                 instead.
               */
               background:
-                "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.55) 0%, hsl(var(--brand-obsidian) / 0.28) 30%, hsl(var(--brand-obsidian) / 0.64) 50%, hsl(var(--brand-obsidian) / 0.84) 70%, hsl(var(--brand-obsidian) / 0.95) 88%, hsl(var(--brand-obsidian)) 100%)",
+                "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.55) 0%, hsl(var(--brand-obsidian) / 0.26) 28%, hsl(var(--brand-obsidian) / 0.74) 44%, hsl(var(--brand-obsidian) / 0.88) 58%, hsl(var(--brand-obsidian) / 0.94) 78%, hsl(var(--brand-obsidian)) 100%)",
             }}
           />
           <div
@@ -426,11 +426,25 @@ export function CinematicBlogPost() {
               <Link
                 href="/blog"
                 data-testid="link-back-to-blog"
-                className="inline-flex min-h-[24px] items-center gap-2 py-1 font-mono-tight text-[11px] uppercase tracking-[0.24em] text-[hsl(var(--brand-ash))] transition-colors hover:text-[hsl(var(--brand-bone))]"
+                /*
+                  --brand-bone rather than --brand-ash, for the reason the
+                  nav links moved. This sits on the cover photo, and a mid
+                  grey cannot reach 4.5:1 against one at any scrim short of
+                  opaque. Measured at 1.60:1 in dark and 2.16:1 in light
+                  before this.
+                */
+                className="inline-flex min-h-[24px] items-center gap-2 py-1 font-mono-tight text-[11px] uppercase tracking-[0.24em] text-[hsl(var(--brand-bone))] transition-colors hover:text-[hsl(var(--brand-bone))]"
               >
                 ← Field notes
               </Link>
-              <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono-tight text-[10px] uppercase tracking-[0.3em] text-[hsl(var(--brand-ash))]">
+              {/*
+                The date, read time and revision line, on --brand-bone for
+                the same reason as the breadcrumb above it: this row sits on
+                the photograph, and --brand-ash measured 1.60:1 there. It
+                loses a little of its quietness against the headline, which
+                is the price of it being readable at all.
+              */}
+              <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono-tight text-[10px] uppercase tracking-[0.3em] text-[hsl(var(--brand-bone))]">
                 <span
                   className="h-[6px] w-[6px] rounded-full bg-[hsl(var(--brand-signal))]"
                   style={{ boxShadow: "0 0 6px hsl(var(--brand-signal))" }}
