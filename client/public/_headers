@@ -159,12 +159,6 @@
 /tools/*
   Cache-Control: public, max-age=0, must-revalidate
 
-/legacy
-  Cache-Control: public, max-age=0, must-revalidate
-
-/legacy/*
-  Cache-Control: public, max-age=0, must-revalidate
-
 # ---------------------------------------------------------------------------
 # Crawler directives.
 #
@@ -202,11 +196,8 @@
 /build
   X-Robots-Tag: noindex, follow
 
-# The pre-redesign site. Nothing on the current site links to it, and its
-# pages duplicate /blog, /projects and /contact. Kept reachable for old
-# inbound links, kept out of the index so it cannot compete with the real one.
-/legacy
-  X-Robots-Tag: noindex, follow
-
-/legacy/*
-  X-Robots-Tag: noindex, follow
+# The pre-redesign site used to be noindexed here. It is not served any more:
+# _redirects 301s every /legacy URL to the page that replaced it, so there is
+# no document at those addresses to keep out of the index, and a noindex on a
+# redirect is at best noise and at worst a signal about the target. Removed
+# rather than left as decoration.

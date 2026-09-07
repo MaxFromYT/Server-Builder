@@ -66,13 +66,32 @@
 # /game was already prerendered: it is one of the most distinctive things here
 # and deserves a real shot at ranking.
 
-# The pre-redesign site, kept reachable for old inbound links.
-/legacy          /             200
-/legacy/game     /             200
-/legacy/blog     /             200
-/legacy/blog/*   /             200
-/legacy/projects /             200
-/legacy/contact  /             200
+# The pre-redesign site, redirected to the pages that replaced it.
+#
+# These were 200 rewrites to /, which meant an old inbound link did not reach
+# the old page or the new one: it got the home page's document, at the old
+# URL, with the home page's canonical. Google reported that as a soft 404,
+# and the noindex in _headers made it worse rather than better, because a
+# noindex on a URL whose canonical points elsewhere is the pairing that can
+# carry the noindex over to the canonical target, which was the home page.
+#
+# A 301 to the current equivalent is better on every axis. Somebody following
+# a years-old link lands on the article they were promised instead of the
+# front page, the link's authority transfers to the page that now holds that
+# content, and the duplicate URL stops existing rather than being papered
+# over with a noindex.
+#
+# The post mapping is one to one and total: the legacy blog rendered the same
+# post data as /blog, and all 247 slugs in postIndex.ts have a prerendered
+# /blog/<slug>. Checked, not assumed.
+#
+# Ordered specific to general, because Pages takes the first match.
+/legacy/blog/*   /blog/:splat  301
+/legacy/blog     /blog         301
+/legacy/projects /projects     301
+/legacy/contact  /contact      301
+/legacy/game     /game         301
+/legacy          /             301
 
 # Retired writing.
 #
