@@ -51,15 +51,17 @@
   #                             REQUIRED, and it is a known, accepted cost, not
   #                             an oversight. script/prerender.ts writes a
   #                             <script type="application/ld+json"> block into
-  #                             every one of the ~240 static pages, and
-  #                             client/index.html carries three more. CSP
+  #                             every one of the static pages, and
+  #                             client/index.html carries four more, one of
+  #                             which is the boot veil that has to run before
+  #                             the first paint and so cannot be a module. CSP
   #                             treats those as inline scripts even though
   #                             ld+json is data the parser never executes.
   #                             Removing 'unsafe-inline' means either a nonce
   #                             (needs a per-request server; this deploys as
-  #                             static files) or a sha256 hash per block (240
-  #                             hashes, regenerated on every content edit, in a
-  #                             header with a 2000 character ceiling). Neither
+  #                             static files) or a sha256 hash per block (one
+  #                             per page, regenerated on every content edit, in
+  #                             a header with a 2000 character ceiling). Neither
   #                             fits. Note that 'unsafe-inline' here permits
   #                             inline <script> only; there is no 'unsafe-eval',
   #                             so eval and new Function stay blocked, and no
@@ -157,20 +159,22 @@
 /tools/*
   Cache-Control: public, max-age=0, must-revalidate
 
-/legacy
-  Cache-Control: public, max-age=0, must-revalidate
-
-/legacy/*
-  Cache-Control: public, max-age=0, must-revalidate
-
 # ---------------------------------------------------------------------------
 # Crawler directives.
 #
 # X-Robots-Tag is the only way to say noindex for a route with no prerendered
-# document of its own: these are served as the app shell, which carries the
-# home page's meta tags, so without this a crawler reads /noc as a duplicate
-# of the home page. robots.txt Disallow would be weaker, since a disallowed
-# URL with inbound links can still be listed by URL alone.
+# document of its own: those are served as the app shell, which carries the
+# home page's meta tags, so without this a crawler reads the URL as a
+# duplicate of the home page. robots.txt Disallow would be weaker, since a
+# disallowed URL with inbound links can still be listed by URL alone.
+#
+# The five simulator dashboards no longer rest on that argument. They are
+# prerendered with their own canonical and their own meta noindex, and the
+# header below stays as a second signal that does not depend on a crawler
+# reading the document. What it must never again be is the only signal:
+# paired with the shell's canonical to the home page, a noindex on a
+# different URL is the combination Google warns can transfer the noindex to
+# the canonical target. Search Console reported those URLs as soft 404s.
 #
 # None of the /* rules above set X-Robots-Tag, so nothing is joined here.
 # ---------------------------------------------------------------------------
@@ -192,11 +196,8 @@
 /build
   X-Robots-Tag: noindex, follow
 
-# The pre-redesign site. Nothing on the current site links to it, and its
-# pages duplicate /blog, /projects and /contact. Kept reachable for old
-# inbound links, kept out of the index so it cannot compete with the real one.
-/legacy
-  X-Robots-Tag: noindex, follow
-
-/legacy/*
-  X-Robots-Tag: noindex, follow
+# The pre-redesign site used to be noindexed here. It is not served any more:
+# _redirects 301s every /legacy URL to the page that replaced it, so there is
+# no document at those addresses to keep out of the index, and a noindex on a
+# redirect is at best noise and at worst a signal about the target. Removed
+# rather than left as decoration.

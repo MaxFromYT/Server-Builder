@@ -64,11 +64,22 @@ const RECENTS_STORAGE_KEY = "equipment-picker-recents";
 const MAX_RECENTS = 8;
 const ROW_HEIGHT = 140;
 
-const getStoredIds = (key: string) => {
+const getStoredIds = (key: string): string[] => {
   if (typeof window === "undefined") return [];
   try {
     const stored = window.localStorage.getItem(key);
-    return stored ? (JSON.parse(stored) as string[]) : [];
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    /*
+      The cast this replaced sat inside the try and the use of the value sat
+      outside it, so the guard covered the wrong thing. A stored object
+      parses fine, gets called a string[], and reaches new Set(favoriteIds)
+      during render, where a non-iterable throws and takes the picker with
+      it. Checking the shape here is what the try was meant to be doing.
+    */
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === "string")
+      : [];
   } catch {
     return [];
   }
@@ -76,7 +87,13 @@ const getStoredIds = (key: string) => {
 
 const storeIds = (key: string, ids: string[]) => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(ids));
+  // getStoredIds above is wrapped and this was not, so favouriting a device
+  // threw where reading the favourites had been handled.
+  try {
+    window.localStorage.setItem(key, JSON.stringify(ids));
+  } catch {
+    /* Favourites and recents last as long as the page does. */
+  }
 };
 
 interface VirtualizedListProps {
@@ -329,6 +346,7 @@ export function EquipmentPicker({
 
   return (
     <div 
+      data-print-hide
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
       data-ui="true"
@@ -362,7 +380,13 @@ export function EquipmentPicker({
               </p>
             )}
           </div>
-          <Button size="icon" variant="ghost" onClick={onClose} data-testid="button-close-picker">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onClose}
+            data-testid="button-close-picker"
+            aria-label="Close the equipment picker"
+          >
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -575,6 +599,12 @@ export function EquipmentPicker({
                             event.stopPropagation();
                             toggleFavorite(equipment.id);
                           }}
+                          aria-pressed={isFavorite}
+                          aria-label={
+                            isFavorite
+                              ? `Remove ${equipment.name} from favorites`
+                              : `Add ${equipment.name} to favorites`
+                          }
                         >
                           <Star className={`w-4 h-4 ${isFavorite ? "text-yellow-400" : ""}`} />
                         </Button>
