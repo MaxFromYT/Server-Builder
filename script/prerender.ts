@@ -234,6 +234,16 @@ interface PageMeta {
   rootContent?: string;
   /** Keep a page out of the index. For interactive pages with little prose. */
   noindex?: boolean;
+  /**
+   * Whether this page plays the entrance animation.
+   *
+   * Marks the document so the inline script in index.html knows to veil the
+   * prerendered content until the preloader takes over. Only true for pages
+   * that actually render one, which means CinematicLayout without
+   * skipPreloader: the five dashboards use the game header instead, and the
+   * 404 page opts out, and on those a veil would never be lifted.
+   */
+  boot?: boolean;
 }
 
 function buildPageHtml(base: string, meta: PageMeta): string {
@@ -248,7 +258,12 @@ function buildPageHtml(base: string, meta: PageMeta): string {
     schema,
     rootContent,
     noindex = false,
+    boot = true,
   } = meta;
+
+  if (boot) {
+    html = html.replace(/<html([^>]*)>/, '<html$1 data-boot="1">');
+  }
 
   html = replaceTitle(html, title);
   html = replaceCanonical(html, canonical);
@@ -493,6 +508,10 @@ async function writeNotFoundPage(base: string): Promise<void> {
     // does not exist just leaves a dead reference in the HTML.
     canonical: `${SITE_URL}/404`,
     noindex: true,
+    // CinematicNotFound passes skipPreloader, so nothing here would ever
+    // lift a veil, and somebody who has just hit a dead link should see the
+    // explanation immediately rather than an entrance animation.
+    boot: false,
     rootContent: `
 <main>
   <h1>Page not found</h1>
@@ -1044,6 +1063,9 @@ ${[...NCL_GUIDE_DATA]
         "The simulator's network operations dashboard: alert volume, uptime stability, and response cadence over the modelled datacenter floor.",
       canonical: `${SITE_URL}/noc`,
       noindex: true,
+      // Game header, not CinematicLayout, so no preloader ever mounts here
+      // and a veil would have nothing to lift it.
+      boot: false,
     },
     {
       dir: "network",
@@ -1052,6 +1074,9 @@ ${[...NCL_GUIDE_DATA]
         "The simulator's network dashboard: topology overview, throughput trends, and link health across the modelled datacenter.",
       canonical: `${SITE_URL}/network`,
       noindex: true,
+      // Game header, not CinematicLayout, so no preloader ever mounts here
+      // and a veil would have nothing to lift it.
+      boot: false,
     },
     {
       dir: "floor",
@@ -1060,6 +1085,9 @@ ${[...NCL_GUIDE_DATA]
         "The simulator's floor dashboard: thermal zones, airflow balance, and how racks are distributed across the modelled datacenter floor.",
       canonical: `${SITE_URL}/floor`,
       noindex: true,
+      // Game header, not CinematicLayout, so no preloader ever mounts here
+      // and a veil would have nothing to lift it.
+      boot: false,
     },
     {
       dir: "incidents",
@@ -1068,6 +1096,9 @@ ${[...NCL_GUIDE_DATA]
         "The simulator's incident dashboard: severity distribution, response speed, and tracking of open incidents on the modelled floor.",
       canonical: `${SITE_URL}/incidents`,
       noindex: true,
+      // Game header, not CinematicLayout, so no preloader ever mounts here
+      // and a veil would have nothing to lift it.
+      boot: false,
     },
     {
       dir: "build",
@@ -1076,6 +1107,9 @@ ${[...NCL_GUIDE_DATA]
         "The simulator's build dashboard: layout changes, the power impact of each one, and the health of the build workflow.",
       canonical: `${SITE_URL}/build`,
       noindex: true,
+      // Game header, not CinematicLayout, so no preloader ever mounts here
+      // and a veil would have nothing to lift it.
+      boot: false,
     },
   ];
 
@@ -2692,9 +2726,12 @@ ${JSON.stringify({
 
   // Home page last: everything above uses `base` as its template, so giving
   // it a body any earlier would put the home page's content on all of them.
+  //
+  // data-boot is set by hand because this is the one page that does not go
+  // through buildPageHtml, and it is the page the entrance was designed for.
   await writeFile(
     path.join(DIST, "index.html"),
-    injectRootContent(base, homeContent),
+    injectRootContent(base, homeContent).replace(/<html([^>]*)>/, '<html$1 data-boot="1">'),
     "utf-8",
   );
   console.log("index.html: home page body written");

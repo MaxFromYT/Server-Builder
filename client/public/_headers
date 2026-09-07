@@ -52,7 +52,9 @@
   #                             an oversight. script/prerender.ts writes a
   #                             <script type="application/ld+json"> block into
   #                             every one of the static pages, and
-  #                             client/index.html carries three more. CSP
+  #                             client/index.html carries four more, one of
+  #                             which is the boot veil that has to run before
+  #                             the first paint and so cannot be a module. CSP
   #                             treats those as inline scripts even though
   #                             ld+json is data the parser never executes.
   #                             Removing 'unsafe-inline' means either a nonce
