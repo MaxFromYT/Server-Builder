@@ -60,6 +60,74 @@
   font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
 }
 
+/*
+  The cinematic surface in the light theme.
+ 
+  Everything in here paints from the --brand-* tokens rather than the shadcn
+  semantic ones: components say text-[hsl(var(--brand-bone))] directly, in
+  hundreds of places. That is what made this tractable. Redefining the
+  thirteen brand tokens under one selector re-themes every cinematic page at
+  once, without touching a single component.
+ 
+  The palette is not the dark one inverted. Lightness had to be chosen per
+  token against the pairings that actually render, and the accent could not
+  simply be lifted: --brand-signal is 72 100% 50%, a lime that measures about
+  1.5:1 on white and is unreadable as text there.
+ 
+  What makes the accent tractable here is the thing that made it impossible
+  in the dark theme. --brand-signal does two jobs, the fill under a button
+  label and the colour of a link on the page, and in the dark theme those
+  wanted opposite directions, which is why --primary-text exists. On a light
+  ground both jobs want the same thing: dark. So one value serves both, and
+  moving it darker improves both at once. It lands at 21% lightness, which
+  reads as a deep olive rather than a lime, and that is the cost of the
+  contrast rather than a change of mind about the brand.
+ 
+  Every pairing was computed before it was written, and check-contrast gates
+  the ones a reader would point at. Lowest of the sixteen is 4.85:1.
+*/
+.light .cinematic:not(.cinematic-pin-dark) {
+  --brand-obsidian: 40 20% 97%;   /* page ground */
+  --brand-void: 220 12% 92%;      /* recessed: darker than the ground now */
+  --brand-graphite: 0 0% 100%;    /* card, raised above the ground */
+  --brand-carbon: 220 10% 94%;    /* muted surface */
+  --brand-iron: 220 10% 80%;      /* border */
+  --brand-ash: 220 8% 42%;        /* muted text */
+  --brand-bone: 220 16% 13%;      /* primary text */
+  --brand-bone-dim: 220 10% 34%;  /* secondary text */
+  --brand-signal: 72 100% 21%;    /* accent, fill and text both */
+  --brand-signal-soft: 72 90% 22%;
+  --brand-amber: 36 100% 28%;
+  --brand-cyan: 187 100% 24%;
+  --brand-danger: 358 70% 40%;
+}
+
+/*
+  High contrast, both themes.
+ 
+  The class was already being applied to the root element on every page; the
+  cinematic tokens simply never answered it, so switching it on changed
+  nothing here. Measured that way before this existed: body text on /blog
+  stayed at rgb(191,186,176) with the class on and off.
+ 
+  This does not invent a third palette. It pushes the text tokens to the ends
+  of their range and lifts the borders, which is what the setting is for:
+  somebody who turns it on wants separation, not a different design.
+*/
+.high-contrast .cinematic {
+  --brand-bone: 40 20% 100%;
+  --brand-bone-dim: 40 14% 88%;
+  --brand-ash: 220 8% 74%;
+  --brand-iron: 220 10% 42%;
+}
+
+.light.high-contrast .cinematic:not(.cinematic-pin-dark) {
+  --brand-bone: 0 0% 0%;
+  --brand-bone-dim: 220 14% 18%;
+  --brand-ash: 220 12% 28%;
+  --brand-iron: 220 12% 58%;
+}
+
 /* Film-grain overlay for cinematic surfaces */
 .cinematic-grain::before {
   content: "";

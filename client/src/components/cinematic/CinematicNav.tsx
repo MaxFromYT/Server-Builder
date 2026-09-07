@@ -8,6 +8,7 @@ import {
 } from "framer-motion";
 import { Magnetic, GlitchText } from "@/lib/framer-animations";
 import { prefetchHandlers } from "@/lib/prefetchOnHover";
+import { DisplayMenu } from "@/components/ui/display-menu";
 
 /**
  * Everything the browser will hand a Tab to. Same selector the shortcuts
@@ -318,6 +319,22 @@ export function CinematicNav() {
 
           <div className="flex items-center gap-3">
             {/*
+              Theme, text size and high contrast, on every page rather than on
+              the five legacy routes.
+
+              All three were reachable only from the old navbar, so about 360
+              pages had no way to any of them. Text size was the sharpest
+              miss: it moves the rem basis on the root element, so it always
+              worked here, and the control that sets it was simply somewhere
+              else. Theme and high contrast now work here too, since
+              .cinematic answers both.
+
+              Not hidden on small screens, unlike the search affordance beside
+              it. A reader who needs larger text is most likely to need it on
+              a phone.
+            */}
+            <DisplayMenu testId="button-display-menu-cinematic" />
+            {/*
               The palette is keyboard first and nobody discovers a keyboard
               shortcut nobody told them about. This is the telling: it opens
               the same dialog, and it shows the key so the next time is
@@ -333,7 +350,18 @@ export function CinematicNav() {
               aria-label="Search this site"
               className="hidden h-9 items-center gap-2 rounded-full border border-[hsl(var(--brand-iron))] px-3 font-mono-tight text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--brand-ash))] transition-colors hover:border-[hsl(var(--brand-signal)/.5)] hover:text-[hsl(var(--brand-bone))] sm:inline-flex"
             >
-              <span aria-hidden>Search</span>
+              {/*
+                The word goes below 2xl, the shortcut stays.
+
+                Nine nav links, a search affordance and a call to action
+                already overflowed this row at 1280, and adding the display
+                control moved that to 1440, which is most laptops. Dropping
+                one word buys more room back than the control costs, so the
+                row now holds at 1280 as well, better than before either
+                change. aria-label on the button already names it, so nothing
+                is lost to a screen reader.
+              */}
+              <span aria-hidden className="hidden 2xl:inline">Search</span>
               <kbd
                 aria-hidden
                 className="rounded border border-[hsl(var(--brand-iron))] px-1.5 py-0.5 font-techno text-[9px] tracking-[0.12em]"

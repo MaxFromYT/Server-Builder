@@ -22,6 +22,18 @@ interface Props {
   hideNav?: boolean;
   /** Disable Lenis smooth-scroll (useful when embedding interactive 3D). */
   disableSmoothScroll?: boolean;
+  /**
+   * Keep this page on the dark palette whatever the theme says.
+   *
+   * For a page whose content is a full-bleed 3D scene with its own text
+   * composited over it. A light palette cannot recolour a dark rack: it
+   * turns the text near-black and leaves it sitting on the scene, which is
+   * how the home page read at every scroll position when the light theme
+   * first reached it. Measured: the canvas there covers 100% of the
+   * viewport, against 55% on /racks/wired and 41% on /teardown, where the
+   * canvas is a panel inside a normal page and the light theme is fine.
+   */
+  pinDark?: boolean;
 }
 
 /** Marks that the boot sequence has already played in this tab. */
@@ -33,6 +45,7 @@ export function CinematicLayout({
   hideFooter = false,
   hideNav = false,
   disableSmoothScroll = false,
+  pinDark = false,
 }: Props) {
   /*
     Once per visit, not once per page.
@@ -74,7 +87,11 @@ export function CinematicLayout({
 
   return (
     <SmoothScrollProvider disabled={disableSmoothScroll}>
-      <div className="cinematic cinematic-grain relative min-h-screen overflow-hidden bg-[hsl(var(--brand-obsidian))] text-[hsl(var(--brand-bone))]">
+      <div
+        className={`cinematic cinematic-grain relative min-h-screen overflow-hidden bg-[hsl(var(--brand-obsidian))] text-[hsl(var(--brand-bone))]${
+          pinDark ? " cinematic-pin-dark" : ""
+        }`}
+      >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-[-8vw] top-[-10vh] h-[34rem] w-[34rem] rounded-full bg-[hsl(var(--brand-cyan)/0.08)] blur-3xl animate-aurora-drift" />
           <div className="absolute right-[-6vw] top-[14vh] h-[30rem] w-[30rem] rounded-full bg-[hsl(var(--brand-signal)/0.07)] blur-3xl animate-panel-float" />
