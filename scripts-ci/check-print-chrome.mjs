@@ -14,10 +14,25 @@
  * be listed in KEEP below with a reason, which is the same decision made
  * once in the open instead of silently.
  */
-import { readFileSync } from "node:fs";
-import { globSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "fs";
+import path from "path";
 
-const FILES = globSync("client/src/**/*.tsx");
+/*
+  A hand-rolled walk rather than fs.globSync: globSync arrived in Node 22 and
+  CI runs Node 20, so the glob version passed locally and died in CI on the
+  import line. Every other gate in here walks directories this way.
+*/
+function walk(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    if (statSync(full).isDirectory()) out.push(...walk(full));
+    else if (full.endsWith(".tsx")) out.push(full);
+  }
+  return out;
+}
+
+const FILES = walk("client/src");
 
 /** Fixed elements that are meant to reach paper. Empty, so far. */
 const KEEP = new Set();
