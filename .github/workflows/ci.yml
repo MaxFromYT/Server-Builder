@@ -149,6 +149,17 @@ jobs:
       - name: Storage access is wrapped
         run: node scripts-ci/check-storage-guards.mjs
 
+      # The cinematic pages have two palettes now, both built by redefining
+      # thirteen brand tokens, and that only reaches colours that ask for a
+      # token. A literal written into a class is invisible to it and stays as
+      # dark as it was while the text on it goes dark: the rack cards on
+      # /racks did exactly that, putting 115 of 174 text elements under the
+      # floor with a heading at 1.16:1. check-contrast could not see it,
+      # because it reads tokens and these were not tokens. SVG fills and the
+      # 3D materials are exempt, since a rack chassis is dark in a light room.
+      - name: Cinematic surfaces use tokens
+        run: node scripts-ci/check-themed-colours.mjs
+
       # vite build, then the prerenderer over 200+ posts, then the server
       # bundle. The heap bump is for the prerender pass, which holds the whole
       # post index and the rendered HTML for a batch at once.
