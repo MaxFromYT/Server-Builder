@@ -39,11 +39,38 @@
 # so the rule sat here doing nothing while appearing to solve the problem.
 # Verified against production after deploying it: www still answered 200.
 #
-# The real fix is outside the repository, in the Cloudflare dashboard: either
-# a Redirect Rule on the zone sending www to the apex, or dropping www as a
-# custom domain on the Pages project. Until then the canonical tag on every
-# page points at the apex, which is what actually keeps Google consolidating
-# the two hosts, and it is doing that job today.
+# The real fix is outside the repository, in the Cloudflare dashboard. Until
+# somebody applies it, the canonical tag on every page points at the apex,
+# which is what actually keeps Google consolidating the two hosts, and it is
+# doing that job today. Verified: https://www.maxdoubin.com/contact serves
+# <link rel="canonical" href="https://maxdoubin.com/contact">.
+#
+# The steps, so this does not have to be worked out again:
+#
+#   1. DNS: www must be a PROXIED record, or Cloudflare never sees the
+#      request and cannot redirect it. An A record for www to 192.0.2.0, or
+#      AAAA to 100::, both reserved placeholders for originless setups. The
+#      orange cloud is the part that matters; the address is never reached.
+#
+#   2. Rules > Redirect Rules > Create rule, on the maxdoubin.com zone:
+#        If:   hostname equals www.maxdoubin.com
+#        Then: dynamic redirect
+#              target   concat("https://maxdoubin.com", http.request.uri.path)
+#              status   301
+#              preserve query string: on
+#
+#      Hostname only. Matching on the full URI would also catch the apex and
+#      loop it into itself.
+#
+#   3. Check with curl, not a browser, because a browser follows and hides it:
+#        curl -sSI https://www.maxdoubin.com/contact | head -3
+#      Expect 301 and location: https://maxdoubin.com/contact. Then confirm
+#      the apex still answers 200 rather than redirecting to itself.
+#
+# The alternative, if www is not wanted at all, is to remove www as a custom
+# domain on the Pages project. That makes www stop resolving rather than
+# redirect, which loses any link equity pointing at it, so the redirect is
+# the better of the two.
 
 # The simulator's internal dashboards used to be rewritten here, on the
 # reasoning that they are canvas-driven with nothing meaningful to prerender
