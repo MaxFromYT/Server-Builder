@@ -308,7 +308,7 @@ export function CinematicBlogPost() {
   }
 
   return (
-    <CinematicLayout>
+    <CinematicLayout overHero>
       <div
         ref={progressRef}
         className="fixed left-0 right-0 top-0 z-[60] h-[2px] origin-left bg-[hsl(var(--brand-signal))]"
@@ -359,8 +359,16 @@ export function CinematicBlogPost() {
                 1.99:1. Not a rounding error, an unreadable headline.
 
                 The stops below lift the middle of the gradient, which is
-                where the words are, and leave the top third alone so the
-                photograph still reads as a photograph.
+                where the words are, and keep the band between them light so
+                the photograph still reads as a photograph.
+
+                The navigation has the same problem over this image and it
+                is not solved here, because it cannot be. Its inactive links
+                are --brand-ash, a mid grey, and no amount of scrim reaches
+                4.5:1 against a mid grey: the plate would have to be darker
+                than 0.017 relative luminance, which is a solid black bar.
+                CinematicNav takes an overHero prop and changes the text
+                instead.
               */
               background:
                 "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.55) 0%, hsl(var(--brand-obsidian) / 0.28) 30%, hsl(var(--brand-obsidian) / 0.64) 50%, hsl(var(--brand-obsidian) / 0.84) 70%, hsl(var(--brand-obsidian) / 0.95) 88%, hsl(var(--brand-obsidian)) 100%)",

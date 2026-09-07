@@ -34,6 +34,14 @@ interface Props {
    * canvas is a panel inside a normal page and the light theme is fine.
    */
   pinDark?: boolean;
+  /**
+   * This page opens with a full bleed image behind the navigation.
+   *
+   * The nav is transparent until scrolled, so on these pages its links sit
+   * on a photograph and need their own plate and a brighter colour. See the
+   * note on CinematicNav.
+   */
+  overHero?: boolean;
 }
 
 /** Marks that the boot sequence has already played in this tab. */
@@ -46,6 +54,7 @@ export function CinematicLayout({
   hideNav = false,
   disableSmoothScroll = false,
   pinDark = false,
+  overHero = false,
 }: Props) {
   /*
     Once per visit, not once per page.
@@ -109,7 +118,7 @@ export function CinematicLayout({
         {!skipPreloader && !bootedOnce && (
           <Preloader onDone={markBooted} />
         )}
-        {!hideNav && <CinematicNav />}
+        {!hideNav && <CinematicNav overHero={overHero} />}
         {/*
           Outside the nav, because the palette has to work on the pages that
           hide the nav too, and because it is a dialog over the whole page

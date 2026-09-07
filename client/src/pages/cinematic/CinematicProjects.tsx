@@ -80,7 +80,7 @@ export function CinematicProjects() {
   );
 
   return (
-    <CinematicLayout>
+    <CinematicLayout overHero>
       <div
         ref={rootRef}
         className="relative min-h-screen px-6 pb-32 pt-[22vh] md:px-10"

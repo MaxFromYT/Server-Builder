@@ -85,7 +85,26 @@ const mobileItemVariants = {
   }),
 };
 
-export function CinematicNav() {
+/**
+ * @param overHero
+ *   This nav is sitting on a full bleed image rather than on the page.
+ *
+ *   The bar is transparent until you scroll, which is the intent, and on a
+ *   page with a cover that puts --brand-ash links straight onto a
+ *   photograph. Measured by masking the glyphs and reading the plate behind
+ *   them: 1.20:1 in dark and 1.41:1 in light, on fifteen of sixteen heroes.
+ *
+ *   A darker scrim cannot fix it. Ash is a mid grey at about 0.25 relative
+ *   luminance, so 4.5:1 needs a plate below 0.017, which is a solid black
+ *   bar and the opposite of the design. The text has to move instead, so on
+ *   a hero the inactive links take --brand-bone and the bar takes a gradient
+ *   of its own that fades out by its own height.
+ *
+ *   Scoped rather than global because it is a real change in appearance and
+ *   only two pages need it: a post and /projects. Everywhere else the nav
+ *   sits on the page's own ground and already measures clean.
+ */
+export function CinematicNav({ overHero = false }: { overHero?: boolean }) {
   const [location] = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -208,6 +227,10 @@ export function CinematicNav() {
           backgroundColor: scrolled || open
             ? "hsl(var(--brand-obsidian) / 0.72)"
             : "transparent",
+          backgroundImage:
+            !scrolled && !open && overHero
+              ? "linear-gradient(180deg, hsl(var(--brand-obsidian) / 0.92) 0%, hsl(var(--brand-obsidian) / 0.55) 62%, transparent 100%)"
+              : "none",
         }}
       >
         {/*
@@ -287,7 +310,9 @@ export function CinematicNav() {
                       className={`relative px-4 py-2 font-mono-tight text-[11px] uppercase tracking-[0.22em] transition-colors ${
                         active
                           ? "text-[hsl(var(--brand-bone))]"
-                          : "text-[hsl(var(--brand-ash))] hover:text-[hsl(var(--brand-bone))]"
+                          : overHero && !scrolled
+                            ? "text-[hsl(var(--brand-bone))] hover:text-[hsl(var(--brand-bone))]"
+                            : "text-[hsl(var(--brand-ash))] hover:text-[hsl(var(--brand-bone))]"
                       }`}
                     >
                       <motion.span
