@@ -16,6 +16,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { disposePooledAssets } from "@/lib/asset-pool-dispose";
 import { installLinkPrefetching } from "@/lib/prefetchOnHover";
+import { installPrintDisclosures } from "@/lib/printDisclosures";
 import { ScrollProgressBar, CursorGlow } from "@/lib/framer-animations";
 
 import { CinematicHome } from "@/pages/cinematic/CinematicHome";
@@ -514,6 +515,10 @@ export default function App() {
     // without each one having to opt in.
     const stopPrefetching = installLinkPrefetching();
 
+    // A collapsed <details> prints as an empty titled box. Open them for the
+    // duration of the print and put them back afterwards.
+    const stopPrintDisclosures = installPrintDisclosures();
+
     // Idle-prefetch the most likely next routes so clicking Projects / Blog
     // / Contact doesn't show the skeleton loader on first navigation. Ties
     // into the retry helper, so prefetch failures are silent.
@@ -536,6 +541,7 @@ export default function App() {
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
       stopPrefetching();
+      stopPrintDisclosures();
       disposePooledAssets();
     };
   }, []);

@@ -151,7 +151,7 @@ export function CinematicGame() {
     return (
       <GameProvider>
         <BuildProvider>
-          <div className="fixed inset-0 z-50 bg-[hsl(var(--brand-obsidian))]">
+          <div data-print-hide className="fixed inset-0 z-50 bg-[hsl(var(--brand-obsidian))]">
             <button
               onClick={() => setIsFullscreen(false)}
               data-testid="button-exit-fullscreen"

@@ -311,12 +311,14 @@ export function CinematicBlogPost() {
     <CinematicLayout overHero>
       <div
         ref={progressRef}
+        data-print-hide
         className="fixed left-0 right-0 top-0 z-[60] h-[2px] origin-left bg-[hsl(var(--brand-signal))]"
         style={{ transform: "scaleX(0)", boxShadow: "0 0 6px hsl(var(--brand-signal))" }}
       />
 
       {minutesLeft !== null && (
         <div
+          data-print-hide
           data-testid="reading-time-left"
           className="pointer-events-none fixed bottom-4 right-4 z-[60] rounded-full border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-obsidian)/0.85)] px-3 py-1.5 font-mono-tight text-[10px] uppercase tracking-[0.24em] text-[hsl(var(--brand-ash))] backdrop-blur-md"
         >
@@ -329,11 +331,28 @@ export function CinematicBlogPost() {
         data-testid={`article-${post.slug}`}
         className="relative pb-32"
       >
-        {/* Full-bleed cover */}
-        <div className="relative h-[70vh] w-full overflow-hidden">
+        {/*
+          Full-bleed cover.
+
+          On screen this is a photo with the title laid over it and a scrim
+          in between. On paper the scrim is gone: the print reset drops every
+          background, and it forces the title to black. Black on an unscrimmed
+          photo measured 2.02:1 to 3.57:1 across a sample of posts, against
+          the 4.5:1 a title needs, and the cover filled a whole sheet on its
+          own on the way.
+
+          So print un-stacks the hero instead: data-print-unstack takes the
+          positioning off the container and the text overlay so the title
+          flows onto white paper, and the photo and its scrims drop out.
+        */}
+        <div
+          data-print-unstack
+          className="relative h-[70vh] w-full overflow-hidden"
+        >
           <img
             src={post.coverImage}
             alt={post.title}
+            data-print-hide
             className="absolute inset-0 h-full w-full object-cover"
             width="1600"
             height="900"
@@ -341,6 +360,7 @@ export function CinematicBlogPost() {
           />
           <div
             aria-hidden
+            data-print-hide
             className="absolute inset-0"
             style={{
               /*
@@ -380,6 +400,7 @@ export function CinematicBlogPost() {
           />
           <div
             aria-hidden
+            data-print-hide
             className="absolute inset-0"
             style={{
               backgroundImage:
@@ -403,7 +424,7 @@ export function CinematicBlogPost() {
               of bottom padding, and three lines of this size come to about
               36px, so the credit cannot grow into the headline.
             */
-            <p className="absolute bottom-2 right-3 z-10 line-clamp-3 max-w-[80vw] text-right font-mono-tight text-[9px] uppercase leading-[1.35] tracking-[0.18em] text-[hsl(var(--brand-ash))] md:right-6 md:max-w-[60vw] md:text-[10px]">
+            <p data-print-hide className="absolute bottom-2 right-3 z-10 line-clamp-3 max-w-[80vw] text-right font-mono-tight text-[9px] uppercase leading-[1.35] tracking-[0.18em] text-[hsl(var(--brand-ash))] md:right-6 md:max-w-[60vw] md:text-[10px]">
               Photo{" "}
               <a
                 href={post.coverCredit.sourceUrl}
@@ -425,7 +446,7 @@ export function CinematicBlogPost() {
             </p>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 px-6 pb-16 md:px-10">
+          <div data-print-unstack className="absolute inset-x-0 bottom-0 px-6 pb-16 md:px-10">
             <div ref={heroRef} className="mx-auto max-w-[860px]">
               <Link
                 href="/blog"

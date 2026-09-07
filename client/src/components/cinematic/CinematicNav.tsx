@@ -219,6 +219,15 @@ export function CinematicNav({ overHero = false }: { overHero?: boolean }) {
     <>
       <motion.header
         ref={headerRef}
+        /*
+          Site chrome, not content. Printing a post used to put the wordmark,
+          the theme toggle, the search badge and the "Get in touch" button
+          across the top of page one. The print rule that was meant to stop
+          that named `nav`, which is the link list *inside* this header, so
+          the header itself kept printing. Twenty pages use <header> for their
+          own page title, so the rule cannot simply be widened to `header`.
+        */
+        data-print-hide
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
@@ -486,6 +495,7 @@ export function CinematicNav({ overHero = false }: { overHero?: boolean }) {
                 toggle are the keyboard routes out. */}
             <motion.div
               aria-hidden
+              data-print-hide
               className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -497,6 +507,7 @@ export function CinematicNav({ overHero = false }: { overHero?: boolean }) {
               ref={drawerRef}
               id="cinematic-mobile-nav"
               data-testid="mobile-nav-drawer"
+              data-print-hide
               className="fixed inset-x-0 top-16 z-40 border-b border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-obsidian)/.96)] backdrop-blur-md md:hidden"
               initial={{ opacity: 0, y: -20, clipPath: "inset(0 0 100% 0)" }}
               animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}

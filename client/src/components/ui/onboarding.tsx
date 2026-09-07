@@ -69,7 +69,7 @@ export function Onboarding({ steps = defaultSteps, storageKey = "hyperscale-onbo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 max-w-sm">
+    <div data-print-hide className="fixed bottom-6 left-6 z-50 max-w-sm">
       <Card className="p-4 space-y-3 bg-background/90 backdrop-blur-md border border-cyan-500/20 shadow-[0_0_25px_rgba(34,211,238,0.2)]">
         <div className="flex items-start justify-between gap-2">
           <div>

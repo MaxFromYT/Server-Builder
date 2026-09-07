@@ -428,6 +428,7 @@ export function Preloader({ minDurationMs = 1200, onDone }: PreloaderProps) {
     <div
       aria-hidden="true"
       data-testid="preloader"
+      data-print-hide
       className={`fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[hsl(var(--brand-obsidian))] transition-opacity duration-[640ms] ease-[cubic-bezier(.2,.8,.2,1)] ${
         hiding ? "pointer-events-none opacity-0" : "opacity-100"
       }`}

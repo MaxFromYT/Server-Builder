@@ -224,7 +224,17 @@ export function CinematicGear() {
 
           {catalogue ? (
             <>
-              <div className="mt-12 grid gap-6 md:grid-cols-[minmax(0,22rem)_1fr]">
+              {/*
+                The search box and the mount/group chips are controls, and a
+                printed page has nothing to click. Left in, they put a dead
+                search field and twenty dead chips ahead of the catalogue.
+                The "N of M models" line below survives, so a reader who
+                printed a filtered view can still see it is a filtered view.
+              */}
+              <div
+                data-print-hide
+                className="mt-12 grid gap-6 md:grid-cols-[minmax(0,22rem)_1fr]"
+              >
                 <div>
                   <label
                     htmlFor="gear-search"

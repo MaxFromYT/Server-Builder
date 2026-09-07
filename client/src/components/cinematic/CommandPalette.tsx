@@ -367,6 +367,7 @@ export function CommandPalette() {
 
   return (
     <div
+      data-print-hide
       className="fixed inset-0 z-[200] flex items-start justify-center px-4 pt-[12vh]"
       role="presentation"
       onMouseDown={(e) => {

@@ -346,6 +346,7 @@ export function EquipmentPicker({
 
   return (
     <div 
+      data-print-hide
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
       data-ui="true"

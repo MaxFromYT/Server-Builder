@@ -244,6 +244,15 @@ jobs:
       - name: Heading outlines
         run: node scripts-ci/check-heading-order.mjs
 
+      # A fixed element is viewport chrome, and print has no viewport: the
+      # browser drops it on page one of the printout and leaves it there.
+      # Printing a post used to come out with the site header across the top,
+      # a reading-time pill, a progress bar and the toast container. Source
+      # only, because several of them render on a condition a crawler never
+      # meets: an open drawer, an open command palette, the preloader.
+      - name: Print chrome
+        run: node scripts-ci/check-print-chrome.mjs
+
       # Last because it reads both the source trees and the built HTML.
       - name: Em dashes
         run: node scripts-ci/check-em-dashes.mjs
