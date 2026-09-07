@@ -310,11 +310,12 @@ export function CommandPalette() {
     [navigate],
   );
 
+  /*
+    Search-box keys. Escape is deliberately not here: it belongs to the
+    dialog, see onDialogKeyDown.
+  */
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      close();
-    } else if (e.key === "ArrowDown") {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       setCursor((c) => Math.min(results.length - 1, c + 1));
     } else if (e.key === "ArrowUp") {
@@ -337,7 +338,24 @@ export function CommandPalette() {
     cannot see and did not ask for. A modal that leaks backwards is worse
     than one that does not claim to be modal at all.
   */
-  const trapTab = (e: React.KeyboardEvent) => {
+  const onDialogKeyDown = (e: React.KeyboardEvent) => {
+    /*
+      Escape has to be handled here rather than on the search input.
+
+      It was on the input, and Tab is trapped inside this dialog, so a reader
+      who opened the palette and pressed Tab once was stuck: focus could not
+      leave, and the only key that closes the thing no longer reached a
+      handler. The way out was clicking the backdrop, which is no way out for
+      someone using a keyboard. That is WCAG 2.1.2, and it took one Tab.
+
+      On the dialog it catches Escape from the input, from any result row,
+      and from anything added to the modal later.
+    */
+    if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+      return;
+    }
     if (e.key !== "Tab") return;
     const root = dialogRef.current;
     if (!root) return;
@@ -381,7 +399,7 @@ export function CommandPalette() {
         aria-modal="true"
         aria-label="Search this site"
         data-testid="command-palette"
-        onKeyDown={trapTab}
+        onKeyDown={onDialogKeyDown}
         className="relative w-full max-w-2xl overflow-hidden rounded-xl border border-[hsl(var(--brand-iron))] bg-[hsl(var(--brand-graphite))] shadow-2xl"
       >
         <div className="flex items-center gap-3 border-b border-[hsl(var(--brand-iron))] px-4">
